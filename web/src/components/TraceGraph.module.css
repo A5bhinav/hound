@@ -42,6 +42,23 @@
   margin-right: auto;
 }
 
+.freezeReveal {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  background: var(--ice-wash);
+  border-bottom: 1px solid var(--ice);
+  color: var(--ink);
+  font-weight: 500;
+  animation: freeze-in 500ms ease-out;
+}
+
+@keyframes freeze-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;

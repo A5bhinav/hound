@@ -1,13 +1,14 @@
 import Link from "next/link";
 
-export function Bar({ sample, children }: { sample: boolean; children?: React.ReactNode }) {
+/** offline: HOUND_DATA=fixture, serving the repo's examples/ instead of the live backend. */
+export function Bar({ offline, children }: { offline: boolean; children?: React.ReactNode }) {
   return (
     <header className="bar">
       <Link href="/" className="wordmark">
         Hound
       </Link>
       <span className="bar-meta">{children}</span>
-      {sample && <span className="sample-flag">SAMPLE DATA · not a real trace</span>}
+      {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}
     </header>
   );
 }
