@@ -430,6 +430,7 @@ def test_scoreboard_scores_latest_replay_trace():
 def test_scan_route_never_scans_live(monkeypatch, tmp_path):
     from hound.proof import scan
     monkeypatch.setattr(scan, "OUT", tmp_path / "scan_missing.json")
+    monkeypatch.setattr(scan, "SUMMARY", tmp_path / "summary_missing.json")  # committed redacted fallback
     monkeypatch.setattr(scan, "weekend_scan", lambda **k: (_ for _ in ()).throw(AssertionError("live scan")))
     r = client.get("/scan/latest")
     assert r.status_code == 200 and r.json()["status"] == "not_computed"
