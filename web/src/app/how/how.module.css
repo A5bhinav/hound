@@ -1,20 +1,53 @@
-.main {
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: 3.5rem 1.5rem 3rem;
+.how {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
 }
 
-.h1 {
-  max-width: 17ch;
-  font-size: clamp(2.8rem, 6vw, 4.4rem);
-  line-height: 0.98;
+.how li {
+  display: flex;
 }
 
-.sub {
-  max-width: 52ch;
-  margin: 1rem 0 2.75rem;
-  font-size: 1.1rem;
-  color: var(--ink-2);
+.howCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* Step chip: the same red square as the step bar, so the four boxes read as the four steps. */
+.howN {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--red);
+}
+
+.howTitle {
+  font-size: 1.25rem;
+}
+
+.proofBox {
+  margin-bottom: 1rem;
+}
+
+.stat {
+  padding: 1rem 1.1rem;
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.casesBox {
+  padding-bottom: 0.5rem;
+}
+
+.h2 {
+  margin: 0 0 0.75rem;
 }
 
 .cases {
@@ -24,50 +57,59 @@
   border-top: 1px solid var(--rule);
 }
 
-.cases li {
-  border-bottom: 1px solid var(--rule);
+.cases li + li {
+  border-top: 1px solid var(--rule);
 }
 
 .case {
   display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr) auto 1.5rem;
+  grid-template-columns: 9rem minmax(0, 1fr) auto 1.5rem;
   align-items: center;
   gap: 1rem;
-  padding: 1.15rem 0.5rem;
+  padding: 0.95rem 0.5rem;
   color: var(--ink);
   text-decoration: none;
   border-radius: var(--radius);
-  transition: background 150ms;
 }
 
 .case:hover,
 .case:focus-visible {
   background: var(--paper-2);
+  text-decoration: none;
 }
 
 .source {
   justify-self: start;
-  font-size: 0.88rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ink-3);
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+}
+
+.source[data-source="doj_replay"] {
+  color: var(--ice-ink);
+  border-color: #1d3a55;
+  background: var(--ice-wash);
 }
 
 .name {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .sent {
   color: var(--ink-2);
-  font-size: 0.98rem;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 .chev {
   color: var(--ink-3);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1;
 }
 
@@ -76,10 +118,7 @@
     grid-template-columns: minmax(0, 1fr) 1.5rem;
   }
 
-  .source {
-    grid-column: 1;
-  }
-
+  .source,
   .name,
   .sent {
     grid-column: 1;
@@ -89,88 +128,5 @@
   .chev {
     grid-column: 2;
     grid-row: 1 / span 3;
-  }
-}
-
-.start {
-  display: inline-block;
-  margin: 0 0 3rem;
-  padding: 0.9rem 1.4rem;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--white);
-  background: var(--red);
-  border-radius: 999px;
-  text-decoration: none;
-  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
-  transition: background-color 0.15s ease, transform 0.15s ease;
-}
-
-.start:hover {
-  color: var(--white);
-  background: #b81d26;
-  transform: translateY(-1px);
-}
-
-.h2 {
-  margin: 0 0 1.1rem;
-  font-size: 2rem;
-}
-
-.how {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.9rem;
-  margin: 0 0 1.25rem;
-  padding: 0;
-  list-style: none;
-}
-
-.howCard {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  height: 100%;
-  padding: 1.25rem;
-  color: var(--ink);
-  text-decoration: none;
-  background: linear-gradient(180deg, #18181b, var(--paper));
-  border: 1px solid var(--rule);
-  border-radius: 14px;
-  transition: border-color 0.18s ease, transform 0.18s ease;
-}
-
-.howCard:hover,
-.howCard:focus-visible {
-  border-color: var(--trace);
-  transform: translateY(-2px);
-}
-
-/* Big serif step numbers in red: the four steps read as a sequence at a glance. */
-.howN {
-  font-family: var(--font-d);
-  font-size: 2.6rem;
-  line-height: 1;
-  color: var(--trace);
-}
-
-.howTitle {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-
-.howText {
-  color: var(--ink-2);
-  font-size: 0.98rem;
-}
-
-.proof {
-  margin: 0 0 3rem;
-  color: var(--ink-2);
-}
-
-@media (max-width: 800px) {
-  .how {
-    grid-template-columns: minmax(0, 1fr);
   }
 }

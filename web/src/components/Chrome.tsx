@@ -24,6 +24,13 @@ export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: 
       <Link href="/" className="wordmark">
         Hound
       </Link>
+      <span className="bar-secure" title="Hound reads public blockchain data only. It never holds, moves or asks for funds or keys.">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+          <rect x="3" y="7" width="10" height="7" rx="1.5" />
+          <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+        </svg>
+        Read-only · never touches funds
+      </span>
       {step === undefined ? (
         <nav className="bar-nav" aria-label="Main">
           <Link href="/report">Report a scam</Link>

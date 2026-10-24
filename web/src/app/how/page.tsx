@@ -32,10 +32,18 @@ function sentLine(c: CaseSummary | Case) {
 }
 
 const HOW = [
-  { title: "Report", href: "/intake", text: "The victim calls the hotline, gets a text link and sends a screenshot of the payment." },
-  { title: "Follow the money", href: `/cases/${DEMO_CASE}`, text: "Every wallet the money passed through, and where it sits now." },
-  { title: "Stop the next victim", href: "/exchange", text: "Exchanges hold withdrawals to wallets on the warning list." },
-  { title: "Police report", href: `/cases/${DEMO_CASE}/packet`, text: "One page a detective can act on, with who to contact." },
+  { title: "Report", href: "/intake", points: ["Victim calls the hotline", "Gets a text link", "Uploads a payment screenshot"] },
+  { title: "Follow the money", href: `/cases/${DEMO_CASE}`, points: ["Every wallet the money passed", "Where it sits now", "Which wallets Tether froze"] },
+  { title: "Stop the next victim", href: "/exchange", points: ["Traced wallets go on a warning list", "Exchanges check before a withdrawal", "Hold, warn or allow"] },
+  { title: "Police report", href: `/cases/${DEMO_CASE}/packet`, points: ["One page for a detective", "Every transfer, cited", "Who to contact"] },
+];
+
+/** The DOJ replay scoreboard (PITCH.md, engine test test_reaches_doj_seized_wallets_blind). */
+const PROOF = [
+  { n: "8 of 8", l: "Wallets in between the DOJ named, found blind" },
+  { n: "3 of 3", l: "Wallets the DOJ seized, found blind" },
+  { n: "~1%", l: "A-7 and A-8 amounts vs the DOJ's own numbers" },
+  { n: "16–20 days", l: "Before Tether froze them, after the victim reported" },
 ];
 
 export const metadata = { title: "How Hound works" };
@@ -57,35 +65,52 @@ export default async function How() {
   return (
     <>
       <Bar offline={usingFixtures} step="tour" />
-      <main className={styles.main}>
-        <p className="eyebrow">How Hound works · for judges, exchanges and police</p>
-        <h1 className={styles.h1}>Hound follows stolen crypto and stops it moving again.</h1>
-        <p className={styles.sub}>
-          A scam victim calls. Hound traces their money to where it sits, warns exchanges before the next victim pays the
-          same wallets, and hands police a one-page report.
-        </p>
-        <Link href="/intake" className={styles.start}>
-          Walk through it: 1 Report →
-        </Link>
+      <main className="wrap">
+        <header className="page-head">
+          <div>
+            <p className="label">How Hound works · for judges, exchanges and police</p>
+            <h1>Hound follows stolen crypto and stops it moving again.</h1>
+            <p className="sub">Victim report in. Traced wallets, exchange holds and a police report out.</p>
+          </div>
+          <Link href="/intake" className="btn btn-primary btn-lg">
+            Walk through it: 1 Report →
+          </Link>
+        </header>
 
-        <h2 className={styles.h2}>How it works</h2>
-        <ol className={styles.how}>
+        <ol className={`grid g4 ${styles.how}`}>
           {HOW.map((h, i) => (
             <li key={h.title}>
-              <Link href={h.href} className={styles.howCard}>
+              <Link href={h.href} className={`box ${styles.howCard}`}>
                 <span className={styles.howN}>{i + 1}</span>
-                <span className={styles.howTitle}>{h.title}</span>
-                <span className={styles.howText}>{h.text}</span>
+                <h2 className={styles.howTitle}>{h.title}</h2>
+                <ul className="checks">
+                  {h.points.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
               </Link>
             </li>
           ))}
         </ol>
-        <p className={styles.proof}>
-          <Link href="/proof">Proof it works:</Link> run blind on a real 2024 DOJ case, Hound found all 3 wallets the DOJ seized.
-        </p>
 
-        <h2 className={styles.h2}>Cases</h2>
-        {cases.length === 0 && <p>No cases yet.</p>}
+        <section className={`box ${styles.proofBox}`} aria-labelledby="proof-h">
+          <div className="box-h">
+            <h2 id="proof-h">Proof: a real 2024 DOJ case, run blind</h2>
+            <Link href="/proof" className="btn">Proof it works →</Link>
+          </div>
+          <div className="grid g4">
+            {PROOF.map((p) => (
+              <div key={p.n} className={styles.stat}>
+                <span className="stat-n">{p.n}</span>
+                <span className="stat-l">{p.l}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`box ${styles.casesBox}`} aria-labelledby="cases-h">
+        <h2 id="cases-h" className={styles.h2}>Cases</h2>
+        {cases.length === 0 && <p className="small">No cases yet.</p>}
         <ul className={styles.cases}>
           {cases.map((c) => (
             <li key={c.case_id}>
@@ -98,6 +123,7 @@ export default async function How() {
             </li>
           ))}
         </ul>
+        </section>
         {!usingFixtures && <ResetDemo />}
       </main>
     </>

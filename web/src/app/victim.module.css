@@ -7,94 +7,74 @@
 }
 
 .h1 {
-  font-size: clamp(2.6rem, 6vw, 4.3rem);
-  line-height: 0.98;
-  max-width: 19ch;
-  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-/* The promise in Hound red, set in italic so it reads as the answer to the question. */
-.h1 em {
-  display: block;
-  font-style: italic;
-  color: var(--trace);
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+  max-width: 28ch;
 }
 
 .lede {
-  margin: 1.5rem 0 2.5rem;
-  animation: rise 0.7s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  margin: 0.6rem 0 1.5rem;
   color: var(--ink-2);
-  max-width: 54ch;
+  max-width: 70ch;
 }
 
 .ways {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
-  animation: rise 0.7s 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  align-items: stretch;
 }
 
 .way {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 1.35rem;
-  color: var(--ink);
-  text-decoration: none;
-  background: linear-gradient(180deg, #18181b, var(--paper));
-  border: 1px solid var(--rule-2);
-  border-radius: 14px;
-  box-shadow: var(--shadow);
-  transition: border-color 0.18s ease, transform 0.18s ease;
+  gap: 0.85rem;
 }
 
-.way:hover,
-.way:focus-visible {
-  border-color: var(--trace);
-  transform: translateY(-2px);
+.way .btn {
+  margin-top: auto;
+  align-self: flex-start;
 }
 
-/* Calling is the easiest way in, so it is the card that glows. */
-.way:first-child {
-  background: radial-gradient(120% 140% at 0% 0%, rgba(163, 23, 31, 0.28), transparent 60%), var(--paper);
-  border-color: rgba(224, 70, 76, 0.45);
+.way .label {
+  margin: 0;
+}
+
+/* Calling is the easiest way in, so it is the box with the red edge. */
+.wayCall {
+  border-color: #4a1a1d;
+  box-shadow: inset 3px 0 0 var(--red);
 }
 
 .wayTitle {
+  font-family: var(--font-d);
   font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: 0.01em;
-  color: var(--ink-2);
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .phone {
   font-family: var(--font-d);
-  font-weight: 400;
-  font-size: 2.3rem;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+  letter-spacing: -0.02em;
   line-height: 1.1;
-  color: var(--trace);
+  color: var(--ink);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.wayText {
+.boxTitle {
+  margin: 0 0 0.9rem;
+  font-size: 1.15rem;
+}
+
+.warn {
+  margin: 1rem 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid #3a1518;
+  font-size: 0.85rem;
   color: var(--ink-2);
 }
 
-.wayGo {
-  margin-top: auto;
-  font-weight: 700;
-  color: var(--trace);
+.foot {
+  margin-top: 1.5rem;
 }
 
 .back {

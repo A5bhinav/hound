@@ -17,50 +17,69 @@ export default async function Home() {
   return (
     <>
       <Bar offline={usingFixtures} />
-      <main className={styles.main}>
-        <h1 className={styles.h1}>
-          Lost money to a crypto scam? <em>We can help you follow it.</em>
-        </h1>
-        <p className={styles.lede}>
-          Hound is free. Tell us what happened and send a picture of your payment. We trace where your money went, tell you
-          who can freeze it, and give you a report to send to the police.
-        </p>
+      <main className="wrap">
+        <header className="page-head">
+          <div>
+            <p className="label">Free help after a crypto scam</p>
+            <h1>Lost money to a crypto scam? We can help you follow it.</h1>
+            <p className="sub">We trace where your money went, who can freeze it, and give you a police report.</p>
+          </div>
+        </header>
 
-        <div className={styles.ways}>
+        <div className={`grid g3 ${styles.ways}`}>
           {phone && (
-            <a href={`tel:${phone}`} className={styles.way}>
-              <span className={styles.wayTitle}>Call us</span>
+            <a href={`tel:${phone}`} className={`box ${styles.way} ${styles.wayCall}`}>
+              <p className="label">Call us</p>
               <span className={styles.phone}>{formatPhone(phone)}</span>
-              <span className={styles.wayText}>A calm voice takes your story and texts you a link. About 5 minutes.</span>
+              <ul className="checks">
+                <li>A calm voice takes your story</li>
+                <li>We text you a link for your screenshot</li>
+                <li>About 5 minutes</li>
+              </ul>
+              <span className="btn btn-primary">Call now</span>
             </a>
           )}
-          <Link href="/report" className={styles.way}>
+          <Link href="/report" className={`box ${styles.way}`}>
+            <p className="label">Report online</p>
             <span className={styles.wayTitle}>Report online</span>
-            <span className={styles.wayText}>Answer a few short questions, then send a screenshot of your payment.</span>
-            <span className={styles.wayGo}>Start →</span>
+            <ul className="checks">
+              <li>A few short questions</li>
+              <li>Upload a screenshot of your payment</li>
+            </ul>
+            <span className="btn">Start →</span>
+          </Link>
+          <Link href="/c" className={`box ${styles.way}`}>
+            <p className="label">Already reported?</p>
+            <span className={styles.wayTitle}>Check my case</span>
+            <ul className="checks">
+              <li>Use the 6-character case code we gave you</li>
+            </ul>
+            <span className="btn">Check your case with your case code</span>
           </Link>
         </div>
 
-        <p className={styles.back}>
-          Already reported? <Link href="/c">Check your case with your case code</Link>.
-        </p>
+        <div className="grid g2" style={{ marginTop: "1rem" }}>
+          <section className="box box-red" aria-labelledby="safe-h">
+            <h2 id="safe-h" className={styles.boxTitle}>Hound will never</h2>
+            <ul className="checks no">
+              <li>Ask you for money, a fee, or a &quot;tax&quot; to release funds</li>
+              <li>Ask for your passwords, seed phrase, recovery phrase or private keys</li>
+              <li>Promise to get your money back</li>
+            </ul>
+            <p className={styles.warn}>Anyone offering recovery for a fee is running a second scam.</p>
+          </section>
+          <section className="box" aria-labelledby="get-h">
+            <h2 id="get-h" className={styles.boxTitle}>What you get</h2>
+            <ul className="checks ok">
+              <li>Where your money went, wallet by wallet</li>
+              <li>Who can freeze it: Tether, the exchange, the FBI&apos;s IC3</li>
+              <li>A one-page report to send to the police</li>
+            </ul>
+          </section>
+        </div>
 
-        <section className={styles.safe} aria-labelledby="safe-h">
-          <h2 id="safe-h">Hound will never</h2>
-          <ul>
-            <li>ask you for money, a fee, or a &quot;tax&quot; to release funds</li>
-            <li>ask for your passwords, seed phrase, recovery phrase or private keys</li>
-            <li>promise to get your money back</li>
-          </ul>
-          <p>
-            If anyone offers to recover your money for a fee, that is a second scam. It is one of the most common ones after a
-            loss.
-          </p>
-        </section>
-
-        <p className={styles.small}>
-          Hound reads public blockchain data only and never touches funds. What we find is reported, not proven.{" "}
-          <Link href="/how">How Hound works</Link>
+        <p className={`small ${styles.foot}`}>
+          Public blockchain data only · Reported, not proven · <Link href="/how">How Hound works</Link>
         </p>
       </main>
     </>

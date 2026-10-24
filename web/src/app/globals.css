@@ -1,39 +1,40 @@
-/* Hound: black, white, one dark red. Red marks action and the money we follow; every other colour carries a meaning. */
+/* Hound: a security console. Black surfaces, white type, one dark red for action. Every other colour carries a meaning. */
 :root {
-  --fog: #0b0b0c;        /* page: near-black, never pure black */
-  --paper: #141416;      /* raised surfaces: cards, the trace canvas, inputs */
-  --paper-2: #1e1e21;    /* hover, drawers, the active step */
-  --ink: #f4f1ec;        /* text: warm white (17:1 on page) */
-  --ink-2: #b7b2ab;      /* secondary text (9:1) */
-  --ink-3: #8a857f;      /* quiet labels (5.3:1) */
-  --rule: #26262a;
-  --rule-2: #3a3a3f;
+  --fog: #0a0a0b;        /* page */
+  --paper: #121214;      /* boxes */
+  --paper-2: #1a1a1d;    /* hover, inner wells, table heads */
+  --ink: #f5f5f4;        /* text (18:1 on page) */
+  --ink-2: #a8a8a3;      /* secondary text (8:1) */
+  --ink-3: #7c7c77;      /* labels (4.8:1) */
+  --rule: #232326;
+  --rule-2: #34343a;
 
-  --red: #a3171f;        /* Hound red: buttons, the brand mark */
-  --red-hi: #e0464c;     /* red text and lines on black (5.3:1) */
-  --trace: #e0464c;      /* USDT, the money we follow, and every link */
-  --eth: #8d95a8;        /* the victim's ETH, before the swap: steel */
-  --exchange: #f0e6d6;   /* reached an exchange: request ready (bone white) */
-  --hold: #e2a83c;       /* holding, freezable */
-  --hold-wash: #2a2112;
-  --dead: #5d5a57;
-  --ice: #7db4e6;        /* Tether froze it (drawn with a seal hatch in the trace) */
-  --ice-wash: #13202c;
+  --red: #a8161f;        /* Hound red: primary buttons, brand mark */
+  --red-2: #c21d27;      /* primary hover */
+  --trace: #e5484d;      /* red on black: links, the money we follow (5.4:1) */
+  --eth: #8b93a7;        /* the victim's ETH, before the swap */
+  --exchange: #ede4d3;   /* reached an exchange: request ready */
+  --hold: #e5a93b;       /* holding, freezable */
+  --hold-wash: #261e0f;
+  --dead: #5c5b58;
+  --ice: #6fb0ea;        /* Tether froze it (drawn with a seal hatch in the trace) */
+  --ice-wash: #0f1c28;
   --ice-deep: #2b5b84;
-  --ice-ink: #a9cdef;
-  --on-ice: #0b0b0c;
+  --ice-ink: #a3cbef;
+  --on-ice: #0a0a0b;
   --on-trace: #ffffff;
-  --ok: #5fbf8a;
-  --ok-wash: #11241a;
-  --bad: #ff6b6b;
-  --bad-wash: #2c1213;
+  --ok: #4cc38a;
+  --ok-wash: #0e2219;
+  --bad: #ff6369;
+  --bad-wash: #2a1012;
   --white: #ffffff;
 
-  --font-d: var(--font-display), Georgia, serif;
+  --font-d: var(--font-display), system-ui, sans-serif;
   --font-b: var(--font-body), system-ui, sans-serif;
   --font-m: var(--font-mono), ui-monospace, Consolas, monospace;
-  --radius: 10px;
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
+  --radius: 8px;
+  --gutter: clamp(1.25rem, 3vw, 2.5rem);
+  --maxw: 1440px;
   color-scheme: dark;
 }
 
@@ -43,7 +44,7 @@
     --fog: #ffffff; --paper: #ffffff; --paper-2: #f2f2f2;
     --ink: #111111; --ink-2: #333333; --ink-3: #555555;
     --rule: #d6d6d6; --rule-2: #bbbbbb;
-    --trace: #8f141b; --red-hi: #8f141b; --exchange: #6b4a1a; --hold: #7a5600; --hold-wash: #f6edd5;
+    --trace: #8f141b; --exchange: #6b4a1a; --hold: #7a5600; --hold-wash: #f6edd5;
     --ice: #2b5b84; --ice-wash: #e2eaf1; --ice-ink: #1f4566; --ok: #1e6e45; --ok-wash: #e1efe6;
     --bad: #a3271b; --bad-wash: #f6e3e0; --eth: #4a5578; --dead: #777777;
     color-scheme: light;
@@ -68,19 +69,9 @@ body {
   background: var(--fog);
   color: var(--ink);
   font-family: var(--font-b);
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-/* One faint red glow behind the top of every page, so the black has depth without decoration. */
-body {
-  background:
-    radial-gradient(60rem 28rem at 50% -12rem, rgba(163, 23, 31, 0.16), transparent 70%),
-    var(--fog);
-  background-repeat: no-repeat;
-  min-height: 100vh;
 }
 
 ::selection {
@@ -90,24 +81,24 @@ body {
 
 a {
   color: var(--trace);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
+  text-decoration: none;
 }
 
 a:hover {
-  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
 }
 
 :focus-visible {
   outline: 2px solid var(--trace);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
-/* Every native control on black: dark field, light text, red when focused. */
+/* Native controls on black: dark field, light text, red when focused. */
 input,
 select,
 textarea {
-  background-color: var(--paper);
+  background-color: var(--fog);
   color: var(--ink);
   border: 1px solid var(--rule-2);
 }
@@ -122,11 +113,6 @@ select:focus,
 textarea:focus {
   border-color: var(--trace);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(224, 70, 76, 0.22);
-}
-
-button {
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .mono {
@@ -135,48 +121,74 @@ button {
   overflow-wrap: anywhere;
 }
 
-/* Top bar */
+h1,
+h2,
+h3 {
+  font-family: var(--font-d);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.9rem, 2.6vw, 2.5rem);
+}
+
+h2 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+/* ───────────── Top bar ───────────── */
 .bar {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  padding: 0.85rem 1.75rem;
+  min-height: 60px;
+  padding: 0.6rem var(--gutter);
   border-bottom: 1px solid var(--rule);
-  background: rgba(11, 11, 12, 0.82);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  background: var(--fog);
 }
 
-/* The wordmark: a red seal, then the name. */
+/* The wordmark: a red square seal, then the name in caps. */
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   font-family: var(--font-d);
-  font-weight: 400;
-  font-size: 1.7rem;
-  line-height: 1;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
 }
 
 .wordmark::before {
-  content: "";
-  width: 0.62rem;
-  height: 0.62rem;
-  border-radius: 2px;
+  content: "H";
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
   background: var(--red);
-  box-shadow: 0 0 0 3px rgba(163, 23, 31, 0.28), 0 0 18px rgba(224, 70, 76, 0.55);
-  transform: rotate(45deg);
+  color: var(--white);
+  font-size: 0.95rem;
+  letter-spacing: 0;
 }
 
 .wordmark:hover {
-  color: var(--ink);
+  text-decoration: none;
 }
 
 .bar-meta {
@@ -184,67 +196,75 @@ button {
   font-size: 0.85rem;
 }
 
+/* "Read-only · never touches funds": the trust promise, always on screen. */
+.bar-secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ok);
+  border: 1px solid #1f4a35;
+  background: var(--ok-wash);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.bar-secure svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
 .bar-nav {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-left: auto;
-  font-size: 0.92rem;
+  font-size: 0.875rem;
 }
 
 .steps {
   display: flex;
-  gap: 0.2rem;
+  gap: 0.25rem;
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.steps li {
-  display: flex;
-  align-items: center;
-}
-
-.steps li + li::before {
-  content: "";
-  width: 0.9rem;
-  height: 1px;
-  margin-right: 0.2rem;
-  background: var(--rule-2);
 }
 
 .bar-nav a {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.4rem 0.7rem;
+  padding: 0.45rem 0.7rem;
   color: var(--ink-2);
+  font-weight: 500;
   text-decoration: none;
-  border-radius: 999px;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  border-radius: var(--radius);
 }
 
 .bar-nav a:hover {
   color: var(--ink);
   background: var(--paper-2);
+  text-decoration: none;
 }
 
 .bar-nav a[aria-current] {
   color: var(--ink);
   font-weight: 600;
   background: var(--paper-2);
-  box-shadow: inset 0 0 0 1px var(--rule-2);
 }
 
 .step-n {
   display: inline-grid;
   place-items: center;
-  width: 1.3rem;
-  height: 1.3rem;
-  border-radius: 50%;
-  font-size: 0.72rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--ink-3);
+  background: var(--paper-2);
   border: 1px solid var(--rule-2);
 }
 
@@ -258,11 +278,7 @@ button {
   border: 1px solid var(--rule-2);
 }
 
-@media (max-width: 900px) {
-  .steps li + li::before {
-    display: none;
-  }
-
+@media (max-width: 1000px) {
   .bar {
     position: static;
   }
@@ -271,40 +287,292 @@ button {
     flex-wrap: wrap;
     margin-left: 0;
   }
+
+  .steps {
+    flex-wrap: wrap;
+  }
 }
 
-/* "Next: …" at the bottom of each step */
+/* ───────────── Layout system: full width, boxes, grids ───────────── */
+.wrap {
+  width: 100%;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+}
+
+/* Page head: label + bold title on the left, actions on the right. */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.page-head .sub {
+  margin: 0.5rem 0 0;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.span2 { grid-column: span 2; }
+
+@media (max-width: 1000px) {
+  .g3, .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .g2, .g3, .g4 { grid-template-columns: minmax(0, 1fr); }
+  .span2 { grid-column: auto; }
+}
+
+.box {
+  padding: 1.25rem 1.35rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+a.box {
+  display: block;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+a.box:hover {
+  border-color: var(--rule-2);
+  background: var(--paper-2);
+  text-decoration: none;
+}
+
+.box-red {
+  border-color: #4a1a1d;
+  background: #160d0e;
+}
+
+.box-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.85rem;
+}
+
+/* Small grey caps label: section names, field names, stat captions. */
+.label,
+.eyebrow {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-b);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.small {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+/* Stat tile: one big number, one short caption. */
+.stat-n {
+  display: block;
+  font-family: var(--font-d);
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-l {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+/* Short checklist lines in place of paragraphs. */
+.checks {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.92rem;
+}
+
+.checks li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.checks li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--red);
+}
+
+.checks.no li::before,
+.checks.ok li::before {
+  display: grid;
+  place-items: center;
+  top: 0.18em;
+  width: 1rem;
+  height: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.checks.no li::before {
+  content: "×";
+  font-size: 0.8rem;
+  color: var(--trace);
+  background: var(--bad-wash);
+  border: 1px solid #4a1a1d;
+}
+
+.checks.ok li::before {
+  content: "✓";
+  font-size: 0.65rem;
+  color: var(--ok);
+  background: var(--ok-wash);
+  border: 1px solid #1f4a35;
+}
+
+/* Key / value rows. */
+.kv {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.kv dt {
+  color: var(--ink-3);
+}
+
+.kv dd {
+  margin: 0;
+}
+
+/* Badges: status at a glance. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  border: 1px solid var(--rule-2);
+  color: var(--ink-2);
+  background: var(--paper-2);
+  white-space: nowrap;
+}
+
+.badge-red { color: var(--trace); border-color: #4a1a1d; background: var(--bad-wash); }
+.badge-ok { color: var(--ok); border-color: #1f4a35; background: var(--ok-wash); }
+.badge-ice { color: var(--ice-ink); border-color: #1d3a55; background: var(--ice-wash); }
+.badge-hold { color: var(--hold); border-color: #4a3816; background: var(--hold-wash); }
+
+/* Buttons. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  font: 600 0.95rem var(--font-b);
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover {
+  background: #232327;
+  text-decoration: none;
+}
+
+.btn-primary {
+  color: var(--white);
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.btn-primary:hover {
+  color: var(--white);
+  background: var(--red-2);
+  border-color: var(--red-2);
+}
+
+.btn-lg {
+  padding: 0.85rem 1.4rem;
+  font-size: 1rem;
+}
+
+/* ───────────── "Next: …" at the bottom of each step ───────────── */
 .next-step {
-  margin: 3rem 0 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 2rem 0 0;
+  padding: 1.1rem 1.35rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
 }
 
 .next-step-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.9rem 1.4rem;
+  padding: 0.75rem 1.2rem;
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   color: var(--white);
   background: var(--red);
-  border-radius: 999px;
+  border-radius: var(--radius);
   text-decoration: none;
-  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .next-step-link:hover {
   color: var(--white);
-  background: #b81d26;
-  transform: translateY(-1px);
+  background: var(--red-2);
+  text-decoration: none;
 }
 
 .next-step-why {
-  margin: 0.75rem 0 0;
+  margin: 0;
   color: var(--ink-2);
-  max-width: 60ch;
+  font-size: 0.9rem;
 }
 
 .sample-flag {
@@ -316,30 +584,6 @@ button {
   background: var(--hold-wash);
 }
 
-/* Shared headings */
-.eyebrow {
-  font-family: var(--font-b);
-  font-weight: 600;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--trace);
-  margin: 0 0 0.6rem;
-}
-
-h1,
-h2 {
-  font-family: var(--font-d);
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  line-height: 1.04;
-  margin: 0;
-}
-
-h3 {
-  letter-spacing: -0.005em;
-}
-
 /* Error panel */
 .api-error {
   max-width: 44rem;
@@ -347,7 +591,7 @@ h3 {
   padding: 1.25rem 1.5rem;
   background: var(--paper);
   border: 1px solid var(--bad);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .api-error p {
@@ -362,7 +606,6 @@ h3 {
 
   .bar {
     position: static;
-    backdrop-filter: none;
   }
 }
 
@@ -373,26 +616,22 @@ h3 {
   }
 }
 
-/* Intro above a step's main panel, and the page-level "Next" footer */
+/* Intro above a step's main panel, and the page-level "Next" footer: full width like .wrap. */
 .page-intro {
-  max-width: 64rem;
+  max-width: var(--maxw);
   margin: 0 auto;
-  padding: 3.25rem 1.5rem 0.75rem;
-}
-
-.page-intro h1 {
-  max-width: 24ch;
-  font-size: clamp(2.3rem, 4.4vw, 3.4rem);
+  padding: 2rem var(--gutter) 0.5rem;
 }
 
 .page-intro p:not(.eyebrow) {
-  max-width: 62ch;
+  max-width: 70ch;
+  margin: 0.5rem 0 0;
   color: var(--ink-2);
-  font-size: 1.08rem;
+  font-size: 0.95rem;
 }
 
 .page-foot {
-  max-width: 64rem;
+  max-width: var(--maxw);
   margin: 0 auto;
-  padding: 0 1.5rem 2.5rem;
+  padding: 0 var(--gutter) 2.5rem;
 }
