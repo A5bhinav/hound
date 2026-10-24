@@ -66,15 +66,19 @@ def _chain_defaults():
 
 
 class Audit:
-    def __init__(self):
-        self.entries = []
+    """Append-only step log. Pass a shared list as `progress` to watch a running trace."""
+
+    def __init__(self, sink=None):
+        self.entries = sink if sink is not None else []
 
     def __call__(self, step, detail, address=None):
         self.entries.append({"t": _now(), "step": step, "address": address, "detail": detail})
         log.info("%s %s %s", step, address or "", detail)
 
 
-def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_balance=None, get_native_txs=None, **method):
+def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_balance=None, get_native_txs=None,
+              progress=None, **method):
+    """progress: optional list; audit entries are appended to it live (AUDIT N4 polling)."""
     started = time.monotonic()
     if get_transfers is None:
         deps = _chain_defaults()
@@ -87,7 +91,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     freeze_status = freeze_status or (lambda c, a: NO_FREEZE)
     m = {**DEFAULTS, **method}
     min_base = int(m["min_amount"] * 10 ** 6)
-    audit = Audit()
+    audit = Audit(progress)
     stats = {"api_calls": 0, "cache_hits": 0, "empty_results": 0}
     hidden = case.get("freeze_visibility") == "hidden"
     cutoff = case.get("data_cutoff_block")
@@ -244,7 +248,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 "tx_hashes": [s["tx_hash"]], "first_time": s["time"], "last_time": s["time"], "hop": 1,
                 "confidence": CONFIDENCE_MODEL["base"]["direct"], "method": "direct"})
     trace["stats"] = {**stats, "elapsed_ms": int((time.monotonic() - started) * 1000)}
-    trace["audit_log"] = audit.entries
+    trace["audit_log"] = list(audit.entries)
     return validate_trace(trace)
 
 

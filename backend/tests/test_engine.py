@@ -159,3 +159,11 @@ def test_adapter_errors_never_leak_into_the_trace():
                   get_native_txs=fixture_chain.get_native_txs)
     import json as _json
     assert "SECRET123" not in _json.dumps(t) and "etherscan" not in _json.dumps(t)
+
+
+def test_progress_list_fills_while_tracing():
+    live = []
+    t = run_trace(example("ohnd_replay.case"), get_transfers=fixture_chain.get_transfers, label=fixture_chain.label,
+                  freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance,
+                  get_native_txs=fixture_chain.get_native_txs, progress=live)
+    assert live and live == t["audit_log"]
