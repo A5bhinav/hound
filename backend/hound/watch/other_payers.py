@@ -171,8 +171,9 @@ def payments(trace: dict, window_days: int = 7, as_of: str | None = None) -> lis
 
 def other_payers(trace: dict, window_days: int = 7, as_of: str | None = None) -> list[dict]:
     """Payments in the current Trace schema shape (one row per payment, address = sender)."""
-    return [{"address": r["from"], "amount": r["amount"], "window_days": r["window_days"],
-             "source_exchange": r["source_exchange"], "confidence": r["confidence"]}
+    return [{"address": r["from"], "amount": r["amount"], "token": r["token"], "window_days": r["window_days"],
+             "source_exchange": r["source_exchange"], "confidence": r["confidence"],
+             "tx_hash": r["tx_hash"], "entry_address": r["entry_address"], "time": r["time"]}
             for r in payments(trace, window_days=window_days, as_of=as_of)]
 
 

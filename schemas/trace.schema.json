@@ -555,6 +555,20 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "token": {
+          "type": "string",
+          "description": "unit of amount: USDT or ETH (TRX on Tron)"
+        },
+        "tx_hash": {
+          "type": "string"
+        },
+        "entry_address": {
+          "type": "string",
+          "description": "the scam entry wallet this payment went into"
+        },
+        "time": {
+          "type": "string"
         }
       }
     }
