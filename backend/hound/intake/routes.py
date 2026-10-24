@@ -266,11 +266,41 @@ def active(request: Request):
     return Response(status_code=204)
 
 
+# A case code is 6 characters (about 10^9 values) and unlocks a victim's case, so wrong guesses are capped
+# per caller: 20 misses in 10 minutes and that caller gets 429 until the window passes. Guessing a live code
+# then takes years instead of hours.
+MISS_LIMIT = 20
+MISS_WINDOW_S = 600
+_MISSES: dict[str, list[float]] = {}
+
+
+def guessing_locked(request: Request) -> bool:
+    now = time.time()
+    key = _client_key(request)
+    with _LOCK:
+        hits = [t for t in _MISSES.get(key, []) if now - t < MISS_WINDOW_S]
+        _MISSES[key] = hits
+        return len(hits) >= MISS_LIMIT
+
+
+def note_miss(request: Request) -> None:
+    key = _client_key(request)
+    with _LOCK:
+        _MISSES.setdefault(key, []).append(time.time())
+        n = len(_MISSES[key])
+    if n in (MISS_LIMIT // 2, MISS_LIMIT):
+        log.warning("intake: %d wrong case codes from one caller in %ds", n, MISS_WINDOW_S)
+
+
 @router.get("/intake/{case_code}")
 def session(case_code: str, request: Request):
     """The upload page knows the code already; it gets status + message only unless the caller is the operator."""
+    if not _authorised(request) and guessing_locked(request):
+        raise HTTPException(429, "Too many wrong case codes. Please wait 10 minutes and try again.")
     s = SESSIONS.get(case_code.upper())
     if not s:
+        if not _authorised(request):
+            note_miss(request)
         raise HTTPException(404, "unknown case code")
     if _authorised(request):
         return _session_view(s)

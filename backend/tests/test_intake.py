@@ -525,3 +525,16 @@ def test_validated_sessions_outlive_the_upload_window(monkeypatch):
     with intake._LOCK:
         intake._expire()
     assert a in intake.SESSIONS and b not in intake.SESSIONS
+
+
+def test_wrong_case_codes_are_locked_out(monkeypatch):
+    intake._MISSES.clear()
+    remote = TestClient(api.app, client=("198.51.100.4", 1))
+    for i in range(intake.MISS_LIMIT):
+        assert remote.get(f"/intake/ZZZZ{i:02d}").status_code == 404
+    assert remote.get("/intake/ZZZZZZ").status_code == 429
+    # even a real code is refused while locked; another caller is unaffected
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    assert remote.get(f"/intake/{code}").status_code == 429
+    assert TestClient(api.app, client=("198.51.100.5", 1)).get(f"/intake/{code}").status_code == 200
+    intake._MISSES.clear()

@@ -216,7 +216,13 @@ def _redact_live(obj):
 def _owner(request, case_id):
     """The victim's own case code (?code=) unlocks their case: they see their full report, like the operator."""
     from hound.intake import routes as intake  # lazy: intake imports this module
-    return intake.owns_case(request.query_params.get("code"), case_id)
+    code = request.query_params.get("code")
+    if not code or intake.guessing_locked(request):
+        return False
+    if intake.owns_case(code, case_id):
+        return True
+    intake.note_miss(request)  # a wrong code for this case counts as a guess
+    return False
 
 
 def _public(case_id, body, request):
