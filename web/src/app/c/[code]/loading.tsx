@@ -1,16 +1,10 @@
-import { HoundMark } from "@/components/Chrome";
-import styles from "./upload.module.css";
+import { Bar, LoadingPanel } from "@/components/Chrome";
 
 export default function Loading() {
   return (
-    <main className={styles.page} role="status">
-      <header className={styles.head}>
-        <span className="wordmark">
-          <HoundMark />
-          Hound
-        </span>
-      </header>
-      <p className="label">Loading</p>
-    </main>
+    <>
+      <Bar offline={false} />
+      <LoadingPanel eyebrow="Your case" title="Loading…" items={["Opening your upload page"]} />
+    </>
   );
 }

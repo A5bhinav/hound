@@ -1,12 +1,10 @@
-import { Bar } from "@/components/Chrome";
+import { Bar, LoadingPanel } from "@/components/Chrome";
 
 export default function Loading() {
   return (
     <>
       <Bar offline={false} />
-      <p className="page-intro" role="status">
-        Loading…
-      </p>
+      <LoadingPanel eyebrow="Hound" title="Loading…" items={["Opening the page"]} />
     </>
   );
 }

@@ -104,6 +104,27 @@ export function StepLabel({ n, children }: { n: 1 | 2 | 3 | 4; children: React.R
   );
 }
 
+/** A loading screen: the page head it is waiting for, then a calm box saying what is happening. */
+export function LoadingPanel({ eyebrow, title, items }: { eyebrow: string; title: string; items: string[] }) {
+  return (
+    <main className="wrap" role="status" aria-live="polite">
+      <header className="page-head">
+        <div>
+          <p className="eyebrow">{eyebrow}</p>
+          <h1>{title}</h1>
+        </div>
+      </header>
+      <div className="notice">
+        <ul className="checks">
+          {items.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
+      </div>
+    </main>
+  );
+}
+
 export function ApiError({ message }: { message: string }) {
   return (
     <div className="api-error" role="alert">
