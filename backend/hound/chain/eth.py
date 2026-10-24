@@ -39,6 +39,10 @@ ETH_RPC_URLS = [u.strip() for u in os.environ.get(
 ETH_LOGS_RPC_URLS = [u.strip() for u in os.environ.get(
     "ETH_LOGS_RPC_URLS", "https://mainnet.gateway.tenderly.co,https://rpc.mevblocker.io",
 ).split(",") if u.strip()]
+# Archive RPC for state at a past block (balances in a replay). Tenderly's public gateway
+# answers past-block eth_call; set ETH_ARCHIVE_RPC_URL to an Alchemy/Infura URL for reliability.
+ETH_ARCHIVE_RPC_URLS = [u.strip() for u in os.environ.get(
+    "ETH_ARCHIVE_RPC_URL", "https://mainnet.gateway.tenderly.co,https://rpc.mevblocker.io").split(",") if u.strip()]
 TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 # Blocks older than this many are "settled": log queries ending there are cached forever.
 SETTLE_BLOCKS = 7200  # ~1 day
@@ -607,19 +611,23 @@ def _pad(address: str) -> str:
     return norm(address)[2:].rjust(64, "0")
 
 
-def get_balance(address: str, token: str = "USDT") -> float:
-    """Current balance in whole units, read on-chain via eth_call / eth_getBalance."""
+def get_balance(address: str, token: str = "USDT", block: int | None = None) -> float:
+    """Balance in whole units, read on-chain. block=None is latest; a block number reads the
+    state at that block from an archive RPC (cached forever)."""
     address = norm(address)
     kind, contract, decimals = _resolve_token(token)
+    tag = "latest" if block is None else hex(int(block))
+    ttl = 120 if block is None else None
+    urls = None if block is None else ETH_ARCHIVE_RPC_URLS
     if kind == "eth":
-        return _amount(int(rpc("eth_getBalance", [address, "latest"], ttl=120), 16), 18)
+        return _amount(int(rpc("eth_getBalance", [address, tag], ttl=ttl, urls=urls), 16), 18)
     if contract is None:
         raise ValueError("get_balance needs a token (USDT, ETH or a contract)")
     if decimals is None:
-        raise ValueError(f"unknown decimals for token {token}; add it to eth.TOKENS")
-    res = eth_call(contract, "0x70a08231" + _pad(address), ttl=120)  # balanceOf(address)
+        decimals = _token_meta(contract)[1]
+    res = rpc("eth_call", [{"to": contract, "data": "0x70a08231" + _pad(address)}, tag], ttl=ttl, urls=urls)
     if not res or res == "0x":
-        raise ChainAPIError(f"empty balanceOf result for {address} on {contract}")
+        raise ChainAPIError(f"empty balanceOf result for {address} on {contract} at {tag}")
     return _amount(int(res, 16), decimals)
 
 
@@ -667,3 +675,113 @@ def get_logs(contract: str, topic0: str, from_block: int, to_block: int | None =
 def _hex_or_int(v: Any) -> int:
     s = str(v)
     return int(s, 16) if s.startswith("0x") else int(s)
+
+
+# ---------------------------------------------------------------- native ETH txs
+
+def get_native_txs(address: str, as_of: int | str | None = None, after: str | None = None) -> list[dict]:
+    """Every successful transaction where `address` is sender or recipient, oldest first:
+    {chain, tx_hash, tx_index, from, to, token: "ETH", kind: "native", amount_wei (str),
+     gas_wei (str, fee paid), block, time}. Zero-value calls are kept (they pay gas);
+    failed transactions are dropped (no ETH moves). Internal transfers are not included.
+    as_of: inclusive cutoff block (int) or ISO time. after: ISO time.
+    Sources: Blockscout v2 -> Etherscan txlist (keyed) -> Blockscout v1."""
+    address = norm(address)
+    lo = parse_time(after) if after else None
+    hi_time = parse_time(as_of) if isinstance(as_of, str) else None
+    hi_block = as_of if isinstance(as_of, int) else None
+    errors = []
+    sources = [("blockscout_v2", lambda: _native_v2(address, lo))]
+    sources += [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources()]
+    for name, run in sources:
+        try:
+            rows = run()
+        except (TooManyTransfers, cache.CacheMiss):
+            raise
+        except ChainAPIError as e:
+            errors.append(f"{name}: {e}")
+            log.warning("native txs via %s failed for %s: %s", name, address, e)
+            continue
+        out = [r for r in rows
+               if (lo is None or parse_time(r["time"]) >= lo)
+               and (hi_time is None or parse_time(r["time"]) <= hi_time)
+               and (hi_block is None or r["block"] <= hi_block)]
+        out.sort(key=lambda r: (r["block"], r["tx_index"] if r["tx_index"] is not None else -1))
+        if not out:
+            count_empty()
+            log.warning("EMPTY native tx list for %s after=%s as_of=%s (source %s)", address, after, as_of, name)
+        return out
+    raise ChainAPIError(f"could not get native txs for {address}: {' | '.join(errors)}")
+
+
+def _native_row(tx_hash, tx_index, frm, to, value, fee, block, ts) -> dict:
+    return {"chain": CHAIN, "tx_hash": tx_hash.lower(), "tx_index": tx_index, "from": (frm or "").lower(),
+            "to": (to or "").lower(), "token": "ETH", "kind": "native", "amount_wei": str(int(value or 0)),
+            "gas_wei": str(int(fee or 0)), "block": int(block), "time": iso(ts)}
+
+
+def _native_v2(address: str, lo: int | None) -> list[dict]:
+    path = f"/api/v2/addresses/{address}/transactions"
+    params: dict[str, Any] = {}
+    out: list[dict] = []
+    first = True
+    while True:
+        def ttl(body, first_page=first):
+            items = body.get("items") or []
+            if not first_page and items and parse_time(items[0]["timestamp"]) < time.time() - SETTLED_AFTER:
+                return None
+            return RECENT_TTL
+
+        body = _v2_get(path, params, ttl)
+        items = body.get("items")
+        if items is None:
+            raise ChainAPIError(f"blockscout v2 bad transactions response for {address}: {str(body)[:300]}")
+        oldest = None
+        for it in items:
+            if it.get("status") not in ("ok", None) or it.get("result") not in ("success", None):
+                continue  # failed tx: no value moved
+            if it.get("block_number") is None:
+                continue  # pending
+            fee = (it.get("fee") or {}).get("value")
+            ts = parse_time(it["timestamp"])
+            oldest = ts
+            out.append(_native_row(it["hash"], it.get("position"), (it.get("from") or {}).get("hash"),
+                                   (it.get("to") or {}).get("hash"), it.get("value"), fee, it["block_number"], ts))
+            if len(out) > MAX_TRANSFERS:
+                raise TooManyTransfers(address, len(out), MAX_TRANSFERS)
+        nxt = body.get("next_page_params")
+        if not nxt or (lo is not None and oldest is not None and oldest < lo):
+            return out
+        params = dict(nxt)
+        first = False
+
+
+def _native_v1(address: str, source: str) -> list[dict]:
+    rows = []
+    start = 0
+    while True:
+        params = {"module": "account", "action": "txlist", "address": address, "startblock": start,
+                  "endblock": 99999999, "page": 1, "offset": V1_PAGE, "sort": "asc"}
+        page = explorer(params, ttl=RECENT_TTL, sources=[source])["result"]
+        rows.extend(page)
+        if len(rows) > MAX_TRANSFERS:
+            raise TooManyTransfers(address, len(rows), MAX_TRANSFERS)
+        if len(page) < V1_PAGE:
+            break
+        last = int(page[-1]["blockNumber"])
+        if last == start:
+            raise ChainAPIError(f"{address}: >{V1_PAGE} txs in block {last}")
+        rows = [r for r in rows if int(r["blockNumber"]) < last]
+        start = last
+    out = []
+    seen = set()
+    for r in rows:
+        if r.get("isError") not in (None, "0") or r.get("txreceipt_status") == "0":
+            continue
+        if r["hash"] in seen:
+            continue
+        seen.add(r["hash"])
+        fee = int(r.get("gasUsed") or 0) * int(r.get("gasPrice") or 0)
+        out.append(_native_row(r["hash"], int(r["transactionIndex"]) if r.get("transactionIndex") else None,
+                               r.get("from"), r.get("to"), r.get("value"), fee, r["blockNumber"], int(r["timeStamp"])))
+    return out
