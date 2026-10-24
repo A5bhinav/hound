@@ -44,9 +44,15 @@ export default async function Home() {
             <Secure />
           </div>
           <HeroMockup />
+          <a href="#what" className={styles.scrollCue}>
+            Scroll
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
         </section>
 
-        <section className={styles.features} aria-label="What Hound does">
+        <section id="what" className={styles.features} aria-label="What Hound does">
           <div>
             <svg className={styles.fIcon} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="14" cy="14" r="9" />

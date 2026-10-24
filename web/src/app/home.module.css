@@ -8,11 +8,61 @@
 }
 
 .hero {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   align-items: center;
   gap: 3rem;
   padding: clamp(2.5rem, 6vw, 5.5rem) 0 clamp(2.5rem, 5vw, 4.5rem);
+}
+
+/* On a laptop or projector the hero is the whole first screen (minus the 92 px bar); the rest is a scroll away. */
+@media (min-width: 1101px) and (min-height: 600px) {
+  .hero {
+    min-height: calc(100svh - 92px);
+    padding: 1.5rem 0 4.5rem;
+  }
+}
+
+.scrollCue {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-decoration: none;
+}
+
+.scrollCue:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.scrollCue svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  animation: cue 2.2s ease-in-out infinite;
+}
+
+@keyframes cue {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollCue svg { animation: none; }
+}
+
+@media (max-width: 1100px), (max-height: 599px) {
+  .scrollCue { display: none; }
 }
 
 .eyebrow {
@@ -26,7 +76,7 @@
 
 .h1 {
   margin: 0;
-  font-size: clamp(2.7rem, 5.2vw, 4.6rem);
+  font-size: clamp(2.5rem, min(4.3vw, 8.6vh), 4.6rem);
   font-weight: 600;
   line-height: 1.06;
   letter-spacing: -0.03em;
@@ -34,6 +84,7 @@
 }
 
 .quiet {
+  white-space: nowrap; /* "We help you follow it." never leaves "it." alone on a line */
   font-weight: 400;
   color: var(--ink-hero);
 }
@@ -64,6 +115,7 @@
 }
 
 .features {
+  scroll-margin-top: 100px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2.5rem;
@@ -170,6 +222,10 @@
 }
 
 @media (max-width: 640px) {
+  .quiet {
+    white-space: normal;
+  }
+
   .cta {
     width: 100%;
   }
