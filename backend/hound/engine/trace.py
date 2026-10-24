@@ -30,6 +30,7 @@ from hound.llm.classify import classify, features
 
 log = logging.getLogger("hound.engine")
 ENGINE_VERSION = "0.3"
+MAX_SENDS = 50  # a victim report with more sends than this is not a real intake; reject it
 DEFAULTS = {"max_hops": 8, "max_branches_per_node": 12, "min_amount": 100.0, "max_api_calls": 400, "deadline_s": 120}
 EXCHANGE_KINDS = {"exchange_hot", "exchange_deposit"}
 CONSOLIDATION_SENDERS = 3
@@ -84,6 +85,10 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     cutoff = case.get("data_cutoff_block")
 
     sends = case["sends"]
+    if len(sends) > MAX_SENDS:
+        raise ValueError(f"case has {len(sends)} sends; the limit is {MAX_SENDS}")
+    if set(method) - set(DEFAULTS):
+        raise ValueError(f"unknown method params {sorted(set(method) - set(DEFAULTS))}")
     chains = {s["chain"] for s in sends}
     if len(chains) != 1:
         raise ValueError(f"a case must start on one chain for now, got {sorted(chains)}")
@@ -102,6 +107,8 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             raise RuntimeError("case has ETH sends but no get_native_txs adapter was provided (AUDIT issue 1)")
         native, usdt_legs = [], []
         for x in sorted({s["to"] for s in eth_sends}):
+            if stats["api_calls"] + 2 > m["max_api_calls"] or time.monotonic() - started > m["deadline_s"]:
+                raise RuntimeError("call budget or deadline exhausted while resolving ETH swaps")
             native += get_native_txs(chain, x, after=None, as_of=cutoff)
             usdt_legs += get_transfers(chain, x, after=None, as_of=cutoff)
             stats["api_calls"] += 2

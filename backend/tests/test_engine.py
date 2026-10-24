@@ -131,3 +131,15 @@ def test_high_volume_and_fetch_errors_are_visible_not_fatal():
     assert reasons[A6] == "high_volume"
     assert reasons["0x212a021291a4a4007bc8892b2176c41204d9c794"] == "dead_end"
     assert t["status"] == "partial" and t["stats"]["fetch_errors"] == 1
+
+
+def test_input_limits_cannot_bypass_the_call_budget():
+    import pytest
+    case = example("ohnd_replay.case")
+    big = dict(case, sends=case["sends"] * 20)
+    with pytest.raises(ValueError, match="limit"):
+        run_trace(big, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs)
+    with pytest.raises(ValueError, match="unknown method"):
+        run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_hopz=99)
+    with pytest.raises(RuntimeError, match="budget"):
+        run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_api_calls=3)
