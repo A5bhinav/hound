@@ -358,3 +358,14 @@ def test_path_hops_say_which_token_they_are_in(no_chain, not_frozen):
     assert hops[0]["from"] == V and (hops[0]["amount"], hops[0]["token"]) == (0.3, "ETH")
     hops = check_mod.check("ethereum", FIN, watch=w)["evidence"]["path"]
     assert hops[-1]["token"] == "USDT"
+
+
+def test_path_hop_counts_each_victim_dollar_once(no_chain, not_frozen):
+    t = _r2_trace()
+    # the loop's second pass makes the engine's per-seed figure on E1 -> LOOP twice the send
+    t["edges"][2]["attributed_amount"] = 2000.0
+    t["edges"][2]["attributed_by_seed"] = {"s1": 2000.0}
+    w = Watchlist()
+    w.add_trace(t)
+    hops = check_mod.check("ethereum", LOOP, watch=w)["evidence"]["path"]
+    assert [h["amount"] for h in hops if h["to"] == LOOP] == [1000.0]
