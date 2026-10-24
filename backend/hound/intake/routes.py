@@ -121,7 +121,64 @@ def reset() -> None:
         n = len(SESSIONS)
         SESSIONS.clear()
         _ACTIVE.clear()
+    save_state()
     log.warning("intake reset: %d session(s) cleared", n)
+
+
+# ---------- persistence: a backend restart (tunnel watchdog, crash) must not lose a victim's case ----------
+
+def _state_file():
+    from pathlib import Path
+    from hound.chain.cache import cache_dir
+    return Path(os.environ.get("HOUND_STATE_FILE") or cache_dir() / "intake_state.json")
+
+
+def save_state() -> None:
+    """Write sessions and the cases they created (victims' stories: chmod 600, gitignored cache/).
+    Atomic: a temp file in the same folder, then os.replace. Never raises: the request already succeeded."""
+    import tempfile
+    from hound import api as hound_api
+    with _LOCK:
+        sessions = {c: dict(s) for c, s in SESSIONS.items()}
+        active = list(_ACTIVE)
+    cases = {s["case_id"]: hound_api.CASES[s["case_id"]] for s in sessions.values()
+             if s.get("case_id") and s["case_id"] in hound_api.CASES}
+    path = _state_file()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".intake_state.")
+        with os.fdopen(fd, "w") as f:
+            json.dump({"version": 1, "sessions": sessions, "active": active, "cases": cases}, f)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except OSError as e:
+        log.error("intake: could not save state to %s: %s", path, e)
+
+
+def load_state() -> None:
+    """At startup: bring back sessions still within their TTL and the cases they created (redacted as live,
+    trusted only if the operator had approved them)."""
+    from hound import api as hound_api
+    path = _state_file()
+    if not path.exists():
+        return
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as e:
+        log.error("intake: could not read saved state %s: %s (starting empty)", path, e)
+        return
+    cases = data.get("cases") or {}
+    with _LOCK:
+        SESSIONS.update(data.get("sessions") or {})
+        _ACTIVE[:] = [c for c in data.get("active") or [] if c in SESSIONS]
+        _expire()
+        live = {s["case_id"]: s for s in SESSIONS.values() if s.get("case_id") in cases}
+    for cid, s in live.items():
+        hound_api.CASES.setdefault(cid, cases[cid])
+        hound_api.LIVE_CASES.add(cid)
+        if s.get("approved"):
+            hound_api.TRUSTED.add(cid)
+    log.info("intake: restored %d session(s) and %d case(s) from %s", len(SESSIONS), len(live), path.name)
 
 
 def _expire() -> None:
@@ -143,6 +200,7 @@ def open_session(story: dict[str, Any] | None, victim: dict[str, Any] | None) ->
              "_created": time.time()}
         SESSIONS[code] = s
         _ACTIVE.append(code)
+    save_state()
     log.info("intake session %s opened", code)
     return s
 
@@ -398,6 +456,7 @@ async def approve(case_code: str, request: Request):
     # Outside the intake lock: _register rebuilds the watchlist and writes a file.
     await run_in_threadpool(hound_api.mark_verified, s["case_id"])
     log.info("intake %s approved by operator -> case %s trusted", s["case_code"], s["case_id"])
+    save_state()
     return {"status": "approved", "case_id": s["case_id"]}
 
 
@@ -445,6 +504,7 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
     # A stranger's public tx must never put its recipient on the watchlist. POST /intake/{code}/approve
     # (operator only) promotes the case after a human look.
         s.update({"status": "validated", "case_id": case["case_id"], "message": None, "_validated_at": time.time()})
+    save_state()
     log.info("intake %s validated -> case %s", code, case["case_id"])
     return {"status": "validated", "case_id": case["case_id"]}
 
@@ -452,6 +512,7 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
 def _retake(s: dict[str, Any], message: str) -> dict[str, Any]:
     s["status"] = "needs_retake"
     s["message"] = message
+    save_state()
     return {"status": "needs_retake", "message": message}
 
 

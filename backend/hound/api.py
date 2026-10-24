@@ -821,6 +821,8 @@ def _include_intake_router(target=None):
         raise RuntimeError("hound.intake.routes exists but has no FastAPI APIRouter named 'router'")
     target.include_router(router)
     log.info("included hound.intake.routes.router (%d routes)", len(router.routes))
+    if callable(getattr(mod, "load_state", None)):
+        mod.load_state()  # victims' cases from before a restart
 
 
 def _include_watch_router(target=None):

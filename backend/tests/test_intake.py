@@ -577,3 +577,25 @@ def test_own_code_on_the_case_list_never_locks_the_victim_out():
     assert remote.get(f"/intake/{code}").status_code == 200
     intake._MISSES.clear()
     intake._ALL_MISSES.clear()
+
+
+def test_sessions_and_their_cases_survive_a_restart(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOUND_STATE_FILE", str(tmp_path / "state.json"))
+    monkeypatch.setattr(intake, "validate_and_build_case", lambda s, ex: {
+        "case_id": "intake-restart1", "status": "intake", "source": "screenshot", "chain": "ethereum",
+        "sends": [], "victim": s["victim"], "story": s["story"]})
+    code = client.post("/intake/start", json={"victim": {"alias": "Ana"}}).json()["case_code"]
+    r = client.post(f"/intake/{code}/screenshot", data={"typed": "I sent 100 USDT, tx " + TX})
+    assert r.json()["status"] == "validated"
+    assert oct((tmp_path / "state.json").stat().st_mode)[-3:] == "600"
+    # simulate a restart: memory wiped, then reloaded from the file
+    intake.SESSIONS.clear()
+    intake._ACTIVE.clear()
+    api.CASES.pop("intake-restart1", None)
+    api.LIVE_CASES.discard("intake-restart1")
+    intake.load_state()
+    assert intake.SESSIONS[code]["status"] == "validated" and intake.owns_case(code, "intake-restart1")
+    assert "intake-restart1" in api.CASES and "intake-restart1" in api.LIVE_CASES
+    assert "intake-restart1" not in api.TRUSTED  # never approved, so never trusted after a restart
+    api.CASES.pop("intake-restart1", None)
+    api.LIVE_CASES.discard("intake-restart1")

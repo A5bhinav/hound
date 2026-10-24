@@ -3,7 +3,11 @@ import os
 import pytest
 
 os.environ.setdefault("HOUND_NO_DOTENV", "1")  # tests never read the real .env keys
-os.environ.setdefault("HOUND_NO_PREWARM", "1")  # no background replay trace outliving a test's patches
+os.environ.setdefault("HOUND_NO_PREWARM", "1")
+# intake state goes to a throwaway file, never the repo's cache/
+import tempfile  # noqa: E402
+
+os.environ.setdefault("HOUND_STATE_FILE", os.path.join(tempfile.mkdtemp(prefix="hound-test-"), "intake_state.json"))  # no background replay trace outliving a test's patches
 
 LIVE = os.environ.get("HOUND_LIVE") == "1"
 
