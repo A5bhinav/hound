@@ -48,10 +48,6 @@
   font-size: 1.5rem;
 }
 
-.amount {
-  font-family: var(--font-m);
-}
-
 .story {
   font-size: 0.85rem;
   color: var(--ink-2);

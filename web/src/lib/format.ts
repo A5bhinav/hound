@@ -3,7 +3,13 @@ import type { Chain, NodeKind, TraceNode } from "./types";
 export const usdt = (n: number | null | undefined) =>
   n == null ? "—" : `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDT`;
 
-export const pct = (c: number) => `${Math.round(c * 100)}%`;
+/** Whole USDT, for dense spots like graph edges. */
+export const usdt0 = (n: number) => `${Math.round(n).toLocaleString("en-US")} USDT`;
+
+export const daysBetween = (fromIso: string, toIso: string) =>
+  Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 86_400_000);
+
+export const pct =(c: number) => `${Math.round(c * 100)}%`;
 
 export const shortAddr = (a: string) => (a.length > 14 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
 
@@ -27,9 +33,9 @@ export const KIND_LABEL: Record<NodeKind, string> = {
 
 export type Tone = "trace" | "exchange" | "hold" | "frozen" | "dead";
 
-/** Colour role for a node, per BRIEF §9.4. */
-export function tone(n: TraceNode): Tone {
-  if (n.frozen?.is_frozen) return "frozen";
+/** Colour role for a node, per BRIEF §9.4. Frozen only once freezes are revealed (replay hides them, §0). */
+export function tone(n: TraceNode, freezesShown = true): Tone {
+  if (freezesShown && n.frozen?.is_frozen) return "frozen";
   switch (n.kind) {
     case "exchange_deposit":
     case "exchange_hot":

@@ -11,11 +11,11 @@ npm run dev                    # http://localhost:3000
 ```
 
 - `HOUND_API_URL`: backend base URL (default `http://localhost:8000`).
-- `HOUND_DATA=fixture`: serve `src/fixtures/` instead of calling the backend. The UI shows a "SAMPLE DATA" flag whenever this is on.
+- `HOUND_DATA=fixture`: serve the repo's `examples/` instead of calling the backend. The UI shows an "OFFLINE" flag whenever this is on.
 
 ## Routes
 
 - `/`: curated case picker (`GET /cases`)
 - `/cases/[id]`: case card + trace graph (`POST /cases/{id}/trace`)
 
-`src/fixtures/sample.trace.json` is a UI placeholder (real DOJ addresses, illustrative amounts). Swap for `examples/ohnd_replay.trace.json` when it lands.
+Fixture mode reads `../examples/ohnd_replay.case.json` and `ohnd_replay.trace.json` (real engine output). Replays (`method.freeze_visibility: "hidden"`) reveal Tether freezes only after the last hop unfolds (BRIEF §0).

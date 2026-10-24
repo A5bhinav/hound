@@ -14,7 +14,17 @@ function Ext({ href, children }: { href: string | null; children: React.ReactNod
   );
 }
 
-export default function NodeDetail({ trace, node, onClose }: { trace: Trace; node: TraceNode; onClose: () => void }) {
+export default function NodeDetail({
+  trace,
+  node,
+  freezesShown,
+  onClose,
+}: {
+  trace: Trace;
+  node: TraceNode;
+  freezesShown: boolean;
+  onClose: () => void;
+}) {
   const incoming = trace.edges.filter((e) => e.to === node.address);
   const outgoing = trace.edges.filter((e) => e.from === node.address);
   const endpoint = trace.endpoints.find((p) => p.address === node.address);
@@ -32,7 +42,7 @@ export default function NodeDetail({ trace, node, onClose }: { trace: Trace; nod
         <Ext href={explorerUrl(node.chain, "address", node.address)}>{node.address}</Ext>
       </p>
 
-      {node.frozen?.is_frozen && (
+      {freezesShown && node.frozen?.is_frozen && (
         <p className={styles.frozenBadge}>
           Tether froze this address{node.frozen.frozen_at ? ` on ${node.frozen.frozen_at.slice(0, 10)}` : ""}.
           {node.frozen.freeze_tx && (
@@ -51,11 +61,17 @@ export default function NodeDetail({ trace, node, onClose }: { trace: Trace; nod
           <>
             <dt>Trail stops here</dt>
             <dd>
-              {endpoint.reason.replace("_", " ")}
+              {endpoint.reason.replaceAll("_", " ")}
               {endpoint.exchange ? ` at ${endpoint.exchange}` : ""}
             </dd>
             <dt>Victim money in</dt>
             <dd>{usdt(endpoint.victim_inflow)}</dd>
+            {endpoint.victim_remaining != null && (
+              <>
+                <dt>{trace.replay ? "Still here at cutoff" : "Still here"}</dt>
+                <dd>{usdt(endpoint.victim_remaining)}</dd>
+              </>
+            )}
             <dt>Freezable</dt>
             <dd>{endpoint.freezable ? "Yes, balance covers the victim's inflow" : "No"}</dd>
           </>
