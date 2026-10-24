@@ -58,6 +58,8 @@ _BANNED = [
     re.compile(r"\b(?:can|could|will|should|may|might|going\s+to)\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
     re.compile(r"\b(?:expects?|expected|hopes?|plans?|aims?|likely|able)\s+to\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
     re.compile(r"\b(?:will|going\s+to|should)\s+(?:\w+\s+){0,2}come\s+back\b", re.I),
+    # promises about the other side: an arrest or a charge is not Hound's to promise
+    re.compile(r"\b(?:will|shall|going\s+to)\s+(?:\w+\s+){0,2}(?:be\s+)?(?:arrest|caught|catch|charg|prosecut|jail|convict)\w*", re.I),
 ]
 # Victim text only: a scared reader takes any mention of a refund or of money returned as a promise.
 # Ban the vocabulary itself rather than modal phrasings ('Recovery is likely', 'may come back').
@@ -76,7 +78,9 @@ _URL = re.compile(r"https?://[^\s<>()]+|\bwww\.[^\s<>()]+|[\w.+-]+@[\w-]+\.[\w.]
 _OBFUSCATED_DOMAIN = re.compile(
     r"[A-Za-z]{2,}\s*(?:[\[(]\s*(?:\.|dot)\s*[\])]|\s\.\s)\s*[A-Za-z]{2,}"
     # ' dot ' only when it ends like a domain: 'recoverfunds dot help.' but not 'the red dot on the chart'
-    r"|[A-Za-z]{2,}\s+dot\s+[a-z]{2,10}(?=\s*(?:[.,;!?)]|$))", re.I)
+    r"|[A-Za-z]{2,}\s+dot\s+[a-z]{2,10}(?=\s*(?:[.,;!?)]|$))"
+    # or ends in a common TLD anywhere in the sentence: 'write to fbi dot gov today'
+    r"|[A-Za-z]{2,}\s+dot\s+(?:gov|com|org|net|io|co|info|help|xyz|app|us|uk)\b", re.I)
 _ABBREV = re.compile(r"\b(?:e\.g|i\.e|U\.S|a\.m|p\.m)\.", re.I)
 _SENTENCE = re.compile(r"[^.!?\n]+")
 
@@ -163,6 +167,11 @@ def validate(template_text, facts, allow_untrusted=False, audience="victim"):
             continue
         if path not in table:
             errors.append(f"placeholder {m.group(0)!r} cites unknown path {path!r}")
+            continue
+        send = re.fullmatch(r"case\.sends\.(\d+)\.amount", path)
+        if fmt == "usdt" and send and table.get(f"case.sends.{send.group(1)}.token") != "USDT":
+            errors.append(f"placeholder {m.group(0)!r}: that send is not in USDT (token "
+                          f"{table.get(f'case.sends.{send.group(1)}.token')!r}); never label it USDT")
             continue
         try:
             _FORMATTERS[fmt](table[path])

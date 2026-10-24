@@ -508,3 +508,87 @@ def test_more_obfuscated_domains_and_accusations_are_rejected():
         with pytest.raises(TemplateError):
             validate(bad, f)
     validate("The red dot on the chart is the start of the trace.", f)
+
+
+# ------------------------------------------------------------ review round 1 (writer findings)
+
+def _schema_reasons():
+    """Every endpoint.reason in trace.schema.json, found wherever the enum sits."""
+    schema = json.loads((Path(__file__).resolve().parents[2] / "schemas" / "trace.schema.json").read_text())
+    found = []
+
+    def walk(o):
+        if isinstance(o, dict):
+            r = o.get("reason")
+            if isinstance(r, dict) and isinstance(r.get("enum"), list):
+                found.extend(r["enum"])
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    walk(schema)
+    assert found, "trace.schema.json has no endpoint reason enum"
+    return sorted(set(found))
+
+
+@pytest.mark.parametrize("reason", _schema_reasons() + ["some_future_reason"])
+@pytest.mark.parametrize("replay", [True, False])
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+def test_every_schema_endpoint_reason_writes_both_audiences(reason, replay, audience):
+    t, c = (copy.deepcopy(TRACE), copy.deepcopy(CASE)) if replay else live()
+    for e in t["endpoints"]:
+        e["reason"] = reason
+    out = write_case(t, c, audience)
+    if audience == "victim" and reason != "some_future_reason":
+        assert writer._WHERE[reason] in out["text"] or "ended up in a wallet" in out["text"]
+
+
+def test_replay_frozen_holding_never_says_still_sitting():
+    out = write_case(TRACE, CASE, "victim")["text"]
+    assert "still sitting" not in out
+    assert "Tether froze this wallet on" in out
+
+
+@pytest.mark.parametrize("case_id", ["case-58a83736", "case-277950ab", "case-99999999"])
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+def test_uuid_case_id_with_digits_never_breaks_the_packet(case_id, audience):
+    t, c = live()
+    t["case_id"] = c["case_id"] = case_id
+    out = write_case(t, c, audience)
+    assert case_id not in out["text"]
+
+
+def test_eth_seeds_are_never_summed_or_labelled_as_usdt():
+    f = build_facts(TRACE, CASE)
+    eth_total = sum(s["amount"] for s in f["case"]["sends"] if s["token"] == "ETH")
+    assert eth_total > 0, "replay example should carry ETH seeds"
+    # the headline figure is USDT that reached the endpoints, never the ETH sent
+    assert abs(f["derived"]["traced_usdt"] - eth_total) > 1
+    assert f["derived"]["traced_usdt"] == round(sum(r["victim_funds"] for r in f["derived"]["endpoints"]), 6)
+    for audience in ("victim", "detective"):
+        text = write_case(TRACE, CASE, audience)["text"]
+        assert f"{eth_total:,.2f} USDT" not in text and f"{round(eth_total):,} USDT" not in text
+    i = next(i for i, s in enumerate(f["case"]["sends"]) if s["token"] == "ETH")
+    with pytest.raises(TemplateError, match="not in USDT"):
+        validate(f"You sent {{{{case.sends.{i}.amount|usdt}}}} on {{{{case.sends.{i}.time|date}}}}.", f)
+    # the same amount with a plain number format is fine (the model can still say ETH in words)
+    validate(f"You sent {{{{case.sends.{i}.amount|raw}}}} ETH.", f)
+
+
+@pytest.mark.parametrize("para", [
+    "Good news: you will get your money back. Your funds are guaranteed to be recovered.",
+    "The person behind this will be arrested.",
+    "They are going to be caught and charged.",
+    "Write to fbi dot gov today.",
+    "Email ic3 dot gov for help.",
+])
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+def test_review_banned_promises_and_spelled_out_domains(para, audience):
+    with pytest.raises(TemplateError):
+        validate(para, build_facts(TRACE, CASE), audience=audience)
+
+
+def test_footer_scam_line_is_code_written_and_not_validated_as_a_draft():
+    out = write_case(TRACE, CASE, "victim")
+    assert out["text"].rstrip().splitlines()[-2] == writer.FOOTER_NEVER
