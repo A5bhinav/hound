@@ -36,7 +36,7 @@ cd web && vercel deploy --prod --yes
 ```
 1. `.env` has `PUBLIC_BASE_URL=https://houndhelp.vercel.app` and `HOUND_SPOKEN_SITE="hound help dot vercel dot app"` (the agent reads the site out when it can't text). Restart the backend after changing either.
 2. Register the voice agent's tool: `python scripts/cartesia_agent.py --tool-url https://<ngrok domain>/intake/voice/story`.
-3. Test once before judging: call (681) 275-5467, hear the case code and the site, open houndhelp.vercel.app on a phone on cellular, **Check my case**, type the code, send a screenshot, and watch **Report** go to "Send confirmed on chain".
+3. Test once before judging: call (989) 800-8367, hear the case code and the site, open houndhelp.vercel.app on a phone on cellular, **Check my case**, type the code, send a screenshot, and watch **Report** go to "Send confirmed on chain".
 4. On the operator laptop, click **Approve: I reviewed this send** on the Report page. Only approved cases can cause exchange holds.
 
 Viewers on the public host see live cases with shortened addresses and no story text, and cannot reset the demo. That is by design.
@@ -47,7 +47,7 @@ The top bar is the story: **1 Report → 2 Follow the money → 3 Stop the next 
 The site has two front doors. **http://localhost:3000** is the victim's: the hero (Report a scam / How it works) and, one scroll down, Call us / Report online / Check my case and what Hound will never ask for. Show it for 5 seconds ("this is what a victim sees", scroll once), then click **How it works** in the top bar for the tour.
 
 0. **How Hound works** (http://localhost:3000/how): read the one-liner, point at the 4 "How it works" cards. Click **Walk through it: 1 Report →**.
-1. **Report.** The page shows the Hound number, (681) 275-5467. Live: a judge calls it, tells a short story, gets a text with a link, and sends the payment screenshot (or types A.H.'s first tx hash). The case card fills in; then **Next: Follow the money →**. No call possible: **Play a sample call** (labelled as a replay), or **Next: Follow the money →** at the bottom.
+1. **Report.** The page shows the Hound number, (989) 800-8367. Live: a judge calls it, tells a short story, hears the case code and houndhelp.vercel.app, and sends the payment screenshot from **Check my case** (or types A.H.'s first tx hash). The case card fills in; then **Next: Follow the money →**. No call possible: **Play a sample call** (labelled as a replay), or **Next: Follow the money →** at the bottom.
 2. **Follow the money** (the DOJ case, Victim A.H.). The trace streams in, then the transfers unfold column by column. Once the last one is drawn, click **Reveal what Tether did**: the 3 last wallets turn hatched ("Tether froze it") and the headline reads "Tether froze 3 of these wallets 16 to 20 days after the victim's report". Click **Next: Stop the next victim →**.
 3. **Stop the next victim.** **Try: A wallet from the DOJ case (on the warning list)** → **Withdraw**: **Withdrawal held**, with the evidence. **Try: An exchange hot wallet** gives **Withdrawal sent**. Click **Next: Police report →**.
 4. **Police report.** The detective's copy; **For the victim** switches copy ("writing…" while Claude writes); **Print or save as PDF** works. Click **Next: See the proof on a real DOJ case →**.
@@ -55,7 +55,7 @@ The site has two front doors. **http://localhost:3000** is the victim's: the her
 6. Before the next judge: **Reset demo** at the bottom of http://localhost:3000/how (click twice). It calls `POST /demo/reset`.
 
 ## A judge who wants to try it as a victim
-Kit and full steps: **docs/demo-kit/README.md**. In short: they call (681) 275-5467 with any story, save **houndhelp.vercel.app/demo/receipt.png** (A.H.'s real 33 ETH payment), upload it on their case page, and see 101,352 USDT followed, all frozen by Tether.
+Kit and full steps: **docs/demo-kit/README.md**. In short: they call (989) 800-8367 with any story, save **houndhelp.vercel.app/demo/receipt.png** (A.H.'s real 33 ETH payment), upload it on their case page, and see 101,352 USDT followed, all frozen by Tether.
 
 ### Typing instead of the screenshot
 On their phone, at the public web URL: **Report online** → answer the questions → **Let me type it instead** and paste A.H.'s first tx hash (`0x39f5…1adc`, full value in `examples/ohnd_replay.case.json`) → "We found your payment" → **See what we found**: where the money went, what to do now, and their own report (unredacted, because they hold the case code).

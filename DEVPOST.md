@@ -14,7 +14,7 @@ Americans over 60 lost $4.4 billion to crypto scams in 2025, out of $11.4 billio
 - **Packet.** One page for a detective: every hop with its transaction count and confidence, every endpoint with its freeze status, who to contact (Tether, the exchange, IC3), and a banner naming any branch the trace could not finish, labelled "reported, not proven".
 
 ## Try it
-- Call **(681) 275-5467**, or open **https://houndhelp.vercel.app** and choose **Report online**.
+- Call **(989) 800-8367**, or open **https://houndhelp.vercel.app** and choose **Report online**.
 - Play the victim from the DOJ case: save https://houndhelp.vercel.app/demo/receipt.png (A.H.'s real 33 ETH payment) and upload it. Hound finds 101,352 USDT of it, all in wallets Tether froze.
 - The judge tour: https://houndhelp.vercel.app/how
 
