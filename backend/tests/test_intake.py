@@ -363,3 +363,46 @@ def test_scrub_keeps_amounts_and_dates_but_removes_phone_numbers():
         assert intake._scrub(f"ring {phone} now") == "ring [number removed] now", phone
     for keep in ("1,250,000.00 USDT", "11082.48", "block 21000000", "2026-10-15 14:32", "0.25 ETH"):
         assert intake._scrub(f"x {keep} y") == f"x {keep} y", keep
+
+
+TO = "0x" + "2" * 40
+
+
+def _capture_transfers(monkeypatch, amount=500.0):
+    import hound.chain as chain
+    calls = []
+
+    def fake(ch, address, token="USDT", after=None, before=None, **_):
+        calls.append({"token": token, "after": after, "before": before})
+        return [{"tx_hash": "0x" + "cd" * 32, "from": "0x" + "1" * 40, "to": address, "token": "USDT",
+                 "amount": amount, "time": after}]
+    monkeypatch.setattr(chain, "get_transfers", fake)
+    return calls
+
+
+def test_amount_without_token_word_is_usdt_and_dates_are_not_amounts():
+    ex = intake.extract_from_text(f"on 2026-10-15 14:32 I sent 500 to {TO}")
+    assert ex["amount"] == 500 and ex["token"] == "USDT" and ex["time"] == "2026-10-15T14:32"
+    assert intake.extract_from_text(f"sent 0.25 ETH and 900 to {TO}")["token"] == "ETH"  # a token word wins
+    assert "amount" not in intake.extract_from_text(f"2026-10-15 to {TO}")
+
+
+def test_naive_time_is_los_angeles(monkeypatch):
+    calls = _capture_transfers(monkeypatch)
+    case = intake.validate_and_build_case({"case_code": "ABCDEF"}, intake.extract_from_text(f"sent 500 to {TO} at 2026-10-15 14:32"))
+    # 14:32 PDT = 21:32 UTC, ±2 h
+    assert calls == [{"token": "USDT", "after": "2026-10-15T19:32:00Z", "before": "2026-10-15T23:32:00Z"}]
+    assert case["sends"][0]["amount"] == 500
+    calls.clear()
+    intake.validate_and_build_case({"case_code": "ABCDEF"}, intake.extract_from_text(f"sent 500 USDT to {TO} at 2026-10-15T14:32:00Z"))
+    assert calls[0]["after"] == "2026-10-15T12:32:00Z"  # an explicit Z stays UTC
+
+
+def test_no_time_searches_the_last_30_days(monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    calls = _capture_transfers(monkeypatch)
+    intake.validate_and_build_case({"case_code": "ABCDEF"}, intake.extract_from_text(f"sent 500 USDT to {TO}"))
+    assert len(calls) == 1  # one chain call whatever the window
+    after = datetime.fromisoformat(calls[0]["after"].replace("Z", "+00:00"))
+    before = datetime.fromisoformat(calls[0]["before"].replace("Z", "+00:00"))
+    assert before - after == timedelta(days=30) and abs(datetime.now(timezone.utc) - before) < timedelta(minutes=1)

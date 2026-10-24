@@ -22,6 +22,7 @@ import secrets
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
@@ -42,6 +43,10 @@ VISION_MAX_TOKENS = 800
 VISION_MIMES = ("image/png", "image/jpeg", "image/webp", "image/gif")
 AMOUNT_TOL = 0.005  # ±0.5% (AUDIT N7)
 TIME_WINDOW = timedelta(hours=2)
+NO_TIME_WINDOW = timedelta(days=30)  # no time given: look back this far (still one get_transfers call)
+LOCAL_TZ = ZoneInfo("America/Los_Angeles")  # a victim's naive "14:32" is their wall clock, not UTC
+DATE_TIME = re.compile(r"(20\d\d-\d\d-\d\d(?:[T ]\d\d:\d\d(?::\d\d(?:\.\d+)?)?(?:Z|[+-]\d\d:?\d\d)?)?)")
+CLOCK = re.compile(r"(?<![\d.])\d{1,2}:\d\d(?::\d\d)?(?![\d])")
 
 TX_HASH = re.compile(r"0x[0-9a-fA-F]{64}")
 # Not inside a longer hex run: a 64-hex tx hash starts with a 40-hex run that is not an address.
@@ -328,7 +333,9 @@ def extract_from_text(text: str) -> dict[str, Any]:
     if t and not addrs:
         out["to_prefix"], out["to_suffix"] = t.group(1).lower(), t.group(2).lower()
     best = None
-    scan = TRUNC.sub(" ", ETH_ADDR.sub(" ", TX_HASH.sub(" ", text)))
+    untokened = None
+    # dates and clock times are blanked too, so "2026-10-15" or "14:32" never reads as an amount
+    scan = CLOCK.sub(" ", DATE_TIME.sub(" ", TRUNC.sub(" ", ETH_ADDR.sub(" ", TX_HASH.sub(" ", text)))))
     for am in AMOUNT.finditer(scan):
         val = float(am.group(1).replace(",", ""))
         tok = (am.group(2) or "").upper()
@@ -336,9 +343,14 @@ def extract_from_text(text: str) -> dict[str, Any]:
             tok = "USDT"
         if tok and (best is None or val > best[0]):
             best = (val, tok)
+        if not tok and val > 0 and (untokened is None or val > untokened):
+            untokened = val
     if best:
         out["amount"], out["token"] = best
-    d = re.search(r"(20\d\d-\d\d-\d\d(?:[T ]\d\d:\d\d(?::\d\d)?)?)", text)
+    elif untokened is not None:
+        out["amount"], out["token"] = untokened, "USDT"  # no token word: USDT is what victims send
+        log.info("intake: amount %s had no token word; reading it as USDT", untokened)
+    d = DATE_TIME.search(text)
     if d:
         out["time"] = d.group(1).replace(" ", "T")
     return out
@@ -405,11 +417,28 @@ def extract_from_image(data: bytes, mime: str) -> dict[str, Any]:
 # ---------- on-chain validation ----------
 
 def _iso(ts: str) -> datetime | None:
+    """ISO time -> aware UTC datetime. A naive time is the victim's local clock (America/Los_Angeles)."""
     try:
-        d = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+        d = datetime.fromisoformat(ts.strip().replace("Z", "+00:00"))
     except Exception:  # noqa: BLE001
         return None
+    return (d if d.tzinfo else d.replace(tzinfo=LOCAL_TZ)).astimezone(timezone.utc)
+
+
+def _search_window(ts: Any) -> tuple[str, str]:
+    """(after, before) in UTC ISO for the address+amount search: ±2 h around a given time, the whole
+    local day (±2 h) for a bare date, else the last 30 days. Width never changes the call count."""
+    raw = str(ts or "").strip()
+    when = _iso(raw)
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    if when is None:
+        if raw:
+            log.info("intake: unreadable time %r; searching the last %d days", raw[:40], NO_TIME_WINDOW.days)
+        now = datetime.now(timezone.utc)
+        return (now - NO_TIME_WINDOW).strftime(fmt), now.strftime(fmt)
+    if re.fullmatch(r"\d{4}-\d\d-\d\d", raw):
+        return (when - TIME_WINDOW).strftime(fmt), (when + timedelta(days=1) + TIME_WINDOW).strftime(fmt)
+    return (when - TIME_WINDOW).strftime(fmt), (when + TIME_WINDOW).strftime(fmt)
 
 
 CHAIN_DOWN_MSG = "We couldn't reach the blockchain right now. Please try again in a minute."
@@ -430,7 +459,8 @@ def _rpc_outage(e: BaseException) -> bool:
 def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, Any]:
     """Confirm the send exists on chain and build a schema-valid Case (source: screenshot).
     Accepts: a full tx hash (receipt read, amount cross-checked when given), or a destination
-    address (full, or prefix…suffix) + amount, matched ±0.5% within ±2 h of the given time."""
+    address (full, or prefix…suffix) + amount, matched ±0.5% within ±2 h of the given time
+    (naive = America/Los_Angeles; no time = the last 30 days)."""
     from hound import chain
     from hound.contracts import validate_case
     sends: list[dict[str, Any]] = []
@@ -448,8 +478,7 @@ def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, 
             if not close:
                 raise NeedsRetake("That hash is real, but the amount on screen does not match what the chain shows. Please double-check the screenshot.")
     elif (ex.get("to") or ex.get("to_prefix")) and ex.get("amount"):
-        when = _iso(str(ex.get("time") or "")) or datetime.now(timezone.utc)
-        lo, hi = (when - TIME_WINDOW).strftime("%Y-%m-%dT%H:%M:%SZ"), (when + TIME_WINDOW).strftime("%Y-%m-%dT%H:%M:%SZ")
+        lo, hi = _search_window(ex.get("time"))
         if ex.get("to"):
             rows = chain.get_transfers("ethereum", ex["to"], token="USDT" if ex.get("token", "USDT") != "ETH" else "ETH", after=lo, before=hi)
             rows = [r for r in rows if r["to"].lower() == ex["to"]]
