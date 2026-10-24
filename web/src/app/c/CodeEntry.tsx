@@ -17,7 +17,7 @@ export default function CodeEntry() {
       className={styles.form}
       onSubmit={(e) => {
         e.preventDefault();
-        if (ok) router.push(`/c/${code}`);
+        if (ok) router.push(`/my/${code}`);
       }}
     >
       <label htmlFor="case-code" className={styles.label}>

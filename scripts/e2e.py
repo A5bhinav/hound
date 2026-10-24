@@ -431,7 +431,9 @@ def main():
         code, b = http("GET", f"{api}/scan/latest")
         step("proof: scan route answers (batch result or not_computed)", code == 200, b[:100], required=False)
 
-        for path, must in [("/", REPLAY), (f"/cases/{REPLAY}", REPLAY), (f"/cases/{REPLAY}/packet", "REPLAY"),
+        # "/" is the victim's front door; the case list and the tour live at /how.
+        for path, must in [("/", "Report online"), ("/report", "Tell us what happened"), ("/c", "Check your case"),
+                           ("/my/ZZZZZZ", "find that case code"), ("/how", REPLAY), (f"/cases/{REPLAY}", REPLAY), (f"/cases/{REPLAY}/packet", "REPLAY"),
                            ("/proof", "A-7"), ("/proof", "1:25-cv-00386"), ("/exchange", ""), ("/intake", "")]:
             code, html = http("GET", f"{web}{path}", timeout=60)
             step(f"page {path} renders", code == 200 and (must in html), f"{code}")

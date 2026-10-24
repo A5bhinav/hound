@@ -11,7 +11,8 @@ export default function CodePage() {
       <header className={styles.head}>
         <span className={styles.brand}>Hound</span>
       </header>
-      <h1 className={styles.h1}>Enter the case code you were given</h1>
+      <h1 className={styles.h1}>Check your case</h1>
+      <p>Type the case code you were given on the phone or after reporting online.</p>
       <CodeEntry />
     </main>
   );

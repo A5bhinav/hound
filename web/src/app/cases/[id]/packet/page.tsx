@@ -17,15 +17,18 @@ const REASON_CONTACT: Record<string, string> = {
 
 export default async function PacketPage({ params, searchParams }: PageProps<"/cases/[id]/packet">) {
   const { id } = await params;
-  const audience = (await searchParams).audience === "victim" ? "victim" : "detective";
+  const sp = await searchParams;
+  const audience = sp.audience === "victim" ? "victim" : "detective";
+  // A victim opening their own report from their case page carries their case code.
+  const code = typeof sp.code === "string" ? sp.code : undefined;
   let data: Packet | null;
   try {
-    data = await getPacket(id, audience);
+    data = await getPacket(id, audience, code);
   } catch (err) {
     if (!(err instanceof HoundApiError)) throw err;
     return (
       <>
-        <Bar offline={usingFixtures} step={4} caseId={id} />
+        <Bar offline={usingFixtures} step={code ? undefined : 4} caseId={id} />
         <ApiError message={err.message} />
       </>
     );
@@ -34,7 +37,7 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   if (!data) {
     return (
       <>
-        <Bar offline={usingFixtures} step={4} caseId={id} />
+        <Bar offline={usingFixtures} step={code ? undefined : 4} caseId={id} />
         <div className="api-error" role="alert">
           <p className="eyebrow">No finished trace yet</p>
           <p>
@@ -49,18 +52,18 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   return (
     <>
       <div className={styles.screenOnly}>
-        <Bar offline={usingFixtures} step={4} caseId={id} />
+        <Bar offline={usingFixtures} step={code ? undefined : 4} caseId={id} />
       </div>
       <main className={styles.sheet}>
         <div className={`${styles.tools} ${styles.screenOnly}`}>
-          <Link href={caseHref}>← Back to the trace</Link>
+          <Link href={code ? `/my/${code}` : caseHref}>{code ? "← Back to your case" : "← Back to the trace"}</Link>
           <span className={styles.toggle} role="group" aria-label="Packet version">
-            <Link href="?audience=detective" aria-current={audience === "detective" ? "page" : undefined}>
-              For the detective
+            <Link href={`?audience=detective${code ? `&code=${code}` : ""}`} aria-current={audience === "detective" ? "page" : undefined}>
+              {code ? "Copy for the police" : "For the detective"}
               <PendingHint />
             </Link>
-            <Link href="?audience=victim" aria-current={audience === "victim" ? "page" : undefined}>
-              For the victim
+            <Link href={`?audience=victim${code ? `&code=${code}` : ""}`} aria-current={audience === "victim" ? "page" : undefined}>
+              {code ? "Your copy" : "For the victim"}
               <PendingHint />
             </Link>
           </span>
@@ -70,7 +73,9 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
         <header className={styles.head}>
           <div>
             <p className="eyebrow">
-              Step 4 of 4 · Police report · {audience === "detective" ? "copy for the detective" : "copy for the victim"}
+              {code
+                ? `Your Hound report · ${audience === "detective" ? "copy for the police" : "your copy"}`
+                : `Step 4 of 4 · Police report · ${audience === "detective" ? "copy for the detective" : "copy for the victim"}`}
             </p>
             <h1>{trace.replay ? "Replay of a historical case" : "Scam funds trace"}</h1>
             <p className={styles.meta}>
@@ -102,11 +107,19 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
           <p className={`${styles.verify} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
         )}
 
+        {code ? (
+          <div className={styles.screenOnly}>
+            <NextStep href={`/my/${code}`} label="Back to your case">
+              Keep your case code, {code}. It opens your case again.
+            </NextStep>
+          </div>
+        ) : (
         <div className={styles.screenOnly}>
           <NextStep href="/proof" label="See the proof on a real DOJ case">
             Hound ran blind on a real 2024 case and found the wallets the DOJ seized.
           </NextStep>
         </div>
+        )}
         <footer className={styles.foot}>
           Public blockchain data only. Hound never takes custody of funds and never asks for keys or seed phrases. Send through IC3
           or Chainabuse; do not publish.

@@ -1,12 +1,13 @@
 import Link from "next/link";
 
 /** The demo is one story in four steps; the bar always shows where on it this page sits. */
-export type Step = 1 | 2 | 3 | 4 | "proof";
+/** A step of the guided tour; "tour" is its overview page (stepper shown, nothing current). */
+export type Step = 1 | 2 | 3 | 4 | "proof" | "tour";
 
 /** The DOJ replay is the case every step links to when the page has no case of its own. */
 export const DEMO_CASE = "ohnd-replay-ah";
 
-const STEPS: { n: Exclude<Step, "proof">; label: string; href: (caseId: string) => string }[] = [
+const STEPS: { n: 1 | 2 | 3 | 4; label: string; href: (caseId: string) => string }[] = [
   { n: 1, label: "Report", href: () => "/intake" },
   { n: 2, label: "Follow the money", href: (c) => `/cases/${encodeURIComponent(c)}` },
   { n: 3, label: "Stop the next victim", href: () => "/exchange" },
@@ -17,17 +18,25 @@ const STEPS: { n: Exclude<Step, "proof">; label: string; href: (caseId: string) 
  *  step: which step this page is (highlighted). caseId: the case steps 2 and 4 open. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: boolean; step?: Step; caseId?: string; children?: React.ReactNode }) {
+  const current = typeof step === "number" ? step : 0; // steps before this one get a check
   return (
     <header className="bar">
       <Link href="/" className="wordmark">
         Hound
       </Link>
+      {step === undefined ? (
+        <nav className="bar-nav" aria-label="Main">
+          <Link href="/report">Report a scam</Link>
+          <Link href="/c">Check my case</Link>
+          <Link href="/how">How Hound works</Link>
+        </nav>
+      ) : (
       <nav className="bar-nav" aria-label="How Hound works">
         <ol className="steps">
           {STEPS.map((s) => (
             <li key={s.n}>
               <Link href={s.href(caseId)} aria-current={step === s.n ? "step" : undefined}>
-                <span className="step-n" aria-hidden="true">{typeof step === "number" && s.n < step ? "✓" : s.n}</span>
+                <span className="step-n" aria-hidden="true">{s.n < current ? "✓" : s.n}</span>
                 {s.label}
               </Link>
             </li>
@@ -37,6 +46,7 @@ export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: 
           Proof it works
         </Link>
       </nav>
+      )}
       {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}
     </header>
   );

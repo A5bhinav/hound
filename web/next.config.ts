@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
       { source: "/api/demo/reset", destination: `${API_URL}/demo/reset` },
       // Intake (CK): the live case card polls the active call; the victim's upload page posts the screenshot.
       { source: "/api/intake/active", destination: `${API_URL}/intake/active` },
+      // A victim reporting online instead of calling (public, rate limited by the backend).
+      { source: "/api/intake/web/start", destination: `${API_URL}/intake/web/start` },
       { source: "/api/intake/:code/screenshot", destination: `${API_URL}/intake/:code/screenshot` },
       // Operator approves a validated intake case so it can feed holds (local only; the backend checks).
       { source: "/api/intake/:code/approve", destination: `${API_URL}/intake/:code/approve` },

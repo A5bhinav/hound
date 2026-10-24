@@ -213,8 +213,16 @@ def _redact_live(obj):
     return obj
 
 
+def _owner(request, case_id):
+    """The victim's own case code (?code=) unlocks their case: they see their full report, like the operator."""
+    from hound.intake import routes as intake  # lazy: intake imports this module
+    return intake.owns_case(request.query_params.get("code"), case_id)
+
+
 def _public(case_id, body, request):
-    return _redact_live(body) if case_id in LIVE_CASES and not _is_local(request) else body
+    if case_id in LIVE_CASES and not _is_local(request) and not _owner(request, case_id):
+        return _redact_live(body)
+    return body
 
 
 @app.get("/cases")
@@ -581,7 +589,7 @@ def get_trace(trace_id: str, request: Request):
 @app.get("/cases/{case_id}/packet")
 def packet(case_id: str, request: Request, audience: str = "detective"):
     written, trace = _get_packet(case_id, audience)
-    if case_id in LIVE_CASES and not _is_local(request):
+    if case_id in LIVE_CASES and not _is_local(request) and not _owner(request, case_id):
         # The prose is written from the victim's story (scam app, platform, first contact); beyond
         # localhost a live case returns only the structured fields, never the paragraphs.
         written = {**{k: v for k, v in written.items() if k != "text"}, "text": None, "redacted": True}

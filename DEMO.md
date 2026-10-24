@@ -44,13 +44,18 @@ Viewers on the public host see live cases with shortened addresses and no story 
 ## The 2-minute click path, in story order (script: PITCH.md)
 The top bar is the story: **1 Report → 2 Follow the money → 3 Stop the next victim → 4 Police report**, then **Proof it works**. Say the step name as you click it.
 
-0. **Home** (http://localhost:3000): read the one-liner, point at the 4 "How it works" cards. Click **Start: report a scam →**.
+The site has two front doors. **http://localhost:3000** is the victim's: Call us / Report online / Check my case, plus what Hound will never ask for. Show it first for 5 seconds ("this is what a victim sees"), then click **How Hound works** for the tour.
+
+0. **How Hound works** (http://localhost:3000/how): read the one-liner, point at the 4 "How it works" cards. Click **Walk through it: 1 Report →**.
 1. **Report.** The page shows the Hound number, (681) 275-5467. Live: a judge calls it, tells a short story, gets a text with a link, and sends the payment screenshot (or types A.H.'s first tx hash). The case card fills in; then **Next: Follow the money →**. No call possible: **Play a sample call** (labelled as a replay), or **Next: Follow the money →** at the bottom.
 2. **Follow the money** (the DOJ case, Victim A.H.). The trace streams in, then the transfers unfold column by column. Once the last one is drawn, click **Reveal what Tether did**: the 3 last wallets turn hatched ("Tether froze it") and the headline reads "Tether froze 3 of these wallets 16 to 20 days after the victim's report". Click **Next: Stop the next victim →**.
 3. **Stop the next victim.** **Try: A wallet from the DOJ case (on the warning list)** → **Withdraw**: **Withdrawal held**, with the evidence. **Try: An exchange hot wallet** gives **Withdrawal sent**. Click **Next: Police report →**.
 4. **Police report.** The detective's copy; **For the victim** switches copy ("writing…" while Claude writes); **Print or save as PDF** works. Click **Next: See the proof on a real DOJ case →**.
 5. **Proof it works:** all 3 seized wallets and 8 of 8 in between, found blind; A-7 and A-8 within about 1%, A-9 within 11%.
-6. Before the next judge: **Reset demo** at the bottom of the home page (click twice). It calls `POST /demo/reset`.
+6. Before the next judge: **Reset demo** at the bottom of http://localhost:3000/how (click twice). It calls `POST /demo/reset`.
+
+## A judge who wants to try it as a victim
+On their phone, at the public web URL: **Report online** → answer the questions → **Let me type it instead** and paste A.H.'s first tx hash (`0x39f5…1adc`, full value in `examples/ohnd_replay.case.json`) → "We found your payment" → **See what we found**: where the money went, what to do now, and their own report (unredacted, because they hold the case code).
 
 ## When something breaks
 | Symptom | Do this |

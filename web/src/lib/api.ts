@@ -176,11 +176,32 @@ export interface Packet {
   trace: Trace;
 }
 
-/** GET /cases/{id}/packet. Null when there is nothing to write yet (409 no finished trace, 422 nothing traced). */
-export async function getPacket(id: string, audience: "detective" | "victim"): Promise<Packet | null> {
+/** What a case code's holder may see: its status and, once validated, the case it created. Null for an unknown code. */
+export interface IntakeStatus {
+  case_code: string;
+  status: "story" | "awaiting_upload" | "validating" | "validated" | "needs_retake";
+  message?: string | null;
+  case_id?: string | null;
+  exchange_used?: string | null;
+}
+
+export async function getIntakeStatus(code: string): Promise<IntakeStatus | null> {
+  if (usingFixtures) return null;
+  try {
+    return await call<IntakeStatus>("GET", `/intake/${encodeURIComponent(code)}`);
+  } catch (err) {
+    if (err instanceof HoundApiError && err.message.includes("returned 404")) return null;
+    throw err;
+  }
+}
+
+/** GET /cases/{id}/packet. Null when there is nothing to write yet (409 no finished trace, 422 nothing traced).
+ *  code: the victim's own case code, which unlocks their full report beyond localhost. */
+export async function getPacket(id: string, audience: "detective" | "victim", code?: string): Promise<Packet | null> {
   if (usingFixtures) throw new HoundApiError("The packet is written by the backend (GET /cases/{id}/packet). Unset HOUND_DATA to use it.");
   try {
-    return await call<Packet>("GET", `/cases/${encodeURIComponent(id)}/packet?audience=${audience}`);
+    const own = code ? `&code=${encodeURIComponent(code)}` : "";
+    return await call<Packet>("GET", `/cases/${encodeURIComponent(id)}/packet?audience=${audience}${own}`);
   } catch (err) {
     // 409: no finished trace yet. 422: the trace has no endpoints to write about (e.g. a judge's wrong hash).
     if (err instanceof HoundApiError && /returned (409|422)/.test(err.message)) return null;

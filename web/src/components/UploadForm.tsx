@@ -102,7 +102,12 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
         <div className={styles.done} role="status" aria-live="polite">
           <p className={styles.big}>Thank you. We found your payment.</p>
           <p>You can tell the person on the phone you&apos;re done. We&apos;ll follow where the money went.</p>
-          <p className={styles.small}>Your case number is {code}.</p>
+          <p className={styles.small}>Your case number is {code}. Keep it: it opens your case again.</p>
+          <p>
+            <a href={`/my/${code}`} className={styles.link}>
+              See what we found →
+            </a>
+          </p>
         </div>
       </>
     );

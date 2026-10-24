@@ -486,3 +486,42 @@ def test_no_time_searches_the_last_30_days(monkeypatch):
     after = datetime.fromisoformat(calls[0]["after"].replace("Z", "+00:00"))
     before = datetime.fromisoformat(calls[0]["before"].replace("Z", "+00:00"))
     assert before - after == timedelta(days=30) and abs(datetime.now(timezone.utc) - before) < timedelta(minutes=1)
+
+
+def test_web_report_opens_a_session_and_is_rate_limited():
+    intake._WEB_RECENT.clear()
+    remote = TestClient(api.app, client=("203.0.113.7", 1))
+    r = remote.post("/intake/web/start", json={"summary": "I sent 2,000 USDT to an investment app", "name": "Maria",
+                                               "exchange_used": "Coinbase"})
+    assert r.status_code == 200
+    code = r.json()["case_code"]
+    s = intake.SESSIONS[code]
+    assert s["status"] == "awaiting_upload" and s["victim"]["alias"] == "Maria" and "2,000 USDT" in s["story"]["summary"]
+    # the public view gives the code holder their case id and exchange, never the story or upload link
+    view = remote.get(f"/intake/{code}").json()
+    assert set(view) == {"case_code", "status", "message", "case_id", "exchange_used"} and view["exchange_used"] == "Coinbase"
+    for _ in range(intake.WEB_PER_IP_HOUR - 1):
+        assert remote.post("/intake/web/start", json={}).status_code == 200
+    assert remote.post("/intake/web/start", json={}).status_code == 429
+    other = TestClient(api.app, client=("203.0.113.8", 1))
+    assert other.post("/intake/web/start", json={}).status_code == 200
+    intake._WEB_RECENT.clear()
+
+
+def test_case_code_unlocks_only_its_own_case():
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    intake.SESSIONS[code].update(status="validated", case_id="intake-abc")
+    assert intake.owns_case(code.lower(), "intake-abc")
+    assert not intake.owns_case(code, "intake-other") and not intake.owns_case(None, "intake-abc")
+    assert not intake.owns_case("ZZZZZZ", "intake-abc")
+
+
+def test_validated_sessions_outlive_the_upload_window(monkeypatch):
+    a = client.post("/intake/start", json={}).json()["case_code"]
+    b = client.post("/intake/start", json={}).json()["case_code"]
+    intake.SESSIONS[a].update(status="validated", case_id="intake-a")
+    for code in (a, b):
+        intake.SESSIONS[code]["_created"] -= intake.TTL_S + 60
+    with intake._LOCK:
+        intake._expire()
+    assert a in intake.SESSIONS and b not in intake.SESSIONS

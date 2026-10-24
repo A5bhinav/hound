@@ -1,0 +1,221 @@
+/* Victim-facing pages: large type, one action at a time, nothing internal on screen. */
+.main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 3rem;
+  font-size: 1.12rem;
+}
+
+.h1 {
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  max-width: 22ch;
+}
+
+.lede {
+  margin: 1rem 0 2rem;
+  color: var(--ink-2);
+  max-width: 54ch;
+}
+
+.ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.35rem;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: 2px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.way:hover,
+.way:focus-visible {
+  border-color: var(--trace);
+}
+
+.wayTitle {
+  font-weight: 800;
+  font-size: 1.3rem;
+}
+
+.phone {
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--trace);
+  white-space: nowrap;
+}
+
+.wayText {
+  color: var(--ink-2);
+}
+
+.wayGo {
+  margin-top: auto;
+  font-weight: 700;
+  color: var(--trace);
+}
+
+.back {
+  margin: 1.5rem 0 2.5rem;
+}
+
+.safe {
+  padding: 1.25rem 1.4rem;
+  background: var(--paper);
+  border-left: 4px solid var(--hold);
+  border-radius: var(--radius);
+}
+
+.safe h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.safe ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+}
+
+.safe p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.small {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+  color: var(--ink-3);
+}
+
+/* Report form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  margin-top: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.field span {
+  font-weight: 400;
+  font-size: 0.95rem;
+  color: var(--ink-3);
+}
+
+.field input,
+.field textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.75rem 0.85rem;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.field textarea {
+  min-height: 8rem;
+}
+
+.submit {
+  align-self: flex-start;
+  padding: 0.95rem 1.5rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--trace);
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  padding: 0.85rem 1rem;
+  border-left: 4px solid var(--hold);
+  background: var(--paper);
+}
+
+/* Your case */
+.status {
+  padding: 1.1rem 1.3rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.found {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.found li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.found strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.4rem;
+}
+
+.todo {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+.todo li {
+  margin-bottom: 0.9rem;
+}
+
+.todo li span {
+  display: block;
+  color: var(--ink-2);
+}
+
+.primary {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.9rem 1.4rem;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--trace);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.trail {
+  margin-top: 2.5rem;
+}
+
+.trail summary {
+  cursor: pointer;
+  font-weight: 700;
+}

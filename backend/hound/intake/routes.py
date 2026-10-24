@@ -38,6 +38,7 @@ SESSIONS: dict[str, dict[str, Any]] = {}
 _ACTIVE: list[str] = []  # most recent case code last
 _LOCK = threading.Lock()
 TTL_S = 2 * 60 * 60
+VALIDATED_TTL_S = 7 * 24 * 60 * 60  # a victim comes back with their code to see what Hound found
 VISION_MODEL = os.environ.get("HOUND_VISION_MODEL", "claude-sonnet-5-5")
 VISION_TIMEOUT_S = 15
 VISION_MAX_TOKENS = 800
@@ -124,9 +125,10 @@ def reset() -> None:
 
 
 def _expire() -> None:
-    cutoff = time.time() - TTL_S
+    now = time.time()
     for code in list(SESSIONS):
-        if SESSIONS[code]["_created"] < cutoff:
+        s = SESSIONS[code]
+        if s["_created"] < now - (VALIDATED_TTL_S if s.get("status") == "validated" else TTL_S):
             SESSIONS.pop(code, None)
             if code in _ACTIVE:
                 _ACTIVE.remove(code)
@@ -270,7 +272,61 @@ def session(case_code: str, request: Request):
     s = SESSIONS.get(case_code.upper())
     if not s:
         raise HTTPException(404, "unknown case code")
-    return _session_view(s) if _authorised(request) else {"case_code": s["case_code"], "status": s["status"], "message": s.get("message")}
+    if _authorised(request):
+        return _session_view(s)
+    # The code is the victim's key to their own case: enough to find it again and to name their exchange
+    # in the "what to do now" list. Never the story, the upload link or any address.
+    return {"case_code": s["case_code"], "status": s["status"], "message": s.get("message"),
+            "case_id": s.get("case_id"), "exchange_used": (s.get("victim") or {}).get("exchange_used")}
+
+
+def owns_case(code: str | None, case_id: str) -> bool:
+    """True when this case code is the session that created case_id (the victim viewing their own case)."""
+    s = SESSIONS.get((code or "").strip().upper())
+    return bool(s and s.get("case_id") and s["case_id"] == case_id)
+
+
+# Online reports are public: a few per address per hour, and a ceiling for everyone, so a script can't
+# flood the case list or the chain-API budget.
+WEB_PER_IP_HOUR = 5
+WEB_PER_HOUR = 60
+_WEB_RECENT: list[tuple[float, str]] = []
+
+
+def _client_key(request: Request) -> str:
+    for h in ("cf-connecting-ip", "x-real-ip"):
+        if request.headers.get(h):
+            return request.headers[h].strip()
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.client.host if request.client else "?"
+
+
+@router.post("/intake/web/start")
+async def web_start(request: Request):
+    """A victim reporting online instead of calling: same session as the voice tool, then the upload page."""
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    if not isinstance(body, dict):
+        raise HTTPException(422, "body must be a JSON object")
+    who, now = _client_key(request), time.time()
+    with _LOCK:
+        _WEB_RECENT[:] = [(t, k) for t, k in _WEB_RECENT if now - t < 3600]
+        if len(_WEB_RECENT) >= WEB_PER_HOUR or sum(k == who for _, k in _WEB_RECENT) >= WEB_PER_IP_HOUR:
+            log.warning("intake web start: rate limit for a caller (%d this hour)", len(_WEB_RECENT))
+            raise HTTPException(429, "Too many reports from here in the last hour. Please try again later, or call us.")
+        _WEB_RECENT.append((now, who))
+    clip = lambda v, n: v.strip()[:n] if isinstance(v, str) and v.strip() else None  # noqa: E731
+    story = {"summary": clip(body.get("summary"), 1200), "scam_app": clip(body.get("scam_app"), 120),
+             "platform": clip(body.get("platform"), 120), "first_contact": clip(body.get("first_contact"), 20)}
+    victim = {"alias": clip(body.get("name"), 40) or "Reporter", "exchange_used": clip(body.get("exchange_used"), 80),
+              "age_band": "unknown"}
+    s = open_session({k: v for k, v in story.items() if v}, victim)
+    log.info("intake session %s opened online", s["case_code"])
+    return {"case_code": s["case_code"]}
 
 
 @router.post("/intake/{case_code}/approve")

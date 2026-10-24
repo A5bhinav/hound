@@ -140,7 +140,7 @@ export default function LiveIntake({ replayCase, publicBase, phone }: { replayCa
 
       {feed.k === "unavailable" && (
         <p className={styles.notice} role="alert">
-          {feed.message} Use "Play a sample call" to show the flow.
+          {feed.message} Use &quot;Play a sample call&quot; to show the flow.
         </p>
       )}
       {feed.k === "waiting" && (
