@@ -140,6 +140,29 @@ export interface AuditEntry {
   detail: string;
 }
 
+/**
+ * Intake (AUDIT §5, N7). PROPOSED contract, not yet implemented by the backend (CK to confirm):
+ *   GET  /intake/active                 -> 200 IntakeSession, or 204 when no call is in progress
+ *   POST /intake/{case_code}/screenshot -> multipart with `file` (image) or `typed` (text the victim typed instead)
+ *                                          returns IntakeUploadResult
+ */
+export interface IntakeSession {
+  case_code: string;
+  /** Public short link to the upload page (/c/{case_code}); shown as text and QR. */
+  upload_url: string;
+  status: "story" | "awaiting_upload" | "validating" | "validated" | "needs_retake";
+  story?: { scam_app?: string | null; platform?: string | null; first_contact?: string | null; summary?: string | null } | null;
+  victim?: { alias?: string; age_band?: string; exchange_used?: string | null } | null;
+  /** Set once the send is validated on chain and the Case exists. */
+  case_id?: string | null;
+  /** Why a retake is needed, in plain words. */
+  message?: string | null;
+}
+
+export type IntakeUploadResult =
+  | { status: "validated"; case_id: string }
+  | { status: "needs_retake"; message: string };
+
 /** POST /cases/{id}/trace answers at once with a job view; GET /traces/{job id} returns progress until the run ends (api.py _job_view). */
 export interface TraceRunning {
   trace_id: string;

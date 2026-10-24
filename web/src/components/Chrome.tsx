@@ -10,6 +10,7 @@ export function Bar({ offline, children }: { offline: boolean; children?: React.
       <span className="bar-meta">{children}</span>
       <nav className="bar-nav" aria-label="Main">
         <Link href="/">Cases</Link>
+        <Link href="/intake">Intake</Link>
         <Link href="/exchange">Exchange check</Link>
         <Link href="/proof">Proof</Link>
       </nav>
