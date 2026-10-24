@@ -165,3 +165,39 @@ def test_unreachable_chain_says_so_instead_of_could_not_read(monkeypatch):
     r = client.post(f"/intake/{code}/screenshot", data={"typed": TX})
     assert r.status_code == 200 and r.json()["status"] == "needs_retake"
     assert "reach the blockchain" in r.json()["message"]
+
+
+def test_amount_glued_to_a_word_still_reads_whole():
+    """Typed or OCR text with a missing space: the whole number is the amount, not its tail."""
+    assert intake.extract_from_text("Amount11,082.48 USDT")["amount"] == 11082.48
+    assert intake.extract_from_text("金额11082.48USDT")["amount"] == 11082.48
+    trunc = intake.extract_from_text("to 0xab12…cd3456 USDT, 300 USDT")
+    assert trunc["amount"] == 300
+
+
+def test_voice_say_line_never_promises_a_text_message():
+    say = client.post("/intake/voice/story", json={"story": {}, "victim": {}}).json()["say"]
+    assert "text" not in say.lower().replace("type in the details", "")
+
+
+def test_demo_reset_clears_intake_sessions():
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    assert client.get("/intake/active").status_code == 200
+    assert client.post("/demo/reset").status_code == 200
+    assert client.get("/intake/active").status_code == 204
+    assert client.get(f"/intake/{code}").status_code == 404
+
+
+def test_intake_case_is_redacted_for_remote_viewers(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    code = client.post("/intake/start", json={"story": {"summary": "my story"}}).json()["case_code"]
+    cid = client.post(f"/intake/{code}/screenshot", data={"typed": f"11,082.48 USDT {TX}"}).json()["case_id"]
+    assert cid in api.LIVE_CASES
+    local = next(c for c in client.get("/cases").json() if c["case_id"] == cid)
+    assert local["sends"][0]["tx_hash"] == TX
+    remote = TestClient(api.app, client=("203.0.113.9", 40000))
+    far = next(c for c in remote.get("/cases").json() if c["case_id"] == cid)
+    assert far["sends"][0]["tx_hash"] != TX and "story" not in far
+    api.CASES.pop(cid, None)
+    api.LIVE_CASES.discard(cid)

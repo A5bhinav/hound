@@ -44,7 +44,7 @@ _DOTTED = re.compile(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z0-9])")
 # a dot between letters or digits, spaced or not ('recoverfunds . help'): sanitize turns it into a space
 _DOTTED_SPACED = re.compile(r"(?<=[A-Za-z0-9])\s*\.\s*(?=[A-Za-z0-9])")
 # Etherscan label names carry a sub-label and a wallet number: 'Binance: Hot Wallet 20', 'OKX 7'
-_LABEL_NUMBER = re.compile(r"\s+\d+$")
+_LABEL_NUMBER = re.compile(r"\s*\d+$")
 ACCUSE = re.compile(r"\b(scam\w*|criminals?|fraud\w*|thief|thieves|launder\w*|crooks?|hackers?|perpetrators?"
                     r"|con\s+artists?|stolen|theft)\b", re.I)
 
