@@ -301,6 +301,35 @@ def test_check_evidence_from_a_live_case_is_redacted_beyond_localhost(monkeypatc
     assert remote.get("/check", params={"chain": "ethereum", "address": scam}).json()["evidence"]["path"][0]["tx_hash"] == TX
 
 
+def _tx_sends_raising(msg):
+    def boom(*a, **k):
+        from hound.chain import ChainAPIError
+        try:
+            raise ChainAPIError(msg)
+        except ChainAPIError as e:
+            raise ValueError(f"tx not found on any RPC: {e}") from e
+    return boom
+
+
+def test_rpc_outage_on_typed_hash_says_try_again(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _tx_sends_raising(
+        "every RPC failed for eth_getTransactionByHash: https://rpc-a 503 | https://rpc-b timed out"))
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    msg = client.post(f"/intake/{code}/screenshot", data={"typed": TX}).json()["message"]
+    assert "couldn't reach the blockchain" in msg and "rpc" not in msg.lower() and "503" not in msg
+
+
+def test_hash_every_rpc_says_null_is_a_real_not_found(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _tx_sends_raising(
+        "every RPC failed for eth_getTransactionByHash: https://rpc-a eth_getTransactionByHash: null result (pruned node?)"
+        " | https://rpc-b eth_getTransactionByHash: null result (pruned node?)"))
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    msg = client.post(f"/intake/{code}/screenshot", data={"typed": TX}).json()["message"]
+    assert "did not check out" in msg and "null" not in msg and "rpc" not in msg.lower()
+
+
 def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     msgs = _fake_anthropic(monkeypatch, "{}")
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16

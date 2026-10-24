@@ -250,8 +250,8 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
     except NeedsRetake as e:
         return _retake(s, str(e))
     except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault
-        log.warning("intake %s: chain unreachable while validating: %s", code, type(e).__name__)
-        return _retake(s, "We could not reach the blockchain to check that payment just now. Please try again in a minute.")
+        log.warning("intake %s: chain unreachable while validating: %s", code, type(e).__name__, exc_info=True)
+        return _retake(s, CHAIN_DOWN_MSG)
     except Exception as e:  # noqa: BLE001 - never 500 at the victim; log and ask again
         log.exception("intake %s failed", code)
         return _retake(s, "We could not read that. Please try another screenshot, or type the transaction hash.")
@@ -379,6 +379,21 @@ def _iso(ts: str) -> datetime | None:
         return None
 
 
+CHAIN_DOWN_MSG = "We couldn't reach the blockchain right now. Please try again in a minute."
+
+
+def _rpc_outage(e: BaseException) -> bool:
+    """tx_sends turns 'every RPC failed' into ValueError. It is a real not-found only when every RPC
+    answered null for the tx; any other per-RPC error (timeout, 5xx, rate limit) means we could not look."""
+    cause = e.__cause__
+    if not isinstance(cause, (ChainAPIError, CacheMiss)):
+        return False
+    if isinstance(cause, CacheMiss):
+        return True
+    parts = str(cause).split(": ", 1)[-1].split(" | ")
+    return not all("null result" in p for p in parts)
+
+
 def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, Any]:
     """Confirm the send exists on chain and build a schema-valid Case (source: screenshot).
     Accepts: a full tx hash (receipt read, amount cross-checked when given), or a destination
@@ -390,7 +405,11 @@ def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, 
         try:
             sends = chain.tx_sends("ethereum", ex["tx_hash"])
         except ValueError as e:
-            raise NeedsRetake(f"That transaction hash did not check out on Ethereum ({e}). Please check it and try again.")
+            if _rpc_outage(e):
+                log.warning("intake %s: RPCs unreachable while reading the typed tx hash", s.get("case_code"), exc_info=True)
+                raise NeedsRetake(CHAIN_DOWN_MSG)
+            log.info("intake %s: tx hash did not check out: %s", s.get("case_code"), e)
+            raise NeedsRetake("That transaction hash did not check out on Ethereum. Please check it and try again.")
         if ex.get("amount") and sends:
             close = [x for x in sends if abs(float(x["amount"]) - float(ex["amount"])) <= AMOUNT_TOL * float(ex["amount"])]
             if not close:
