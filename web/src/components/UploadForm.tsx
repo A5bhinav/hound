@@ -43,6 +43,14 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
       console.error(`[hound-web] upload -> 404 for code ${code}: ${text.slice(0, 300)}`);
       return setState({ k: "inactive" });
     }
+    if (res.status === 409) {
+      console.error(`[hound-web] upload -> 409 for code ${code}: ${text.slice(0, 300)}`);
+      return setState({
+        k: "error",
+        message: "We already have your payment. You can tell the person on the phone you are done.",
+        detail: "HTTP 409",
+      });
+    }
     if (!res.ok) {
       console.error(`[hound-web] upload -> ${res.status}: ${text.slice(0, 300)}`);
       return setState({

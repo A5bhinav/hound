@@ -182,6 +182,12 @@ function ScanPanel({ scan }: { scan: Scan }) {
           <div className={styles.big}>
             <Stat n={usdt(scan.usdt_unfrozen)} label={`in ${scan.addresses_unfrozen} addresses not yet frozen`} />
           </div>
+          {scan.addresses_unfrozen === 0 && (
+            // The scan fails closed: rows whose transfer counts were not checked are left out of the total.
+            <p className={styles.empty}>
+              Nothing is counted yet: transfer counts for these addresses have not been checked. {scan.method}
+            </p>
+          )}
           <ul className={styles.scanList}>
             {shown.map((c) => (
               // Live addresses are truncated everywhere public (BRIEF §0).

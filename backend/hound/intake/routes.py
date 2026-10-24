@@ -139,7 +139,7 @@ async def voice_story(request: Request):
     s = open_session(body.get("story"), body.get("victim"))
     spoken = " ".join(s["case_code"])  # "K 7 M 2 P Q" reads better than "K7M2PQ"
     return {"case_code": s["case_code"], "upload_url": s["upload_url"],
-            "say": f"I have opened case {spoken}. Please open the upload link for this case and send a picture of the payment screen, or type in the details."}
+            "say": f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, where you can add a picture of the payment screen or type in the details."}
 
 
 @router.post("/intake/start")

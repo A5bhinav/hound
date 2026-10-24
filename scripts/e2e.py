@@ -347,7 +347,7 @@ def main():
         procs.append(subprocess.Popen([PY, "-m", "uvicorn", "hound.api:app", "--port", str(bport)], cwd=ROOT / "backend",
                                       env=env, stdout=open(logs / "backend.log", "w"), stderr=subprocess.STDOUT))
         wait_for(f"{api}/health", 60, procs[-1], "backend")
-        wenv = dict(os.environ, HOUND_API_URL=api, HOUND_DATA="", PORT=str(wport))
+        wenv = dict(os.environ, HOUND_API_URL=api, HOUND_DATA="", PORT=str(wport), HOUND_NEXT_DIST_DIR=".next-e2e")
         # Always rebuild: next build bakes HOUND_API_URL into the /api proxy, so a stale build points
         # the proxy at an old backend port (500 on every proxied route).
         print("building web (next build)...", flush=True)
@@ -448,7 +448,12 @@ def main():
             intake_typed_hash_live(logs)
         step("the repo's real cache/watchlist.json was not touched", _stat(real_wl) == real_before,
              f"before {real_before} after {_stat(real_wl)}")
+    except SystemExit as e:
+        # a server that never came up must fail the run, not vanish into the finally block
+        step("servers booted", False, str(e))
     finally:
+        if not results:
+            step("at least one check ran", False, "nothing was checked")
         failed = [r for r in results if r[1] == "FAIL"]
         warned = [r for r in results if r[1] == "WARN"]
         print(f"\n{len(results) - len(failed) - len(warned)} pass, {len(warned)} warn, {len(failed)} fail")
