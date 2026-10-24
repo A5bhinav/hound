@@ -1,0 +1,20 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+  min-height: calc(100vh - 3.6rem);
+}
+
+.sampleNote {
+  margin: 0;
+  padding: 0.4rem 1.25rem;
+  font-size: 0.8rem;
+  color: #7a5806;
+  background: var(--hold-wash);
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

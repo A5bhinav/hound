@@ -1,0 +1,72 @@
+.card {
+  padding: 1.25rem;
+  background: var(--paper);
+  border-right: 1px solid var(--rule);
+  overflow-y: auto;
+}
+
+.alias {
+  font-size: 2rem;
+}
+
+.sent {
+  font-family: var(--font-m);
+  font-size: 1.05rem;
+  margin: 0.2rem 0 1rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.facts dt {
+  color: var(--ink-2);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.summary {
+  font-size: 0.88rem;
+  color: var(--ink-2);
+  margin: 0 0 1.25rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+.list li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.45rem 0 0.45rem 0.6rem;
+  border-top: 1px solid var(--rule);
+  border-left: 3px solid transparent;
+}
+
+.list li[data-reason="exchange"] { border-left-color: var(--exchange); }
+.list li[data-reason="holding"] { border-left-color: var(--hold); }
+.list li[data-freezable] { background: var(--hold-wash); }
+.list li[data-reason="frozen"] { border-left-color: var(--ice); }
+.list li[data-reason="dead_end"],
+.list li[data-reason="dust"],
+.list li[data-reason="max_hops"] { border-left-color: var(--dead); }
+
+.meta {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+}
+
+.method {
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
