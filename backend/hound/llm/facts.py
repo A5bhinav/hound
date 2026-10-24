@@ -47,7 +47,8 @@ _DOTTED_SPACED = re.compile(r"(?<=[A-Za-z0-9])\s*\.\s*(?=[A-Za-z0-9])")
 _LABEL_NUMBER = re.compile(r"\s*\d+$")
 _INFERRED = re.compile(r"\s+deposit \(inferred\)$")
 ACCUSE = re.compile(r"\b(scam\w*|criminals?|fraud\w*|thief|thieves|launder\w*|crooks?|hackers?|perpetrators?"
-                    r"|con\s+artists?|stolen|theft)\b", re.I)
+                    r"|con\s+artists?|con\s+men|con\s+man|stolen|theft|swindl\w*|extort\w*|illicit|illegal\w*"
+                    r"|money\s+mules?|culprits?|suspects?|bad\s+actors?|offenders?|gangs?|cartels?)\b", re.I)
 
 
 class WriterInputError(ValueError):

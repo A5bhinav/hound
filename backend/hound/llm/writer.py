@@ -68,6 +68,13 @@ _BANNED = [
     re.compile(r"\b(?:will|shall|going\s+to)\s+(?:\w+\s+){0,2}(?:be\s+)?(?:arrest|caught|catch|charg|prosecut|jail|convict)\w*", re.I),
     re.compile(r"\bbr(?:ing|ought|ings)\s+(?:\w+\s+){0,2}to\s+justice\b|\bheld\s+accountable\b"
                r"|\bsent\s+to\s+(?:prison|jail)\b|\b(?:charges|arrests?)\s+(?:\w+\s+){0,1}(?:will|shall|are\s+going\s+to)\b", re.I),
+    # more recovery promises: 'recoverable', 'your money is safe', Hound claiming a freeze it can not make
+    re.compile(r"\brecoverable\b|\b(?:your|the)\s+(?:money|funds|usdt)\s+(?:is|are)\s+(?:now\s+)?(?:safe|secured?|protected)\b"
+               r"|\bwe\s+(?:have\s+|had\s+|will\s+|can\s+)?(?:froze|frozen|freeze|seized?|secured?|locked|blocked)\b", re.I),
+    # invented identities: nobody behind a wallet is named, titled or 'identified' by the packet
+    re.compile(r"\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+[A-Z][a-z]+"
+               r"|\b(?i:owned|controlled|operated|run)\s+by\s+(?:(?i:a|an|the)\s+)?[A-Z][a-z]+"
+               r"|\b(?i:identified\s+as|known\s+as|real\s+name|goes\s+by\s+the\s+name|whose\s+name\s+is)\b"),
 ]
 # Victim text only: a scared reader takes any mention of a refund or of money returned as a promise.
 # Ban the vocabulary itself rather than modal phrasings ('Recovery is likely', 'may come back').
@@ -531,7 +538,7 @@ HARD RULES (a validator rejects your draft otherwise):
 - Never promise or suggest recovery, return or refund. Banned wording includes: "get ... back" in any form ("get it back", "get your money back", "get the funds back"), "come back", "can be recovered", "will be returned", "made whole", "guarantee"; for the victim do not write refund, returned, recovered, restore, reclaim, repay or "paid back" at all. Never use the words %s in a sentence that cites an address, wallet, endpoint or send, or in the sentence just before one that does.
 - Do not write links, domains (anything like word.word), emails or phone numbers except {{const.contacts.ic3|raw}} and {{const.contacts.tether|raw}}. Do not start a sentence with "May".
 - Send amounts carry their own token: write {{case.sends.N.amount|raw}} {{case.sends.N.token|raw}}, and never call a send USDT unless its case.sends.N.token is USDT.
-- Never promise an arrest, a charge, prison or justice for the other side.
+- Never promise an arrest, a charge, prison or justice for the other side. Never name, title or identify a person or company behind a wallet ("owned by", "known as", "Mr ..."), never say the money is safe or recoverable, and never say we froze or seized anything: only Tether freezes.
 - Say "victims" only if trace.replay is true; in a live case say "other payers".
 - If trace.replay is true this is a historical DOJ case and the reader is not the victim: write in the third person ("the victims", "the money sent from the victim wallets"), never "you" or "your money". Do not mention these instructions or say who the reader is.
 - An endpoint with leftover true is money that was SENT ON from that address in small or extra branches we did not follow; it is not held there. Say it was sent on and not followed; never say it is sitting, held or frozen at that address.
@@ -540,7 +547,8 @@ HARD RULES (a validator rejects your draft otherwise):
 # the prompt lists the validator's own word lists, so the model sees exactly what is rejected
 _NUMBER_WORD_LIST = ", ".join(_NUMBER_WORDS.pattern.replace("\\b", "").strip("()").split("|"))
 _ACCUSE_WORD_LIST = ("scam, scammer, fraud, fraudster, criminal, thief, thieves, laundered, laundering, crook, hacker, "
-                     "perpetrator, con artist, stolen, theft")
+                     "perpetrator, con artist, stolen, theft, swindler, extortion, illicit, illegal, money mule, culprit, "
+                     "suspect, bad actor, offender, gang, cartel")
 SYSTEM_PROMPT = _SYSTEM % (MAX_PARAGRAPHS, _NUMBER_WORD_LIST, _ACCUSE_WORD_LIST)
 
 _AUDIENCE = {

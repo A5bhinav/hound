@@ -937,3 +937,32 @@ def test_swap_unresolved_endpoint_prints_eth_never_zero_usdt():
         validate(f"Some went to {{{{derived.endpoints.{i}.address|short}}}} ({{{{derived.endpoints.{i}.victim_funds|usdt}}}}).",
                  facts)
     assert writer._fmt_eth(1234.5) == "1,234.5 ETH" and writer._fmt_eth(0.0) == "0 ETH"
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("para,why", [
+    ("Most of this money is recoverable through the right channels.", "banned"),
+    ("Your money is safe now that the wallet is listed.", "banned"),
+    ("We froze the main wallet before it could move.", "banned"),
+    ("We have seized the funds at the last hop.", "banned"),
+    ("The wallet {{derived.endpoints.0.address|short}} is owned by Wang Lei.", "banned"),
+    ("The receiving wallet is operated by Huione Group.", "banned"),
+    ("Mr Chen moved the money on the same day.", "banned"),
+    ("The sender is known as the boss of the ring.", "banned"),
+    ("The suspect moved it to {{derived.endpoints.0.address|short}}.", "accusation"),
+    ("A money mule wallet received it: {{derived.endpoints.0.address|short}}.", "accusation"),
+    ("It ended at {{derived.endpoints.0.address|short}}, an illicit wallet.", "accusation"),
+])
+def test_more_promises_accusations_and_identities_rejected(audience, para, why):
+    with pytest.raises(TemplateError, match=why):
+        validate(para, build_facts(TRACE, CASE), audience=audience)
+
+
+@pytest.mark.parametrize("para", [
+    "A freeze only stops the money from moving. It does not decide who it belongs to.",
+    "Tether froze the wallet. Only law enforcement can ask Tether to act.",
+    "The trace does not identify anyone; it follows money on a public ledger.",
+    "Most of it went to a wallet run by an exchange.",
+])
+def test_neutral_wording_near_the_new_bans_passes(para):
+    validate(para, build_facts(TRACE, CASE), audience="victim")
