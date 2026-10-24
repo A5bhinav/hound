@@ -167,7 +167,7 @@ def main():
             step(f"page {path} renders", code == 200 and (must in html), f"{code}")
 
         code, _ = http("GET", f"{web}/api/intake/active")
-        step("intake: GET /api/intake/active served", code == 200, f"{code} (CK's hound/intake/routes.py)", required=False)
+        step("intake: GET /api/intake/active served (200 session or 204 none)", code in (200, 204), f"{code}")
     finally:
         failed = [r for r in results if r[1] == "FAIL"]
         warned = [r for r in results if r[1] == "WARN"]
