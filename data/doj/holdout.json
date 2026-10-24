@@ -1,0 +1,219 @@
+{
+  "case": "US v. 4,340,000 Tether et al.",
+  "docket": "1:25-cv-00386 (N.D. Ohio)",
+  "filed": "2025-02-27",
+  "source_pdf": "https://www.justice.gov/usao-ndoh/media/1391461/dl",
+  "chain": "ethereum",
+  "note": "Every address below is HOLDOUT: never add to the label DB. Complaint truncates to first-3/last-7 hex; full finals recovered from USDT AddedBlackList events (blocks 20140808/20140818/20170086).",
+  "accounting": {
+    "named_victims": "FIFO (\u00b6\u00b671,73,80)",
+    "28_additional": "LIFO, Proceeds-In-First-Out, or FIFO (\u00b681)",
+    "5_unidentified_accounts": "LIFO (\u00b682)"
+  },
+  "victims": {
+    "total": 38,
+    "named": [
+      {
+        "alias": "A.H.",
+        "state": "OH",
+        "age_band": "60+",
+        "traced_usdt": 369683,
+        "deposits": [
+          {
+            "date": "2024-05-02",
+            "eth": "~26.61",
+            "usd": 97938,
+            "to": "A-1"
+          },
+          {
+            "date": "2024-05-17",
+            "eth": 33.0,
+            "usd": 97921,
+            "to": "A-1"
+          },
+          {
+            "date": "2024-04-30",
+            "eth": 15.08,
+            "usd": 48462,
+            "to": "B-1"
+          },
+          {
+            "date": "2024-04-23",
+            "eth": 15.27,
+            "usd": 49086,
+            "to": "B-1"
+          },
+          {
+            "date": "2024-04-19",
+            "eth": 16.14,
+            "usd": 49496,
+            "to": "C-1"
+          },
+          {
+            "date": "2024-04-02",
+            "eth": 8.39,
+            "usd": 29245,
+            "to": "C-1"
+          }
+        ],
+        "note": "first deposit amount approx; see \u00b669(a)"
+      },
+      {
+        "alias": "B.D.",
+        "state": "MI",
+        "traced_usdt": 11101
+      },
+      {
+        "alias": "R.M.",
+        "state": "CA",
+        "traced_usdt": 234026
+      },
+      {
+        "alias": "M.S.",
+        "state": "UT",
+        "traced_usdt": 136047
+      },
+      {
+        "alias": "H.L.",
+        "state": "NC",
+        "traced_usdt": 168744,
+        "lost_usd": 640000
+      }
+    ],
+    "additional_identified": 28,
+    "unidentified_accounts": 5
+  },
+  "addresses": {
+    "starts": [
+      {
+        "label": "A-1",
+        "prefix": "0xcf9",
+        "suffix": "b485027",
+        "role": "received ETH from A.H.; swapped ETH->USDT here (\u00b670)"
+      },
+      {
+        "label": "B-1",
+        "prefix": "0xe79",
+        "suffix": "c2d6ad0",
+        "role": "received ETH from A.H."
+      },
+      {
+        "label": "C-1",
+        "prefix": "0xa32",
+        "suffix": "6f4dbb8",
+        "role": "received ETH from A.H."
+      }
+    ],
+    "intermediates": [
+      {
+        "label": "A-2",
+        "prefix": "0x783",
+        "suffix": "2da1a06"
+      },
+      {
+        "label": "A-3",
+        "prefix": "0x9eb",
+        "suffix": "5db5e1f",
+        "role": "FIFO lands here; 4 transfers May 21-30 2024 to A-6 (\u00b671)"
+      },
+      {
+        "label": "A-4",
+        "prefix": "0x07f",
+        "suffix": "93e9d53"
+      },
+      {
+        "label": "A-5",
+        "prefix": "0xdf6",
+        "suffix": "f0ed53f"
+      },
+      {
+        "label": "A-6",
+        "prefix": "0x58e",
+        "suffix": "b2d0dcb",
+        "role": "CONSOLIDATION: all victims' funds pass here before A-7/A-8/A-9 (\u00b6\u00b673-79)"
+      },
+      {
+        "label": "B-2",
+        "prefix": "0x212",
+        "suffix": "4d9c794"
+      },
+      {
+        "label": "B-3",
+        "prefix": "0x447",
+        "suffix": "eb6911a",
+        "role": "B-branch FIFO lands here, then to A-6 (\u00b673)"
+      },
+      {
+        "label": "B-4",
+        "prefix": "0x28b",
+        "suffix": "fd17376"
+      }
+    ],
+    "finals": [
+      {
+        "label": "A-7",
+        "prefix": "0xa17",
+        "suffix": "44f0021",
+        "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+        "frozen_at": "2024-06-21",
+        "freeze_tx": "0x5b124d778136157b2f9e27e5fc6179780598288a9f36be7bd558301068f48b7a",
+        "freeze_block": 20140818,
+        "victim_usdt_traced_total": 2690294,
+        "defendant_usdt": 4340000
+      },
+      {
+        "label": "A-8",
+        "prefix": "0x4e5",
+        "suffix": "d47abb5",
+        "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+        "frozen_at": "2024-06-25",
+        "freeze_tx": "0xa76529e1aa4576206a8c4c5fab2b136d94f24768b957dd7809de41bf9f55f4a5",
+        "freeze_block": 20170086,
+        "victim_usdt_traced_total": 1765180,
+        "defendant_usdt": 3290000
+      },
+      {
+        "label": "A-9",
+        "prefix": "0xafd",
+        "suffix": "b2378a5",
+        "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+        "frozen_at": "2024-06-21",
+        "freeze_tx": "0x547c5335f4887c8b06ef4f1eec7726404ad6c23ce8a9f794cd14d3e4d21da776",
+        "freeze_block": 20140808,
+        "victim_usdt_traced_total": 795255,
+        "defendant_usdt": 577578
+      }
+    ]
+  },
+  "flow": "A-1(swap)->A-2->circular among A-1..A-5->A-3->A-6 ; B-1/C-1(swap)->B-2/B-3/B-4->B-3->A-6 ; A-6->A-7/A-8/A-9",
+  "ah_fifo_to_finals": {
+    "A-7": 314657,
+    "A-8": 11954,
+    "A-9": 43071
+  },
+  "per_victim_to_finals": {
+    "A-7": {
+      "A.H.": 314657,
+      "B.D.": 5110,
+      "R.M.": 227963,
+      "H.L.": 73619
+    },
+    "A-8": {
+      "A.H.": 11954,
+      "B.D.": 4967,
+      "M.S.": 136047
+    },
+    "A-9": {
+      "A.H.": 43071,
+      "B.D.": 1024,
+      "R.M.": 6063,
+      "H.L.": 95125
+    }
+  },
+  "scoreboard_targets": {
+    "intermediates": 11,
+    "consolidation": "A-6",
+    "finals": 3,
+    "totals_paragraphs": "\u00b6\u00b683-85"
+  }
+}
