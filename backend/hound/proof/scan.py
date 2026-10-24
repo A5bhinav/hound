@@ -76,6 +76,15 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
     return result
 
 
+def serve() -> dict[str, Any]:
+    """What GET /scan/latest returns: the last batch result. Never scans live in a request
+    (that would spend the Chainabuse quota and make network calls on every UI refresh)."""
+    if OUT.exists():
+        return json.load(open(OUT))
+    return {"status": "not_computed", "label": "reported, not proven", "addresses": 0, "usdt_unfrozen": 0.0,
+            "addresses_unfrozen": 0, "cases": [], "method": "run `python -m hound.proof.scan` to write the result"}
+
+
 if __name__ == "__main__":
     res = weekend_scan()
     print(json.dumps({k: v for k, v in res.items() if k != "cases"}, indent=2))

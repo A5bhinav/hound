@@ -191,7 +191,9 @@ def serve() -> dict[str, Any]:
         r = json.load(open(RESULT_PATH))
         r.pop("rows", None)
         return r
-    return freeze_backtest(write=False)
+    # Never compute live in a request: 200 network lookups would hang the demo.
+    return {"status": "not_computed", "n": 0, "method": "run `python -m hound.proof.backtest` once to write "
+            "data/proof/backtest.json", "detection_lag_median_h": None, "p90_h": None, "escape_share_median": None}
 
 
 if __name__ == "__main__":

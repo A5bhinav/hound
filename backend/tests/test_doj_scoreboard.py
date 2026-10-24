@@ -89,3 +89,10 @@ def test_holdout_leak_detected():
     with pytest.raises(AssertionError, match="Holdout leak"):
         assert_holdout_clean({h["entries"][0]["full"]})
     assert_holdout_clean({"0x0000000000000000000000000000000000000000"})
+
+
+def test_backtest_route_never_computes_live(monkeypatch, tmp_path):
+    from hound.proof import backtest
+    monkeypatch.setattr(backtest, "RESULT_PATH", tmp_path / "missing.json")
+    monkeypatch.setattr(backtest, "freeze_backtest", lambda **k: (_ for _ in ()).throw(AssertionError("live compute")))
+    assert backtest.serve()["status"] == "not_computed"

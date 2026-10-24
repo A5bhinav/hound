@@ -22,7 +22,6 @@ from hound.llm.facts import WriterInputError
 from hound.llm.writer import write_case
 from hound.proof.backtest import serve as backtest_serve
 from hound.proof.doj_ohnd import doj_scoreboard
-from hound.proof.scan import weekend_scan
 from hound.watch.check import check
 from hound.watch.other_payers import other_payers
 from hound.watch import watchlist
@@ -60,12 +59,26 @@ def _now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# Only these cases may feed the watchlist (and so make /check HOLD a wallet): cases the operator put
+# on disk, and cases the server's own intake verified on chain. A client-posted case can be traced
+# (judges may try their own scenario) but can never mint a hold against someone else's wallet.
+TRUSTED = set()
+
+
+def mark_verified(case_id):
+    """Called by server-side intake after the send was validated on chain (never by a client)."""
+    TRUSTED.add(case_id)
+
+
 def _load_curated():
-    files = sorted((ROOT / "data" / "cases").glob("*.case.json")) + [ROOT / "examples" / "ohnd_replay.case.json"]
+    files = (sorted((ROOT / "data" / "cases").glob("*.case.json"))
+             + sorted((ROOT / "data" / "cases_live").glob("*.case.json"))  # gitignored, demo laptop only
+             + [ROOT / "examples" / "ohnd_replay.case.json"])
     for f in files:
         if f.exists():
             c = validate_case(json.loads(f.read_text()))
             CASES[c["case_id"]] = c
+            TRUSTED.add(c["case_id"])
     log.info("loaded %d curated cases", len(CASES))
 
 
@@ -228,6 +241,10 @@ def _run_job(job_id, case, generation, progress):
 
 def _register(job_id, trace, using_fixture):
     """Feed the watchlist so /check holds wallets from this trace right away (not only preloaded ones)."""
+    if trace["case_id"] not in TRUSTED:
+        log.warning("trace job %s: case %s is not curated or verified; not registered with the watchlist "
+                    "(an unverified client case must never cause a hold)", job_id, trace["case_id"])
+        return
     if using_fixture:
         log.warning("trace job %s ran on fixture data; not registered with the watchlist", job_id)
         return
@@ -324,6 +341,7 @@ def demo_reset():
         JOBS.clear()
         LATEST.clear()
         LAST_DONE.clear()
+        TRUSTED.clear()
         _load_curated()
         watchlist.reset()  # drop wallets registered from the traces just cleared
     log.warning("demo reset: in-memory cases, traces and jobs cleared; %d curated cases reloaded", len(CASES))
@@ -408,7 +426,8 @@ def backtest():  # serves the batch result written by `python -m hound.proof.bac
 
 @app.get("/scan/latest")
 def scan():
-    return weekend_scan()
+    from hound.proof.scan import serve as scan_serve
+    return scan_serve()
 
 
 @app.get("/health")
