@@ -12,8 +12,9 @@
   --hold: #c28e14;
   --hold-wash: #f6e7bf;
   --dead: #8b959f;
-  --ice: #2f7f95;
+  --ice: #1f7a8c;
   --ice-wash: #dcedf1;
+  --white: #ffffff;
 
   --font-d: var(--font-display), "Arial Narrow", sans-serif;
   --font-b: var(--font-body), system-ui, sans-serif;
@@ -30,8 +31,8 @@ body {
   background: var(--fog);
   color: var(--ink);
   font-family: var(--font-b);
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 17px;
+  line-height: 1.5;
 }
 
 a {

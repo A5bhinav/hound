@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AuditEntry, Case, CaseSummary, Trace } from "@/lib/types";
-import { shortAddr } from "@/lib/format";
+import { shortAddr, tok0 } from "@/lib/format";
 import { useTrace } from "@/lib/useTrace";
 import Link from "next/link";
 import CaseCard from "./CaseCard";
@@ -34,6 +34,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         <CaseCard c={c} trace={trace} freezesShown={freezesShown} />
         {state.phase === "done" && (
           <div className={styles.right}>
+            <StatStrip c={c} trace={state.trace} freezesShown={freezesShown} />
             <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />
             {/* Demo order: the trail first, then the twist (BRIEF §6). */}
             {freezesShown && (
@@ -59,6 +60,30 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         )}
       </main>
     </>
+  );
+}
+
+/** The trail in numbers, readable from the back of the room: what she sent, where it entered, how far it went,
+ *  how much was followed, and (after the reveal) how many of those wallets Tether later froze. */
+function StatStrip({ c, trace, freezesShown }: { c: CaseSummary | Case; trace: Trace; freezesShown: boolean }) {
+  const sends = "sends" in c ? c.sends : [];
+  const byToken = new Map<string, number>();
+  for (const s of sends) byToken.set(s.token, (byToken.get(s.token) ?? 0) + s.amount);
+  const sent = [...byToken].map(([t, a]) => tok0(a, t)).join(" + ");
+  const entry = trace.nodes.filter((n) => n.depth === 1).length;
+  const wallets = trace.nodes.filter((n) => n.depth > 0).length;
+  const hops = Math.max(0, ...trace.nodes.map((n) => n.depth));
+  // Endpoints count each victim dollar once (loop edges would double count).
+  const reached = trace.endpoints.reduce((s, e) => s + (e.victim_inflow ?? 0), 0);
+  const frozen = trace.nodes.filter((n) => n.frozen?.is_frozen).length;
+  return (
+    <ol className={styles.stats} aria-label="Trace summary">
+      {sends.length > 0 && <li><b>{sends.length} {sends.length === 1 ? "send" : "sends"}</b><span>{sent}</span></li>}
+      <li><b>{entry}</b><span>entry {entry === 1 ? "wallet" : "wallets"}</span></li>
+      <li><b>{wallets}</b><span>wallets traced, {hops} hops</span></li>
+      <li><b>{tok0(reached, "USDT")}</b><span>followed</span></li>
+      {freezesShown && frozen > 0 && <li data-tone="frozen"><b>{frozen}</b><span>frozen by Tether</span></li>}
+    </ol>
   );
 }
 
