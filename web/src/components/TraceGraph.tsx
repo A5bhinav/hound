@@ -106,6 +106,8 @@ export default function TraceGraph({
   const [selected, setSelected] = useState<string | null>(null);
   const [shownHop, setShownHop] = useState(0);
   const maxHop = useMemo(() => Math.max(0, ...trace.edges.map((e) => e.hop)), [trace]);
+  // Loops (DOJ ¶70's circular pattern) give some edges a hop number past the deepest column; label what's drawn.
+  const maxDepth = useMemo(() => Math.max(0, ...trace.nodes.map((n) => n.depth)), [trace]);
   const hideFreezes = trace.method.freeze_visibility === "hidden";
   const [freezesShown, setFreezesShown] = useState(!hideFreezes);
   const frozen = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen && n.frozen.frozen_at), [trace]);
@@ -271,7 +273,9 @@ export default function TraceGraph({
     <section className={styles.wrap} aria-label="Money trail">
       <div className={styles.controls}>
         <span className={styles.progress}>
-          {shownHop >= maxHop ? `${maxHop} hops traced` : `Tracing hop ${shownHop} of ${maxHop}…`}
+          {shownHop >= maxHop
+            ? `Traced ${maxDepth} hops deep · ${trace.edges.length} money flows`
+            : `Tracing hop ${shownHop} of ${maxHop}…`}
         </span>
         <button type="button" onClick={play}>Replay trace</button>
         <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>
