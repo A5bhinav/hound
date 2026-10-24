@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import type { Chain } from "@/lib/types";
 import styles from "./ExchangeCheck.module.css";
@@ -46,6 +46,15 @@ export default function ExchangeCheck() {
   const amountClean = amount.replace(/[,\s_]/g, "").trim(); // "1,000" and "2 500" are fine
   const amountN = Number(amountClean);
   const amountOk = /^\d+(\.\d+)?$/.test(amountClean) && amountN > 0; // plain decimals only, no 0x10 or 1e3
+  // After Withdraw the verdict can sit below the fold (phone, 720p projector): bring it to the middle of the screen.
+  const sideRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (phase.k !== "result" && phase.k !== "error") return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // The verdict row (badge + headline), not the whole result box, which can be taller than the screen.
+    const verdict = sideRef.current?.querySelector("[data-decision]")?.firstElementChild;
+    verdict?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  }, [phase]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -155,7 +164,7 @@ export default function ExchangeCheck() {
             </div>
           </form>
 
-          <div className={styles.side}>
+          <div className={styles.side} ref={sideRef}>
             {(phase.k === "form" || phase.k === "checking") && (
               <div className={styles.idle}>
                 <p className="label">Destination check</p>

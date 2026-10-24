@@ -37,12 +37,14 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
     return (
       <>
         <Bar offline={usingFixtures} step={code ? undefined : 4} caseId={id} />
-        <div className="api-error" role="alert">
-          <p className="eyebrow">No finished trace yet</p>
-          <p>
-            The packet is written from the latest finished trace. <Link href={caseHref}>Run the trace for {id}</Link>, then come back.
-          </p>
-        </div>
+        <main className="wrap">
+          <div className="notice" role="status">
+            <p className="label">No finished trace yet</p>
+            <p>
+              The packet is written from the latest finished trace. <Link href={caseHref}>Run the trace for {id}</Link>, then come back.
+            </p>
+          </div>
+        </main>
       </>
     );
   }
@@ -50,6 +52,8 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   const { packet, trace } = data;
   const frozen = trace.endpoints.filter((p) => trace.nodes.find((x) => x.address === p.address)?.frozen?.is_frozen).length;
   const cv = packet.citations_verified;
+  // The victim's own copy (opened with their case code, or the victim version): plain words, no trace jargon.
+  const plain = !!code || audience === "victim";
   return (
     <>
       <div className={styles.screenOnly}>
@@ -77,31 +81,38 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
           <PrintButton />
         </div>
 
+        {/* The victim's copy speaks plainly; the detective's keeps the trace terms. */}
         <div className={`${styles.stats} ${styles.screenOnly}`}>
           <div className={styles.stat}>
             <span className="stat-n">{trace.edges.length}</span>
-            <span className="stat-l">Transfers traced</span>
+            <span className="stat-l">{plain ? "Transfers we followed" : "Transfers traced"}</span>
           </div>
           <div className={styles.stat}>
             <span className="stat-n">{trace.endpoints.length}</span>
-            <span className="stat-l">Places the money stopped</span>
+            <span className="stat-l">{plain ? "Places your money went" : "Places the money stopped"}</span>
           </div>
           <div className={styles.stat}>
             <span className={`stat-n ${frozen ? styles.ice : ""}`}>{frozen}</span>
             <span className="stat-l">Frozen by Tether</span>
           </div>
-          <div className={styles.stat}>
-            <span className="stat-n">
-              {packet.text === null
-                ? "Hidden"
-                : typeof cv === "object"
-                  ? `${cv.verified} of ${cv.total}`
-                  : packet.cited.length}
-            </span>
-            <span className="stat-l">
-              {packet.text === null ? "Summary shown on the operator's screen only" : verified(cv) ? "Cited numbers checked against the trace" : "Cited fields, not verified"}
-            </span>
-          </div>
+          {packet.text === null ? (
+            <div className={styles.stat}>
+              <span className="stat-n">Hidden</span>
+              <span className="stat-l">Summary shown on the operator&apos;s screen only</span>
+            </div>
+          ) : plain ? (
+            verified(cv) && (
+              <div className={styles.stat}>
+                <span className={`stat-n ${styles.ok}`}>Checked</span>
+                <span className="stat-l">Every number checked against the blockchain</span>
+              </div>
+            )
+          ) : (
+            <div className={styles.stat}>
+              <span className="stat-n">{typeof cv === "object" ? `${cv.verified} of ${cv.total}` : packet.cited.length}</span>
+              <span className="stat-l">{verified(cv) ? "Cited numbers checked against the trace" : "Cited fields, not verified"}</span>
+            </div>
+          )}
         </div>
 
         <main className={styles.sheet}>
@@ -146,13 +157,15 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
             {packet.text !== null && (
               <p className={styles.verify} data-ok={verified(packet.citations_verified) || undefined}>
                 {verified(packet.citations_verified)
-                  ? `Every number above was checked against the trace (${packet.cited.length} cited fields).`
+                  ? plain
+                    ? "Every number above was checked against the blockchain."
+                    : `Every number above was checked against the trace (${packet.cited.length} cited fields).`
                   : "Citations not verified against the trace."}
               </p>
             )}
           </section>
 
-          {audience === "detective" && <Tables trace={trace} />}
+          {audience === "detective" && <Tables trace={trace} plain={plain} />}
           {!trace.replay && (
             <p className={`${styles.verifyNote} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
           )}
@@ -231,14 +244,16 @@ function Para({ text, live }: { text: string; live: boolean }) {
   );
 }
 
-function Tables({ trace }: { trace: Trace }) {
+function Tables({ trace, plain }: { trace: Trace; plain: boolean }) {
   const edges = [...trace.edges].sort((a, b) => a.hop - b.hop || b.attributed_amount - a.attributed_amount);
   return (
     <>
       <section className={styles.section}>
         <div className={styles.sectionHead}>
           <h2 className={styles.h2}>Where the money stopped, and who to contact</h2>
-          <span className={styles.count}>{trace.endpoints.length} endpoints</span>
+          <span className={styles.count}>
+            {trace.endpoints.length} {plain ? (trace.endpoints.length === 1 ? "place" : "places") : "endpoints"}
+          </span>
         </div>
         <div className={styles.tableWrap}>
           <table className={styles.table}>

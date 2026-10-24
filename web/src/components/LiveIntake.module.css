@@ -1,6 +1,11 @@
 /* Operator console for step 1: four status tiles, then progress, the case card and the upload link. */
+.headCta :global(.btn:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .tiles {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .tile {
@@ -37,9 +42,9 @@
 }
 
 .notice {
-  margin: 0 0 1rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0.9rem 1.15rem;
+  font-size: 1rem;
   color: var(--ink);
   background: var(--hold-wash);
   border: 1px solid #4a3816;
@@ -51,7 +56,7 @@
 }
 
 .boxTitle {
-  margin: 0 0 0.85rem;
+  margin: 0 0 1.15rem;
 }
 
 /* Progress: grey ring while pending, green check once done, so progress never reads as an error. */
@@ -60,14 +65,14 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.95rem;
+  font-size: 1rem;
   border-top: 1px solid var(--rule);
 }
 
 .steps li {
   position: relative;
-  padding: 0.7rem 0 0.7rem 1.9rem;
-  color: var(--ink-3);
+  padding: 0.8rem 0 0.8rem 2rem;
+  color: var(--ink-2);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -79,8 +84,8 @@
   width: 1.1rem;
   height: 1.1rem;
   margin-top: -0.55rem;
-  border: 2px solid var(--rule-2);
-  border-radius: 4px;
+  border: 1px solid var(--rule-2);
+  border-radius: 50%;
 }
 
 .steps li[data-done] {
@@ -91,7 +96,7 @@
   content: "✓";
   display: grid;
   place-items: center;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--ok);
   border: 1px solid #1f4a35;
@@ -114,16 +119,16 @@
 }
 
 .summary {
-  margin-top: 1rem;
-  padding: 0.85rem 1rem;
+  margin-top: 1.15rem;
+  padding: 1rem 1.15rem;
   background: var(--fog);
   border: 1px solid var(--rule);
-  border-radius: var(--radius);
+  border-radius: 10px;
 }
 
 .summary p:last-child {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.97rem;
   color: var(--ink-2);
 }
 
@@ -172,7 +177,7 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   font-family: var(--font-m);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 

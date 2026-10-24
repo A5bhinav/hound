@@ -268,11 +268,16 @@ export default function TraceGraph({
             className={styles.reveal}
             onClick={() => {
               setFreezesShown(true);
-              // On a short screen (720p projector) the last column ends below the fold: bring the graph's bottom into view.
+              // On a short screen (720p projector) the last column ends below the fold: bring the trail up under the
+              // sticky bar (so the reveal line and its controls stay readable), or further if its bottom still won't fit.
               requestAnimationFrame(() => {
-                const svg = scrollRef.current?.querySelector("svg");
-                const r = svg?.getBoundingClientRect();
-                if (r && r.bottom > window.innerHeight) window.scrollBy({ top: r.bottom - window.innerHeight + 16, behavior: "smooth" });
+                const r = scrollRef.current?.querySelector("svg")?.getBoundingClientRect();
+                const box = scrollRef.current?.closest("section")?.getBoundingClientRect();
+                if (!r || !box || r.bottom <= window.innerHeight) return;
+                const barBottom = document.querySelector(".bar")?.getBoundingClientRect().bottom ?? 0;
+                let delta = box.top - barBottom - 8;
+                if (r.bottom - delta > window.innerHeight) delta = r.bottom - window.innerHeight + 16;
+                window.scrollBy({ top: delta, behavior: "smooth" });
               });
             }}
             disabled={shownHop < maxHop}

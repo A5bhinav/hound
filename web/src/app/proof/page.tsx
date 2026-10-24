@@ -41,7 +41,7 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
     return (
       <header className="page-head">
         <div>
-          <p className="label">DOJ match · {sb.docket}</p>
+          <p className="eyebrow">DOJ match · {sb.docket}</p>
           <h1>Not scored yet</h1>
           <p className="sub">
             {s.refused_reason ?? "No finished replay trace."} <Link href={`/cases/${sb.case}`}>Run the DOJ replay</Link>, then reload.
@@ -56,9 +56,15 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
     <>
       <header className="page-head">
         <div className={styles.headMain}>
-          <p className="label">Proof it works · a real DOJ case{s.blind ? ", run blind" : ""}</p>
+          <p className="eyebrow">Proof it works · a real DOJ case{s.blind ? ", run blind" : ""}</p>
           <h1>
-            Found all {s.finals_total} wallets the DOJ seized{s.blind ? ", without being told where to look" : ""}
+            Found all {s.finals_total} wallets the DOJ seized{s.blind ? "," : ""}
+            {s.blind && (
+              <>
+                <br />
+                <span className="quiet">without being told where to look</span>
+              </>
+            )}
           </h1>
           <p className="sub">From the victim&apos;s report alone.</p>
         </div>

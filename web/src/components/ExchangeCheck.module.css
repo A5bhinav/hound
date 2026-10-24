@@ -2,7 +2,7 @@
 .page {
   display: grid;
   grid-template-columns: minmax(16rem, 0.8fr) minmax(0, 3fr);
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: start;
 }
 
@@ -13,40 +13,40 @@
 }
 
 .howTitle {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
 }
 
 .steps {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.9rem;
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .steps li {
   display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: 1.7rem minmax(0, 1fr);
+  gap: 0.75rem;
   align-items: start;
 }
 
 .stepN {
   display: inline-grid;
   place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 5px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 50%;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--white);
   background: var(--red);
 }
 
 .answers {
-  gap: 0.6rem 0.85rem;
-  font-size: 0.85rem;
+  gap: 0.75rem 0.9rem;
+  font-size: 0.95rem;
   color: var(--ink-2);
 }
 
@@ -69,7 +69,7 @@
 .exchange {
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -79,7 +79,7 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.85rem 1.35rem;
+  padding: 1rem 1.5rem;
   background: #1d2430; /* the mock exchange is a different product: its own dark header */
   color: #f4f4f1;
 }
@@ -90,8 +90,8 @@
 }
 
 .exTag {
-  font-size: 0.75rem;
-  opacity: 0.75;
+  font-size: 0.85rem;
+  color: #c4cad6;
 }
 
 .exBody {
@@ -102,22 +102,22 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  padding: 1.35rem;
+  gap: 1rem;
+  padding: 1.5rem;
   border-right: 1px solid var(--rule);
 }
 
 .title {
   font-family: var(--font-b);
   font-weight: 600;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.8rem;
+  gap: 0.4rem;
+  font-size: 0.9rem;
   font-weight: 500;
   color: var(--ink-2);
 }
@@ -125,12 +125,12 @@
 .field input,
 .field select {
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--ink);
-  padding: 0.6rem 0.7rem;
+  padding: 0.7rem 0.85rem;
   border: 1px solid var(--rule-2);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--fog);
 }
 
@@ -139,8 +139,9 @@
 }
 
 .send {
-  font: 600 1rem var(--font-b);
-  padding: 0.8rem;
+  font: 600 1.05rem var(--font-b);
+  min-height: 3.1rem;
+  padding: 0.85rem;
   border: 0;
   border-radius: var(--radius);
   background: var(--ink);
@@ -160,25 +161,25 @@
 .samples {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
   align-items: center;
-  padding-top: 0.85rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--rule);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--ink-3);
 }
 
 .samples span {
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 500;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .samples button {
   font: inherit;
   text-align: left;
-  padding: 0.35rem 0.6rem;
+  padding: 0.45rem 0.75rem;
   border: 1px solid var(--rule-2);
   border-radius: var(--radius);
   background: var(--paper-2);
@@ -191,7 +192,7 @@
 }
 
 .side {
-  padding: 1.35rem;
+  padding: 1.5rem;
   min-width: 0;
 }
 
@@ -199,11 +200,11 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   min-height: 100%;
-  padding: 1.25rem;
+  padding: 1.5rem;
   border: 1px dashed var(--rule-2);
-  border-radius: var(--radius);
+  border-radius: 10px;
   color: var(--ink-2);
 }
 
@@ -213,14 +214,14 @@
 
 .idleTitle {
   margin: 0 0 0.35rem;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--white);
 }
 
 .result {
-  padding: 1.1rem 1.25rem;
-  border-radius: var(--radius);
+  padding: 1.35rem 1.5rem;
+  border-radius: 10px;
   border: 1px solid var(--rule);
   border-left-width: 4px;
 }
@@ -252,7 +253,7 @@
 }
 
 .conf {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
@@ -260,9 +261,10 @@
 .verdict {
   margin: 0.6rem 0 0.75rem;
   font-family: var(--font-d);
-  font-weight: 700;
-  font-size: 1.6rem;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-size: 1.9rem;
+  letter-spacing: -0.025em;
+  color: var(--white);
 }
 
 .lede {
@@ -271,7 +273,7 @@
 
 .reasons {
   margin: 0 0 1rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--ink-2);
 }
 
@@ -283,14 +285,14 @@
 .evidence summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 1rem;
   margin-bottom: 0.75rem;
 }
 
 .evKv {
   margin-bottom: 1rem;
-  padding: 0.85rem 1rem;
-  font-size: 0.82rem;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.92rem;
   background: var(--fog);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
@@ -310,14 +312,14 @@
 .path {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
   background: var(--fog);
 }
 
 .path th {
   text-align: left;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -351,7 +353,7 @@
 }
 
 .fine {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   color: var(--ink-2);
 }
 

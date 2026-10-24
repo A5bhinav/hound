@@ -136,16 +136,18 @@ export default function LiveIntake({ replayCase, publicBase, phone }: { replayCa
             Step 1 of 4 · Report the scam{feed.k === "replay" ? " · replay of a recorded call, not a live one" : ""}
           </p>
           <h1>{s ? `Case ${s.case_code}` : "Waiting for a victim to call"}</h1>
+          <div className={`ctas ${styles.headCta}`}>
+            {feed.k === "replay" ? (
+              <button type="button" className="btn btn-lg" onClick={backToLive}>
+                Back to live
+              </button>
+            ) : (
+              <button type="button" className="btn btn-primary btn-lg" onClick={replay} disabled={!replayCase}>
+                Play a sample call
+              </button>
+            )}
+          </div>
         </div>
-        {feed.k === "replay" ? (
-          <button type="button" className="btn btn-lg" onClick={backToLive}>
-            Back to live
-          </button>
-        ) : (
-          <button type="button" className="btn btn-primary btn-lg" onClick={replay} disabled={!replayCase}>
-            Play a sample call
-          </button>
-        )}
       </header>
 
       {feed.k === "unavailable" && (

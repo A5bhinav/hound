@@ -25,41 +25,37 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
 
   return (
     <main className={`wrap ${styles.page}`}>
-      {/* Title left, the case's key numbers right: one compact band, so the ribbons still start high on a projector. */}
+      {/* Title left, the case's key numbers right as one quiet row; on a short screen the row hides so the trail starts high. */}
       <header className={`page-head ${styles.head}`}>
         <div>
           <StepLabel n={2}>Follow the money</StepLabel>
           <h1 className={styles.title}>{title(c)}</h1>
-          <p className="sub">
-            Case <span className="mono">{c.case_id}</span> · traced hop by hop from the victim&apos;s sends
+          <p className={`sub ${styles.sub}`}>
+            {facts.source} · traced wallet by wallet
           </p>
         </div>
-        <dl className={styles.stats}>
-          {facts.sends > 0 && (
-            <div className={styles.stat}>
-              <dt className="label">Sends</dt>
-              <dd>{facts.sends}</dd>
-            </div>
-          )}
-          {facts.sent && (
-            <div className={styles.stat}>
-              <dt className="label">Total sent</dt>
-              <dd>{facts.sent}</dd>
-            </div>
-          )}
-          {facts.when && (
-            <div className={styles.stat}>
-              <dt className="label">Dates</dt>
-              <dd className={styles.statSm}>{facts.when}</dd>
-            </div>
-          )}
-          <div className={styles.stat}>
-            <dt className="label">Source</dt>
-            <dd>
-              <span className={`badge ${replay ? "badge-ice" : "badge-red"}`}>{facts.source}</span>
-            </dd>
-          </div>
-        </dl>
+        {(facts.sends > 0 || facts.sent || facts.when) && (
+          <dl className={styles.stats}>
+            {facts.sends > 0 && (
+              <div className={styles.stat}>
+                <dt className="label">Sends</dt>
+                <dd>{facts.sends}</dd>
+              </div>
+            )}
+            {facts.sent && (
+              <div className={styles.stat}>
+                <dt className="label">Total sent</dt>
+                <dd>{facts.sent}</dd>
+              </div>
+            )}
+            {facts.when && (
+              <div className={styles.stat}>
+                <dt className="label">Dates</dt>
+                <dd>{facts.when}</dd>
+              </div>
+            )}
+          </dl>
+        )}
       </header>
 
       {trace && trace.status !== "done" && (
@@ -125,7 +121,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
 
 /** "Victim A.H. (DOJ replay, US v. …)" reads as "Victim A.H."; the docket lives in the details. */
 function title(c: CaseSummary | Case) {
-  const a = c.victim?.alias ?? c.case_id;
+  const a = c.victim?.alias ?? "Reported case"; // never the raw case id
   return a.includes(" (") ? a.slice(0, a.indexOf(" (")) : a;
 }
 
@@ -155,6 +151,7 @@ function Stops({ trace, freezesShown }: { trace: Trace; freezesShown: boolean })
         <h2 id="stops-h">Where it stopped</h2>
         <span className="badge">{rows.length} {rows.length === 1 ? "wallet" : "wallets"}</span>
       </div>
+      <div className="table-scroll">
       <table className={styles.table}>
         <thead>
           <tr>
@@ -187,6 +184,7 @@ function Stops({ trace, freezesShown }: { trace: Trace; freezesShown: boolean })
           })}
         </tbody>
       </table>
+      </div>
     </section>
   );
 }

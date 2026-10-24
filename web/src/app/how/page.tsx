@@ -68,13 +68,22 @@ export default async function How() {
       <main className="wrap">
         <header className="page-head">
           <div>
-            <p className="label">How Hound works · for judges, exchanges and police</p>
-            <h1>Hound follows stolen crypto and stops it moving again.</h1>
+            <p className="eyebrow">How Hound works · for judges, exchanges and police</p>
+            <h1>
+              Hound follows stolen crypto
+              <br />
+              <span className="quiet">and stops it moving again.</span>
+            </h1>
             <p className="sub">Victim report in. Traced wallets, exchange holds and a police report out.</p>
+            <div className="ctas">
+              <Link href="/intake" className="btn btn-primary btn-lg">
+                Walk through it: 1 Report →
+              </Link>
+              <Link href="/proof" className="btn btn-lg">
+                Proof it works
+              </Link>
+            </div>
           </div>
-          <Link href="/intake" className="btn btn-primary btn-lg">
-            Walk through it: 1 Report →
-          </Link>
         </header>
 
         <ol className={`grid g4 ${styles.how}`}>
@@ -109,20 +118,20 @@ export default async function How() {
         </section>
 
         <section className={`box ${styles.casesBox}`} aria-labelledby="cases-h">
-        <h2 id="cases-h" className={styles.h2}>Cases</h2>
-        {cases.length === 0 && <p className="small">No cases yet.</p>}
-        <ul className={styles.cases}>
-          {cases.map((c) => (
-            <li key={c.case_id}>
-              <Link href={`/cases/${encodeURIComponent(c.case_id)}`} className={styles.case}>
-                <span className={styles.source} data-source={c.source}>{SOURCE[c.source] ?? c.source}</span>
-                <span className={styles.name}>{title(c)}</span>
-                <span className={styles.sent}>{sentLine(c)}</span>
-                <span className={styles.chev} aria-hidden="true">›</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+          <h2 id="cases-h" className={styles.h2}>Cases</h2>
+          {cases.length === 0 && <p className="small">No cases yet.</p>}
+          <ul className={styles.cases}>
+            {cases.map((c) => (
+              <li key={c.case_id}>
+                <Link href={`/cases/${encodeURIComponent(c.case_id)}`} className={styles.case}>
+                  <span className={`badge ${c.source === "doj_replay" ? "badge-ice" : ""} ${styles.source}`}>{SOURCE[c.source] ?? c.source}</span>
+                  <span className={styles.name}>{title(c)}</span>
+                  <span className={styles.sent}>{sentLine(c)}</span>
+                  <span className={styles.chev} aria-hidden="true">›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
         {!usingFixtures && <ResetDemo />}
       </main>

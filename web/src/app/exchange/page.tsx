@@ -10,12 +10,16 @@ export default function ExchangePage() {
         <header className="page-head">
           <div>
             <StepLabel n={3}>Stop the next victim</StepLabel>
-            <h1>What an exchange sees when someone tries to pay a wallet from this case</h1>
+            <h1>
+              What an exchange sees
+              <br />
+              <span className="quiet">when someone tries to pay a wallet from this case</span>
+            </h1>
             <p className="sub">Traced wallets on a warning list. The exchange checks before money leaves.</p>
           </div>
         </header>
         {usingFixtures && (
-          <p className="api-error" role="note">
+          <p className="notice" role="note" style={{ marginBottom: "1.25rem" }}>
             The exchange check needs the live backend (GET /check). Unset HOUND_DATA to use it.
           </p>
         )}

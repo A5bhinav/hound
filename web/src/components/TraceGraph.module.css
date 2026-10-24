@@ -6,27 +6,28 @@
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem 0.75rem;
+  gap: 0.5rem 0.85rem;
   flex-wrap: wrap;
-  padding: 0.85rem 1.35rem;
+  padding: 0.9rem 1.5rem;
   border-bottom: 1px solid var(--rule);
 }
 
 /* Box header: title, then the hop counter as a quiet caption. */
 .title {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
 }
 
 .controls button {
-  font: 600 0.9rem var(--font-b);
-  padding: 0.5rem 0.85rem;
-  border: 1px solid var(--rule-2);
+  font: 500 0.97rem var(--font-b);
+  min-height: 2.6rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid #3a3a3f;
   border-radius: var(--radius);
   background: transparent;
   color: var(--ink);
@@ -34,7 +35,8 @@
 }
 
 .controls button:hover:not(:disabled) {
-  background: var(--paper-2);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #55555b;
 }
 
 .controls button:disabled {
@@ -55,9 +57,9 @@
 }
 
 .progress {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-3);
   margin-right: auto;
@@ -69,8 +71,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  margin: 1rem 1.35rem 0;
-  padding: 0.85rem 1.1rem;
+  margin: 1rem 1.5rem 0;
+  padding: 0.9rem 1.2rem;
   border: 1px solid #1d3a55;
   border-left: 4px solid var(--ice);
   border-radius: var(--radius);
@@ -81,14 +83,14 @@
 
 .freezeReveal strong {
   font-family: var(--font-d);
-  font-weight: 700;
-  font-size: 1.25rem;
+  font-weight: 600;
+  font-size: 1.3rem;
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
 .freezeReveal span {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--ice-ink);
 }
 
@@ -112,14 +114,15 @@
 
 .flow {
   display: block;
-  /* 560 units tall, scaled down on short screens (720p projector) so the last column stays in view.
+  /* 560 units tall, scaled down on short screens (720p projector) so the reveal line, the controls and the last
+     column all fit under the sticky bar together.
      width: auto keeps the viewBox aspect ratio, so the columns shrink with it. */
-  height: clamp(420px, calc(100svh - 220px), 560px);
+  height: clamp(380px, calc(100svh - 290px), 560px);
   width: auto;
 }
 
 .colHead {
-  font: 600 13px var(--font-b);
+  font: 600 14px var(--font-b);
   fill: var(--ink-3);
   opacity: 0.45;
   transition: opacity 400ms;
@@ -192,13 +195,13 @@
 }
 
 .nodeAmt {
-  font: 700 14px var(--font-b);
-  fill: var(--ink);
+  font: 600 15px var(--font-b);
+  fill: var(--white);
   font-variant-numeric: tabular-nums;
 }
 
 .nodeSub {
-  font: 500 12.5px var(--font-b);
+  font: 500 13.5px var(--font-b);
   fill: var(--ink-2);
   transition: fill 700ms ease;
 }
@@ -220,12 +223,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 1.25rem;
+  gap: 0.4rem 1.4rem;
   margin: 0;
-  padding: 0.7rem 1.35rem;
+  padding: 0.8rem 1.5rem;
   border-top: 1px solid var(--rule);
   list-style: none;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--ink-2);
 }
 
@@ -259,7 +262,7 @@
   bottom: 0;
   width: min(380px, 100%);
   overflow-y: auto;
-  padding: 1.25rem 1.35rem;
+  padding: 1.4rem 1.5rem;
   background: var(--fog);
   border-left: 1px solid var(--rule-2);
   box-shadow: -16px 0 32px -12px rgba(0, 0, 0, 0.7);
@@ -278,7 +281,7 @@
 }
 
 .detailTitle {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   margin-bottom: 0.25rem;
 }
 
@@ -288,7 +291,7 @@
   background: var(--ice-wash);
   border-radius: var(--radius);
   color: var(--ice-ink);
-  font-size: 0.9rem;
+  font-size: 0.97rem;
 }
 
 .facts {
@@ -299,7 +302,7 @@
   padding: 0.85rem 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
 }
 
 .facts dt {
@@ -309,14 +312,14 @@
 .facts dd {
   margin: 0;
   font-family: var(--font-m);
-  font-size: 0.84rem;
+  font-size: 0.9rem;
 }
 
 .reasons,
 .flows {
   margin: 0 0 1rem;
   padding-left: 0;
-  font-size: 0.86rem;
+  font-size: 0.95rem;
 }
 
 .flows {
@@ -333,7 +336,7 @@
 
 .flowMeta {
   color: var(--ink-2);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
 }
 
 @media print {

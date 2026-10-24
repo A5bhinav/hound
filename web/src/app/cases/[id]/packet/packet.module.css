@@ -3,13 +3,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1.25rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.88rem;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1.25rem;
+  font-size: 0.97rem;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 
 .back {
@@ -31,7 +31,7 @@
 }
 
 .toggle a {
-  padding: 0.4rem 0.85rem;
+  padding: 0.5rem 1rem;
   color: var(--ink-2);
   font-weight: 500;
   text-decoration: none;
@@ -59,19 +59,23 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat {
-  padding: 1rem 1.1rem;
+  padding: 1.25rem 1.4rem;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
 }
 
 .ice {
   color: var(--ice);
+}
+
+.ok {
+  color: var(--ok);
 }
 
 /* The police report is a document: white paper on Hound black, exactly as it prints. Light tokens are scoped here,
@@ -113,8 +117,18 @@
   gap: 1rem;
 }
 
+/* The global headline is white on black; on paper it is ink. */
+.sheet h1,
+.sheet h2 {
+  color: var(--ink);
+}
+
+.sheet :global(.eyebrow) {
+  color: var(--ink-3);
+}
+
 .head h1 {
-  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  font-size: clamp(1.9rem, 2.8vw, 2.6rem);
 }
 
 /* Case / trace / date / writer: one ruled row of fields under the title. */
@@ -126,11 +140,11 @@
   padding: 0.75rem 0;
   border-top: 2px solid var(--ink);
   border-bottom: 1px solid var(--rule);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 .meta dt {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -158,7 +172,8 @@
 .text {
   margin: 1.5rem 0;
   max-width: 60rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .text ul {
@@ -173,8 +188,8 @@
 .verify {
   display: inline-block;
   margin: 0.5rem 0 0;
-  padding: 0.3rem 0.6rem;
-  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--hold);
   background: var(--hold-wash);
@@ -187,7 +202,7 @@
 }
 
 .verifyNote {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   color: var(--ink-2);
 }
 
@@ -206,11 +221,11 @@
 }
 
 .h2 {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
 }
 
 .count {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--ink-3);
 }
@@ -222,7 +237,7 @@
   margin: 0 0 0.75rem;
   padding: 0;
   list-style: none;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
 }
 
 .method li {
@@ -242,14 +257,14 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   font-variant-numeric: tabular-nums;
 }
 
 .table th {
   text-align: left;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.68rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -260,7 +275,7 @@
 }
 
 .table td {
-  padding: 0.55rem 0.7rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--rule);
   vertical-align: top;
   overflow-wrap: anywhere;
@@ -282,8 +297,8 @@
 /* Endpoint and freeze status chips, in the sheet's light palette. */
 .tag {
   display: inline-block;
-  padding: 0.05rem 0.45rem;
-  font-size: 0.72rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: capitalize;
   color: var(--ink-2);
@@ -303,7 +318,7 @@
   min-width: 1.5rem;
   height: 1.5rem;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--ink);
   background: var(--paper-2);
   border: 1px solid var(--rule-2);
@@ -323,7 +338,7 @@
   margin-top: 2rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--rule);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--ink-2);
 }
 

@@ -8,59 +8,54 @@
 /* .page-head's own margin would double the flex gap. */
 .head {
   margin-bottom: 0.25rem;
-  padding-bottom: 1.25rem;
-  align-items: center;
+  padding-bottom: 1.75rem;
 }
 
 .title {
-  font-size: clamp(1.9rem, 2.6vw, 2.5rem);
+  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
 }
 
-/* Key numbers as compact tiles on the right of the head. */
+.sub {
+  margin-top: 0.9rem !important;
+}
+
+/* Key numbers as one quiet row on the right of the head, split by hairlines. */
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
   margin: 0;
 }
 
 .stat {
-  min-width: 8.5rem;
-  padding: 0.7rem 1rem;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
+  padding: 0.15rem 1.6rem;
+  border-left: 1px solid var(--rule-2);
+}
+
+.stat:first-child {
+  padding-left: 0;
+  border-left: 0;
 }
 
 .stat dt {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.45rem;
 }
 
 .stat dd {
   margin: 0;
   font-family: var(--font-d);
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
+  color: var(--white);
   font-variant-numeric: tabular-nums;
-}
-
-/* Long source names wrap inside the tile instead of pushing the page wider on a phone. */
-.stat :global(.badge) {
-  white-space: normal;
-}
-
-.statSm {
-  font-size: 0.95rem !important;
-  padding-top: 0.2rem;
 }
 
 .note {
   align-self: flex-start;
   margin: 0;
-  padding: 0.4rem 0.7rem;
-  font-size: 0.85rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.92rem;
   white-space: normal;
 }
 
@@ -70,14 +65,14 @@
 
 .lead {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
 }
 
 .detail {
-  margin: 0.25rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--ink-2);
-  font-size: 0.9rem;
+  font-size: 0.97rem;
 }
 
 .after {
@@ -99,14 +94,14 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.97rem;
   font-variant-numeric: tabular-nums;
 }
 
 .table th {
-  padding: 0 0.75rem 0.5rem 0;
+  padding: 0 0.75rem 0.6rem 0;
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -114,8 +109,13 @@
   border-bottom: 1px solid var(--rule-2);
 }
 
+.table th,
 .table td {
-  padding: 0.65rem 0.75rem 0.65rem 0;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.8rem 0.75rem 0.8rem 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -133,7 +133,8 @@
 }
 
 .amt {
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--white);
 }
 
 /* Case details and engine log: two closed boxes side by side; open, each reads on its own. */
@@ -173,7 +174,7 @@
   padding: 0;
   max-height: 22rem;
   overflow-y: auto;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
 }
 
 .log li {
@@ -210,22 +211,25 @@
 
 @media (max-width: 860px) {
   .title {
-    font-size: 1.75rem;
+    font-size: 2.1rem;
   }
 
   .log li {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Phone: tiles in an even two-column grid instead of ragged wrapping. */
+  /* Phone: the numbers in an even two-column grid instead of ragged wrapping. */
   .stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
     width: 100%;
   }
 
-  .stat {
-    min-width: 0;
+  .stat,
+  .stat:first-child {
+    padding: 0;
+    border: 0;
   }
 
   .log li > :last-child {
@@ -238,27 +242,33 @@
   margin: 0;
 }
 
-/* AUDIT item 5: on a short projector (1280x720) the third frozen wallet fell below the fold.
-   Trade the page's breathing room for graph height; the ribbons stay untouched. */
-@media (max-height: 780px) {
+/* AUDIT item 5: on a short projector (1280x720) the money trail has to start high, and after the reveal all three
+   frozen wallets must be in view. Below 800 px of height the numbers row hides (they are in Case details) and the head
+   tightens; the ribbons stay untouched. */
+@media (max-height: 800px) {
   .page {
-    padding-top: 1rem;
+    padding-top: 1.1rem;
     gap: 0.75rem;
   }
 
   .head {
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.9rem;
+  }
+
+  .head :global(.eyebrow) {
+    margin-bottom: 0.6rem;
   }
 
   .title {
-    font-size: 1.6rem;
+    font-size: 1.9rem;
   }
 
-  .stat {
-    padding: 0.45rem 0.8rem;
+  .sub {
+    margin-top: 0.4rem !important;
+    font-size: 1.05rem !important;
   }
 
-  .stat dd {
-    font-size: 1.05rem;
+  .stats {
+    display: none;
   }
 }

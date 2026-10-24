@@ -9,16 +9,16 @@
   padding: 0.9rem 1.1rem;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem;
 }
 
 /* Headline tiles: 8 of 8, 3 of 3, then one tile per seized wallet. */
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .tiles {
@@ -27,10 +27,14 @@
 }
 
 .stat {
-  padding: 1rem 1.1rem;
+  padding: 1.25rem 1.4rem;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
+}
+
+.tiles .stat {
+  border-radius: 10px;
 }
 
 .tiles .stat {
@@ -51,12 +55,12 @@
 .bandN[data-band="red"] { color: var(--bad); }
 
 .pair {
-  margin-top: 1rem;
+  margin-top: 1.25rem;
   align-items: start;
 }
 
 .h2 {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
 }
 
 .warn {
@@ -65,19 +69,25 @@
   border-radius: var(--radius);
   background: var(--hold-wash);
   color: var(--hold);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* On a phone the table keeps its columns and scrolls inside its box (.table-scroll), never the page. */
+.table th,
+.table td {
+  white-space: nowrap;
 }
 
 .table th {
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -104,8 +114,8 @@
   display: inline-block;
   padding: 0.15rem 0.55rem;
   border-radius: 4px;
-  font-weight: 700;
-  font-size: 0.82rem;
+  font-weight: 600;
+  font-size: 0.88rem;
   border: 1px solid transparent;
 }
 
@@ -136,7 +146,7 @@
 .more summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 1rem;
   color: var(--ink-2);
 }
 
@@ -146,18 +156,18 @@
 
 .more .table {
   margin-top: 0.75rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
 }
 
 .detailList {
   margin-top: 0.85rem;
-  font-size: 0.85rem;
+  font-size: 0.97rem;
   color: var(--ink-2);
 }
 
 .methodKv {
   margin-top: 0.85rem;
-  font-size: 0.85rem;
+  font-size: 0.97rem;
 }
 
 .addrs {
@@ -167,7 +177,7 @@
   margin: 0.75rem 0 0;
   padding: 0.75rem 1rem;
   list-style: none;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--ink-2);
   background: var(--fog);
   border: 1px solid var(--rule);

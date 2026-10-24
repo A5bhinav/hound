@@ -52,7 +52,7 @@ export default function NodeDetail({
       <button type="button" className={styles.close} onClick={onClose} aria-label="Close details">
         ×
       </button>
-      <p className="eyebrow">
+      <p className="label">
         {KIND_LABEL[node.kind]} · hop {node.depth}
       </p>
       <h2 className={styles.detailTitle}>{node.label ?? shortAddr(node.address)}</h2>
@@ -134,7 +134,7 @@ export default function NodeDetail({
 
       {node.classifier && (
         <>
-          <p className="eyebrow">Why we think it&apos;s {node.classifier.kind} ({pct(node.classifier.confidence)})</p>
+          <p className="label">Why we think it&apos;s {node.classifier.kind} ({pct(node.classifier.confidence)})</p>
           <ul className={`checks ${styles.reasons}`}>
             {node.classifier.reasons.map((r) => (
               <li key={r}>{r}</li>
@@ -145,7 +145,7 @@ export default function NodeDetail({
 
       {swaps.length > 0 && (
         <>
-          <p className="eyebrow">Swapped ETH to USDT here</p>
+          <p className="label">Swapped ETH to USDT here</p>
           <ul className={styles.flows}>
             {swaps.map((s) => {
               const eth = Object.values(s.victim_eth).reduce((a, b) => a + b, 0);
@@ -176,7 +176,7 @@ function Flows({ title, side, edges, chain }: { title: string; side: "from" | "t
   if (!edges.length) return null;
   return (
     <>
-      <p className="eyebrow">{title}</p>
+      <p className="label">{title}</p>
       <ul className={styles.flows}>
         {edges.map((e) => (
           <li key={`${e.from}->${e.to}:${e.token}`}>

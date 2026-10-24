@@ -19,27 +19,27 @@
 .more summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--trace);
 }
 
 .caveat {
   margin: 0.85rem 0 1rem;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--ink-2);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 
 .table th {
   padding: 0 0.75rem 0.5rem 0;
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -48,7 +48,7 @@
 }
 
 .table td {
-  padding: 0.45rem 0.75rem 0.45rem 0;
+  padding: 0.6rem 0.75rem 0.6rem 0;
   border-bottom: 1px solid var(--rule);
 }
 
