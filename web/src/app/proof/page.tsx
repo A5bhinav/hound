@@ -33,6 +33,10 @@ export default async function ProofPage() {
 
 function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
   const s = sb.summary;
+  // The 4 victim-side inputs (d95, A-1, B-1, C-1) are in the holdout file but were given to the engine.
+  const inputs = new Set((sb.inputs ?? []).map((i) => i.address.toLowerCase()));
+  const given = sb.holdout.filter((a) => inputs.has(a.toLowerCase()));
+  const hidden = sb.holdout.filter((a) => !inputs.has(a.toLowerCase()));
   if (s.status !== "scored") {
     return (
       <section className={styles.panel}>
@@ -110,9 +114,12 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
         subpoena data; those totals are context only, never scored.
       </p>
       <details className={styles.holdout}>
-        <summary>Holdout: the {sb.holdout.length} DOJ addresses the engine was never given</summary>
+        <summary>
+          Holdout: the {hidden.length} DOJ addresses the engine was never given (plus the {given.length} where the
+          victim&apos;s sends start and land, which it had to be given)
+        </summary>
         <ul className="mono">
-          {sb.holdout.map((a) => (
+          {hidden.map((a) => (
             <li key={a}>{a}</li>
           ))}
         </ul>
@@ -133,8 +140,8 @@ function BacktestPanel({ bt }: { bt: Backtest }) {
       ) : (
         <>
           <div className={styles.big}>
-            <Stat n={`${Math.round(bt.detection_lag_median_h)} h`} label="median, first inflow to freeze" />
-            {bt.p90_h != null && <Stat n={`${Math.round(bt.p90_h)} h`} label="90th percentile" />}
+            <Stat n={days(bt.detection_lag_median_h)} label="median, first stolen dollar in to Tether's freeze" />
+            {bt.p90_h != null && <Stat n={days(bt.p90_h)} label="90th percentile" />}
             {bt.escape_share_median != null && (
               <Stat n={`${Math.round(bt.escape_share_median * 100)}%`} label="median share moved out before the freeze" />
             )}
@@ -194,4 +201,10 @@ function Stat({ n, label }: { n: string; label: string }) {
       <span className={styles.statL}>{label}</span>
     </div>
   );
+}
+
+/** 1076 hours reads as nothing on stage; 45 days does. */
+function days(h: number): string {
+  const d = h / 24;
+  return d >= 2 ? `${Math.round(d)} days` : `${Math.round(h)} h`;
 }

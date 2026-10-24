@@ -67,6 +67,8 @@ export interface Scoreboard {
   targets: { label: string; address: string; group: "intermediate" | "final"; reached: boolean }[];
   amount: { label: string; address: string; doj_ah_para74_usdt: number; ours_attributed_usdt: number | null; pct_error: number | null; band: string }[];
   holdout: string[];
+  /** The victim-side addresses the engine was given (where the sends start and land). */
+  inputs?: { label: string; address: string }[];
   context: { para83_85_totals_usdt?: Record<string, number | string>; note?: string };
   summary: {
     status: string;

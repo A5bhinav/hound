@@ -101,6 +101,11 @@ export interface Seed {
 export interface OtherPayer {
   address: string;
   amount: number;
+  /** USDT, or the chain's native token (ETH). Amounts are in this token, never mixed. */
+  token?: string;
+  tx_hash?: string;
+  entry_address?: string;
+  time?: string;
   window_days: number;
   source_exchange: string | null;
   confidence: number;

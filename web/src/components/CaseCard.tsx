@@ -127,7 +127,7 @@ function Endpoints({ trace, freezesShown }: { trace: Trace; freezesShown: boolea
     <>
       <p className="eyebrow">Where the money stopped</p>
       <ul className={styles.list}>
-        {trace.endpoints.map((p) => {
+        {trace.endpoints.filter((p) => p.victim_inflow > 0 || (p.victim_remaining ?? 0) > 0).map((p) => {
           const fz = frozenAt(p.address);
           return (
             <li key={p.address} data-reason={fz !== null ? "frozen" : p.reason} data-freezable={p.freezable || undefined}>
