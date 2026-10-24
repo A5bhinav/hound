@@ -171,7 +171,23 @@ def _is_local(request):
     # client-controlled (X-Forwarded-For: 127.0.0.1 is trivial to send), so never trust them.
     if any(h in request.headers for h in PROXY_HEADERS) or "x-forwarded-for" in request.headers:
         return False
+    # The Next proxy adds X-Forwarded-Host: the host the browser asked for. A LAN viewer of
+    # http://192.168.x.y:3000 reaches us from loopback too, so only a localhost name stays local.
+    fwd_host = request.headers.get("x-forwarded-host")
+    if fwd_host is not None and _host_name(fwd_host) not in LOCAL_HOSTNAMES:
+        return False
     return True
+
+
+LOCAL_HOSTNAMES = ("localhost", "127.0.0.1", "[::1]", "::1")
+
+
+def _host_name(value):
+    """'localhost:3000' -> 'localhost', '[::1]:3000' -> '[::1]'; first entry of a comma list."""
+    h = value.split(",")[0].strip().lower()
+    if h.startswith("["):
+        return h.split("]")[0] + "]"
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
 
 
 ANY_ADDR = re.compile(r"(?<![0-9A-Za-z])(0x[0-9a-fA-F]{64}|0x[0-9a-fA-F]{40}|[0-9a-fA-F]{64}"

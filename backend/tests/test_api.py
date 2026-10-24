@@ -735,6 +735,16 @@ def test_spoofed_forwarded_for_is_never_local():
     assert not api._is_local(req({"x-forwarded-for": "127.0.0.1, ::1"}))
 
 
+def test_forwarded_host_from_the_lan_is_not_local():
+    from starlette.requests import Request
+    def req(host):
+        return Request({"type": "http", "client": ("127.0.0.1", 5000), "headers": [(b"x-forwarded-host", host.encode())]})
+    for ok in ("localhost:3000", "127.0.0.1:3000", "[::1]:3000", "localhost", "LOCALHOST:3000"):
+        assert api._is_local(req(ok)), ok
+    for far in ("192.168.1.20:3000", "hound.example.com", "abc.trycloudflare.com", "localhost.evil.com:3000", ""):
+        assert not api._is_local(req(far)), far
+
+
 def test_invalid_curated_case_is_skipped_not_fatal(tmp_path, monkeypatch):
     live = tmp_path / "data" / "cases_live"
     live.mkdir(parents=True)
