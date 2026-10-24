@@ -58,8 +58,22 @@ def get_transfers(chain: str, address: str, token: str | None = "USDT", as_of: i
     return out
 
 
-def get_balance(chain: str, address: str, token: str = "USDT") -> float:
-    return _adapter(chain).get_balance(address, token=token)
+def get_native_txs(chain: str, address: str, as_of: int | str | None = None, after: str | None = None) -> list[dict]:
+    """Native ETH txs touching `address`: {tx_hash, tx_index, from, to, amount_wei, gas_wei, block, time}
+    (same shape as hound.fixture_chain). Ethereum only."""
+    if chain != "ethereum":
+        raise ValueError(f"native txs are only supported on ethereum, not {chain}")
+    from . import eth
+    return eth.get_native_txs(address, as_of=as_of, after=after)
+
+
+def get_balance(chain: str, address: str, token: str = "USDT", block: int | None = None) -> float:
+    """Whole-token balance; block=None is latest, a block number reads state then (archive RPC).
+    Replays should pass case.data_cutoff_block: today's balances leak DOJ's seizure (AUDIT issue 3)."""
+    if block is not None and chain == "tron":
+        raise ValueError("historical Tron balances are not supported")
+    return _adapter(chain).get_balance(address, token=token) if block is None else \
+        _adapter(chain).get_balance(address, token=token, block=block)
 
 
 def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> dict:
@@ -84,5 +98,5 @@ def is_exchange(chain: str, address: str) -> bool:
     return _labels.is_exchange(chain, address)
 
 
-__all__ = ["get_transfers", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
+__all__ = ["get_transfers", "get_native_txs", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
            "ChainAPIError", "RateLimited", "CacheMiss", "TooManyTransfers", "stats", "reset_stats", "CHAINS"]

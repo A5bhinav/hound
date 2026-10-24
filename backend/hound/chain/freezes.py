@@ -1,16 +1,22 @@
 """Tether (USDT) freezes: public AddedBlackList / RemovedBlackList / DestroyedBlackFunds events.
 
-freeze_status() asks the USDT contract directly (isBlackListed) so "is it frozen right now"
-is always the on-chain truth, then uses the event history for when and by which tx.
+Ethereum history lives in data/freezes_eth.json (committed, AUDIT issue 9), built once with
+    .venv/bin/python -m hound.chain.freezes dump
+and the tail after the dump's head block is refreshed from the chain every 10 minutes.
+freeze_status(chain, address, as_of) is a local lookup; with as_of=None it is also
+cross-checked against the contract (isBlackListed) when the network is allowed.
 """
 
 from __future__ import annotations
 
+import json
 import logging
+import sys
 import time
 from typing import Any
 
-from . import eth
+from . import cache, eth
+from .cache import REPO_ROOT
 from .net import ChainAPIError
 
 log = logging.getLogger("hound.chain.freezes")
@@ -19,10 +25,12 @@ TOPIC_ADDED = "0x42e160154868087d6bfdc0ca23d96a1c1cfa32f1b72ba9ba27b69b98a0d819d
 TOPIC_REMOVED = "0xd7e9ec6e6ecd65492dce6bf513cd6867560d49544421d0783ddf06e76c24470c"  # RemovedBlackList(address)
 TOPIC_DESTROYED = "0x61e6e66b0d6339b2980aecc6ccc0039736791f0ccde9ed512e789a7fbdd698c6"  # DestroyedBlackFunds(address,uint256)
 SEL_IS_BLACKLISTED = "0xe47d6060"  # isBlackListed(address)
+DUMP_FILE = REPO_ROOT / "data" / "freezes_eth.json"
+EVENT_TOPICS = (("added", TOPIC_ADDED), ("removed", TOPIC_REMOVED), ("destroyed", TOPIC_DESTROYED))
 
 
-def _eth_events(topic: str) -> list[dict]:
-    rows = eth.get_logs(eth.USDT, topic, eth.USDT_DEPLOY_BLOCK)
+def _eth_events(topic: str, from_block: int = eth.USDT_DEPLOY_BLOCK) -> list[dict]:
+    rows = eth.get_logs(eth.USDT, topic, from_block)
     out = []
     for r in rows:
         data = r.get("data") or "0x"
@@ -59,17 +67,64 @@ def _history(chain: str) -> dict[str, list[dict]]:
     return hist
 
 
+def _load_dump() -> tuple[int, dict[str, list[dict]]] | None:
+    if not DUMP_FILE.exists():
+        return None
+    d = json.loads(DUMP_FILE.read_text())
+    return d["_meta"]["head_block"], d["events"]
+
+
+def _fetch_events(from_block: int) -> dict[str, list[dict]]:
+    hist: dict[str, list[dict]] = {}
+    for kind, topic in EVENT_TOPICS:
+        for ev in _eth_events(topic, from_block):
+            hist.setdefault(ev["address"], []).append({"type": kind, **ev})
+    return hist
+
+
 def _load_history(chain: str) -> dict[str, list[dict]]:
     if chain != "ethereum":
         from . import tron
         return tron.blacklist_history()
-    hist: dict[str, list[dict]] = {}
-    for kind, topic in (("added", TOPIC_ADDED), ("removed", TOPIC_REMOVED), ("destroyed", TOPIC_DESTROYED)):
-        for ev in _eth_events(topic):
-            hist.setdefault(ev["address"], []).append({"type": kind, **ev})
+    dump = _load_dump()
+    if dump is None:
+        log.warning("%s missing: fetching the full freeze history (run `python -m hound.chain.freezes dump`)",
+                    DUMP_FILE)
+        hist = _fetch_events(eth.USDT_DEPLOY_BLOCK)
+    else:
+        head, events = dump
+        hist = {a: [dict(e) for e in evs] for a, evs in events.items()}
+        try:
+            tail = _fetch_events(head + 1)  # cached 10 min (recent range)
+        except (cache.CacheMiss, ChainAPIError) as e:
+            log.warning("freeze tail after block %d not refreshed (%s); using the dump only", head, e)
+            tail = {}
+        for a, evs in tail.items():
+            have = {(e["tx"], e["log_index"]) for e in hist.get(a, [])}
+            hist.setdefault(a, []).extend(e for e in evs if (e["tx"], e["log_index"]) not in have)
     for evs in hist.values():
         evs.sort(key=lambda e: (e["block"], e["log_index"]))
     return hist
+
+
+def dump() -> dict:
+    """Write data/freezes_eth.json: every Ethereum USDT blacklist event up to ~1 day ago."""
+    head = eth._settled_block(eth.latest_block())
+    hist = _fetch_events(eth.USDT_DEPLOY_BLOCK)
+    events = {}
+    for a, evs in sorted(hist.items()):
+        keep = sorted((e for e in evs if e["block"] <= head), key=lambda e: (e["block"], e["log_index"]))
+        if keep:
+            events[a] = keep
+    counts = {k: sum(1 for evs in events.values() for e in evs if e["type"] == k) for k, _ in EVENT_TOPICS}
+    out = {"_meta": {"head_block": head, "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                     "source": "public USDT contract events 0xdac17f958d2ee523a2206206994597c13d831ec7",
+                     "topics": dict((k, t) for k, t in EVENT_TOPICS), "counts": counts},
+           "events": events}
+    DUMP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    DUMP_FILE.write_text(json.dumps(out, separators=(",", ":")) + "\n")
+    _MEMO.clear()
+    return out["_meta"]
 
 
 def freeze_events(chain: str, after: str | None = None, before: str | None = None) -> list[dict]:
@@ -123,7 +178,7 @@ def _before(e: dict, as_of: int | str) -> bool:
 
 def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> dict[str, Any]:
     """-> {"is_frozen", "frozen_at", "freeze_tx", "status": frozen|unfrozen|destroyed|none} + extras
-    ("unfrozen_at", "destroyed_usdt", "destroyed_at").
+    ("frozen_block", "unfrozen_at", "destroyed_amount", "destroyed_tx", "destroyed_block", "destroyed_at").
 
     as_of None: current state, checked on-chain (isBlackListed) and timed from the event history.
     as_of block number or ISO time: local lookup in the event history up to that point (replays).
@@ -137,8 +192,13 @@ def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> d
     if as_of is not None:
         evs = [e for e in evs if _before(e, as_of)]
     status = _status_from(evs)
+    onchain = None
     if as_of is None:
-        onchain = is_blacklisted_onchain(chain, address)
+        try:
+            onchain = is_blacklisted_onchain(chain, address)
+        except (cache.CacheMiss, ChainAPIError) as e:
+            log.info("isBlackListed cross-check skipped for %s: %s", address, e)
+    if onchain is not None:
         if onchain and status not in ("frozen", "destroyed"):
             log.warning("%s is blacklisted on-chain but the event history says %s", address, status)
             status = "frozen"
@@ -155,11 +215,21 @@ def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> d
         "frozen_at": last_add["time"] if (frozen and last_add) else None,
         "freeze_tx": last_add["tx"] if (frozen and last_add) else None,
         "status": status,
+        "frozen_block": last_add["block"] if (frozen and last_add) else None,
+        "checked_onchain": onchain is not None,
     }
     if status == "unfrozen" and removed:
         out["unfrozen_at"] = removed[-1]["time"]
         out["previously_frozen_at"] = last_add["time"] if last_add else None
     if destroyed:
-        out["destroyed_usdt"] = round(sum(e.get("amount", 0.0) for e in destroyed), 6)
-        out["destroyed_at"] = destroyed[-1]["time"]
+        amt = round(sum(e.get("amount", 0.0) for e in destroyed), 6)
+        out.update({"destroyed_amount": amt, "destroyed_usdt": amt, "destroyed_tx": destroyed[-1]["tx"],
+                    "destroyed_block": destroyed[-1]["block"], "destroyed_at": destroyed[-1]["time"]})
     return out
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARNING)
+    if sys.argv[1:] != ["dump"]:
+        sys.exit("usage: python -m hound.chain.freezes dump")
+    print(dump())
