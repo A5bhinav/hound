@@ -1,3 +1,79 @@
+/* Screen chrome around the report: toolbar and summary tiles on Hound black, full width. */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.back {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.back:hover {
+  color: var(--ink);
+}
+
+/* Audience toggle: a two-way segmented control. */
+.toggle {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--fog);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+}
+
+.toggle a {
+  padding: 0.4rem 0.85rem;
+  color: var(--ink-2);
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.toggle a:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.toggle a[aria-current="page"] {
+  background: var(--paper-2);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--rule-2);
+}
+
+.toolBadges {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat {
+  padding: 1rem 1.1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.ice {
+  color: var(--ice);
+}
+
 /* The police report is a document: white paper on Hound black, exactly as it prints. Light tokens are scoped here,
    so every child (tables, badges, links) inherits them without its own overrides. */
 .sheet {
@@ -22,9 +98,7 @@
   --eth: #4a5578;
   --dead: #7a7a7a;
   color-scheme: light;
-  max-width: 62rem;
-  margin: 2rem auto 3rem;
-  padding: 2.5rem 2.75rem;
+  padding: 2.5rem clamp(1.5rem, 3vw, 3rem);
   color: var(--ink);
   background: var(--paper);
   border-top: 6px solid var(--red);
@@ -32,58 +106,39 @@
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
-.tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.88rem;
-}
-
-.tools button {
-  margin-left: auto;
-  font: 500 0.85rem var(--font-b);
-  padding: 0.4rem 0.8rem;
-  border: 1px solid var(--ink);
-  background: var(--ink);
-  color: var(--paper);
-  cursor: pointer;
-}
-
-.toggle {
-  display: inline-flex;
-  border: 1px solid var(--ink);
-}
-
-.toggle a {
-  padding: 0.3rem 0.7rem;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.toggle a[aria-current="page"] {
-  background: var(--ink);
-  color: var(--paper);
-}
-
 .head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--ink);
 }
 
 .head h1 {
-  font-size: 2.6rem;
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
 }
 
+/* Case / trace / date / writer: one ruled row of fields under the title. */
 .meta {
-  margin: 0.3rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2.5rem;
+  margin: 1rem 0 0;
+  padding: 0.75rem 0;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
   font-size: 0.82rem;
-  color: var(--ink-2);
+}
+
+.meta dt {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.meta dd {
+  margin: 0.15rem 0 0;
 }
 
 .stamp {
@@ -96,14 +151,14 @@
   font-weight: 700;
   font-size: 0.82rem;
   letter-spacing: 0.14em;
-  transform: rotate(-2deg);
   text-transform: uppercase;
   border-radius: 2px;
 }
 
 .text {
-  margin: 1.25rem 0;
-  max-width: 50rem;
+  margin: 1.5rem 0;
+  max-width: 60rem;
+  font-size: 0.95rem;
 }
 
 .text ul {
@@ -116,43 +171,152 @@
 }
 
 .verify {
+  display: inline-block;
+  margin: 0.5rem 0 0;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--hold);
+  background: var(--hold-wash);
+  border-radius: 4px;
+}
+
+.verify[data-ok] {
+  color: var(--ok);
+  background: var(--ok-wash);
+}
+
+.verifyNote {
   font-size: 0.8rem;
   color: var(--ink-2);
 }
 
+.section {
+  margin-top: 2rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ink);
+}
+
 .h2 {
-  font-size: 1.25rem;
-  margin: 1.75rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+.count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.method {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+}
+
+.method li {
+  padding: 0.15rem 0.5rem;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
 }
 
 .tableWrap {
   overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .table th {
   text-align: left;
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid var(--ink);
-  font-family: var(--font-d);
-  font-weight: 700;
-  letter-spacing: 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-2);
+  white-space: nowrap;
 }
 
 .table td {
-  padding: 0.35rem 0.5rem;
+  padding: 0.55rem 0.7rem;
   border-bottom: 1px solid var(--rule);
   vertical-align: top;
   overflow-wrap: anywhere;
 }
 
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:nth-child(even) td {
+  background: #faf9f7;
+}
+
+.num {
+  text-align: right !important;
+  white-space: nowrap;
+}
+
+/* Endpoint and freeze status chips, in the sheet's light palette. */
+.tag {
+  display: inline-block;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--ink-2);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.tag[data-reason="holding"] { color: var(--hold); background: var(--hold-wash); border-color: #e3cf9c; }
+.tag[data-reason="exchange"] { color: var(--exchange); background: #f4ece0; border-color: #dccbb0; }
+.tag[data-reason="frozen"] { color: var(--ice-ink); background: var(--ice-wash); border-color: #b7cbdd; }
+
+.hop {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+}
+
 .tx {
   display: block;
+}
+
+.more {
+  color: var(--ink-3);
+  font-family: var(--font-b);
 }
 
 .foot {
@@ -163,11 +327,19 @@
   color: var(--ink-2);
 }
 
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolBadges {
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 700px) {
   .sheet {
-    margin: 0;
     padding: 1.25rem;
-    border: 0;
   }
 
   .head {
@@ -180,12 +352,25 @@
     display: none !important;
   }
 
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
   .sheet {
     margin: 0;
     padding: 0;
     border: 0;
     max-width: none;
     box-shadow: none;
+  }
+
+  .table tbody tr:nth-child(even) td {
+    background: none;
+  }
+
+  .tableWrap {
+    overflow: visible;
   }
 }
 

@@ -1,8 +1,17 @@
 export default function Loading() {
   return (
-    <div className="api-error" style={{ borderLeftColor: "var(--trace)" }} role="status">
-      <p className="eyebrow">Loading the proof</p>
-      <p>Scoring the DOJ replay and reading the backtest and weekend scan.</p>
-    </div>
+    <main className="wrap" role="status">
+      <header className="page-head">
+        <div>
+          <p className="label">Proof it works</p>
+          <h1>Loading the proof…</h1>
+        </div>
+      </header>
+      <ul className="box checks">
+        <li>Scoring the DOJ replay</li>
+        <li>Reading the backtest</li>
+        <li>Reading the weekend scan</li>
+      </ul>
+    </main>
   );
 }

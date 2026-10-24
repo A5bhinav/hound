@@ -1,7 +1,6 @@
 import Link from "next/link";
 import PendingHint from "@/components/PendingHint";
-import { NextStep } from "@/components/Chrome";
-import { ApiError, Bar } from "@/components/Chrome";
+import { ApiError, Bar, NextStep } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
 import { HoundApiError, getPacket, usingFixtures, type Packet } from "@/lib/api";
 import { pct, shortAddr, tok, usdt } from "@/lib/format";
@@ -49,14 +48,18 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   }
 
   const { packet, trace } = data;
+  const frozen = trace.endpoints.filter((p) => trace.nodes.find((x) => x.address === p.address)?.frozen?.is_frozen).length;
+  const cv = packet.citations_verified;
   return (
     <>
       <div className={styles.screenOnly}>
         <Bar offline={usingFixtures} step={code ? undefined : 4} caseId={id} />
       </div>
-      <main className={styles.sheet}>
+      <div className={`wrap ${styles.page}`}>
         <div className={`${styles.tools} ${styles.screenOnly}`}>
-          <Link href={code ? `/my/${code}` : caseHref}>{code ? "← Back to your case" : "← Back to the trace"}</Link>
+          <Link href={code ? `/my/${code}` : caseHref} className={styles.back}>
+            {code ? "← Back to your case" : "← Back to the trace"}
+          </Link>
           <span className={styles.toggle} role="group" aria-label="Packet version">
             <Link href={`?audience=detective${code ? `&code=${code}` : ""}`} aria-current={audience === "detective" ? "page" : undefined}>
               {code ? "Copy for the police" : "For the detective"}
@@ -67,64 +70,111 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
               <PendingHint />
             </Link>
           </span>
+          <span className={styles.toolBadges}>
+            {trace.replay ? <span className="badge badge-ice">Replay</span> : <span className="badge">Live case</span>}
+            <span className="badge badge-red">Reported, not proven</span>
+          </span>
           <PrintButton />
         </div>
 
-        <header className={styles.head}>
-          <div>
-            <p className="eyebrow">
-              {code
-                ? `Your Hound report · ${audience === "detective" ? "copy for the police" : "your copy"}`
-                : `Step 4 of 4 · Police report · ${audience === "detective" ? "copy for the detective" : "copy for the victim"}`}
-            </p>
-            <h1>{trace.replay ? "Replay of a historical case" : "Scam funds trace"}</h1>
-            <p className={styles.meta}>
-              Case <span className="mono">{trace.case_id}</span> · trace <span className="mono">{trace.trace_id}</span> · generated{" "}
-              {trace.created_at.slice(0, 10)}
-            </p>
+        <div className={`${styles.stats} ${styles.screenOnly}`}>
+          <div className={styles.stat}>
+            <span className="stat-n">{trace.edges.length}</span>
+            <span className="stat-l">Transfers traced</span>
           </div>
-          <p className={styles.stamp}>Reported, not proven</p>
-        </header>
+          <div className={styles.stat}>
+            <span className="stat-n">{trace.endpoints.length}</span>
+            <span className="stat-l">Places the money stopped</span>
+          </div>
+          <div className={styles.stat}>
+            <span className={`stat-n ${frozen ? styles.ice : ""}`}>{frozen}</span>
+            <span className="stat-l">Frozen by Tether</span>
+          </div>
+          <div className={styles.stat}>
+            <span className="stat-n">
+              {packet.text === null
+                ? "Hidden"
+                : typeof cv === "object"
+                  ? `${cv.verified} of ${cv.total}`
+                  : packet.cited.length}
+            </span>
+            <span className="stat-l">
+              {packet.text === null ? "Summary shown on the operator's screen only" : verified(cv) ? "Cited numbers checked against the trace" : "Cited fields, not verified"}
+            </span>
+          </div>
+        </div>
 
-        <section className={styles.text}>
-          {packet.text === null ? (
-            <p>The written summary of a live case is shown only on the operator&apos;s screen, because it quotes the victim&apos;s report.</p>
-          ) : (
-            packet.text.split(/\n\n+/).map((para, i) => <Para key={i} text={para} live={!trace.replay} />)
+        <main className={styles.sheet}>
+          <header className={styles.head}>
+            <div>
+              <p className="eyebrow">
+                {code
+                  ? `Your Hound report · ${audience === "detective" ? "copy for the police" : "your copy"}`
+                  : `Step 4 of 4 · Police report · ${audience === "detective" ? "copy for the detective" : "copy for the victim"}`}
+              </p>
+              <h1>{trace.replay ? "Replay of a historical case" : "Scam funds trace"}</h1>
+            </div>
+            <p className={styles.stamp}>Reported, not proven</p>
+          </header>
+          <dl className={styles.meta}>
+            <div>
+              <dt>Case</dt>
+              <dd className="mono">{trace.case_id}</dd>
+            </div>
+            <div>
+              <dt>Trace</dt>
+              <dd className="mono">{trace.trace_id}</dd>
+            </div>
+            <div>
+              <dt>Generated</dt>
+              <dd>{trace.created_at.slice(0, 10)}</dd>
+            </div>
+            {packet.source && (
+              <div>
+                <dt>Written by</dt>
+                <dd>{packet.source}</dd>
+              </div>
+            )}
+          </dl>
+
+          <section className={styles.text}>
+            {packet.text === null ? (
+              <p>The written summary of a live case is shown only on the operator&apos;s screen, because it quotes the victim&apos;s report.</p>
+            ) : (
+              packet.text.split(/\n\n+/).map((para, i) => <Para key={i} text={para} live={!trace.replay} />)
+            )}
+            {packet.text !== null && (
+              <p className={styles.verify} data-ok={verified(packet.citations_verified) || undefined}>
+                {verified(packet.citations_verified)
+                  ? `Every number above was checked against the trace (${packet.cited.length} cited fields).`
+                  : "Citations not verified against the trace."}
+              </p>
+            )}
+          </section>
+
+          {audience === "detective" && <Tables trace={trace} />}
+          {!trace.replay && (
+            <p className={`${styles.verifyNote} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
           )}
-          <p className={styles.verify}>
-            {packet.text === null
-              ? ""
-              : verified(packet.citations_verified)
-                ? `Every number above was checked against the trace (${packet.cited.length} cited fields).`
-                : "Citations not verified against the trace."}
-            {packet.source ? ` Written by: ${packet.source}.` : ""}
-          </p>
-        </section>
 
-        {audience === "detective" && <Tables trace={trace} />}
-        {!trace.replay && (
-          <p className={`${styles.verify} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
-        )}
+          <footer className={styles.foot}>
+            Public blockchain data only. Hound never takes custody of funds and never asks for keys or seed phrases. Send through IC3
+            or Chainabuse; do not publish.
+          </footer>
+        </main>
 
-        {code ? (
-          <div className={styles.screenOnly}>
+        <div className={styles.screenOnly}>
+          {code ? (
             <NextStep href={`/my/${code}`} label="Back to your case">
               Keep your case code, {code}. It opens your case again.
             </NextStep>
-          </div>
-        ) : (
-        <div className={styles.screenOnly}>
-          <NextStep href="/proof" label="See the proof on a real DOJ case">
-            Hound ran blind on a real 2024 case and found the wallets the DOJ seized.
-          </NextStep>
+          ) : (
+            <NextStep href="/proof" label="See the proof on a real DOJ case">
+              Hound ran blind on a real 2024 case and found the wallets the DOJ seized.
+            </NextStep>
+          )}
         </div>
-        )}
-        <footer className={styles.foot}>
-          Public blockchain data only. Hound never takes custody of funds and never asks for keys or seed phrases. Send through IC3
-          or Chainabuse; do not publish.
-        </footer>
-      </main>
+      </div>
     </>
   );
 }
@@ -185,15 +235,18 @@ function Tables({ trace }: { trace: Trace }) {
   const edges = [...trace.edges].sort((a, b) => a.hop - b.hop || b.attributed_amount - a.attributed_amount);
   return (
     <>
-      <section>
-        <h2 className={styles.h2}>Where the money stopped, and who to contact</h2>
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2 className={styles.h2}>Where the money stopped, and who to contact</h2>
+          <span className={styles.count}>{trace.endpoints.length} endpoints</span>
+        </div>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th scope="col">Address</th>
                 <th scope="col">Stop</th>
-                <th scope="col">Victim money</th>
+                <th scope="col" className={styles.num}>Victim money</th>
                 <th scope="col">Freeze</th>
                 <th scope="col">Contact</th>
               </tr>
@@ -207,26 +260,29 @@ function Tables({ trace }: { trace: Trace }) {
                       <Addr v={p.address} live={!trace.replay} />
                     </td>
                     <td>
-                      {p.reason.replaceAll("_", " ")}
+                      <span className={styles.tag} data-reason={p.reason}>
+                        {p.reason.replaceAll("_", " ")}
+                      </span>
                       {p.exchange ? ` (${p.exchange})` : ""}
                     </td>
-                    <td className="mono">{usdt(p.victim_remaining ?? p.victim_inflow)}</td>
+                    <td className={`mono ${styles.num}`}>{usdt(p.victim_remaining ?? p.victim_inflow)}</td>
                     <td>
                       {n?.frozen?.is_frozen ? (
                         <>
-                          Frozen {n.frozen.frozen_at?.slice(0, 10)}
+                          <span className={styles.tag} data-reason="frozen">
+                            Frozen {n.frozen.frozen_at?.slice(0, 10)}
+                          </span>
                           {n.frozen.freeze_tx && (
-                            <span className="mono">
-                              {" "}
+                            <span className={`mono ${styles.tx}`}>
                               <Addr v={n.frozen.freeze_tx} live={!trace.replay} />
                             </span>
                           )}
                         </>
                       ) : (
-                        "Not frozen"
+                        <span className={styles.tag}>Not frozen</span>
                       )}
                     </td>
-                    <td>{REASON_CONTACT[n?.frozen?.is_frozen ? "frozen" : p.reason] ?? "—"}</td>
+                    <td>{REASON_CONTACT[n?.frozen?.is_frozen ? "frozen" : p.reason] ?? "None"}</td>
                   </tr>
                 );
               })}
@@ -234,19 +290,24 @@ function Tables({ trace }: { trace: Trace }) {
           </table>
         </div>
       </section>
-      <section>
-        <h2 className={styles.h2}>Every transfer</h2>
-        <p className={styles.meta}>
-          {trace.method.accounting} accounting, up to {trace.method.max_hops} hops, branches under {trace.method.min_amount} USDT not
-          expanded{trace.method.as_of_block ? `, chain data cut off at block ${trace.method.as_of_block}` : ""}.
-        </p>
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2 className={styles.h2}>Every transfer</h2>
+          <span className={styles.count}>{edges.length} transfers</span>
+        </div>
+        <ul className={styles.method}>
+          <li>{trace.method.accounting} accounting</li>
+          <li>Up to {trace.method.max_hops} hops</li>
+          <li>Branches under {trace.method.min_amount} USDT not expanded</li>
+          {trace.method.as_of_block ? <li>Chain data cut off at block {trace.method.as_of_block}</li> : null}
+        </ul>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th scope="col">Hop</th>
                 <th scope="col">From → to</th>
-                <th scope="col">Victim money</th>
+                <th scope="col" className={styles.num}>Victim money</th>
                 <th scope="col">Confidence</th>
                 <th scope="col">Transactions</th>
               </tr>
@@ -254,12 +315,14 @@ function Tables({ trace }: { trace: Trace }) {
             <tbody>
               {edges.map((e) => (
                 <tr key={`${e.from}->${e.to}:${e.token}`}>
-                  <td>{e.hop}</td>
+                  <td>
+                    <span className={styles.hop}>{e.hop}</span>
+                  </td>
                   <td className="mono">
                     <Addr v={e.from} live={!trace.replay} />
                     <br />→ <Addr v={e.to} live={!trace.replay} />
                   </td>
-                  <td className="mono">{tok(e.attributed_amount, e.token)}</td>
+                  <td className={`mono ${styles.num}`}>{tok(e.attributed_amount, e.token)}</td>
                   <td>
                     {pct(e.confidence)} · {e.method}
                   </td>
@@ -269,7 +332,7 @@ function Tables({ trace }: { trace: Trace }) {
                         <Addr v={h} live={!trace.replay} />
                       </span>
                     ))}
-                    {e.tx_hashes.length > TX_SHOWN && <span className={styles.tx}>+{e.tx_hashes.length - TX_SHOWN} more in the trace</span>}
+                    {e.tx_hashes.length > TX_SHOWN && <span className={`${styles.tx} ${styles.more}`}>+{e.tx_hashes.length - TX_SHOWN} more in the trace</span>}
                   </td>
                 </tr>
               ))}

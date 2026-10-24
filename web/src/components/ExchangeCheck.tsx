@@ -69,91 +69,170 @@ export default function ExchangeCheck() {
 
   return (
     <div className={styles.page}>
+      <section className={`box ${styles.how}`} aria-labelledby="how-h">
+        <h2 id="how-h" className={styles.howTitle}>How the check works</h2>
+        <ol className={styles.steps}>
+          <li>
+            <span className={styles.stepN}>1</span>
+            <span>Every wallet Hound traced goes on a warning list</span>
+          </li>
+          <li>
+            <span className={styles.stepN}>2</span>
+            <span>Before a withdrawal leaves, the exchange asks Hound</span>
+          </li>
+          <li>
+            <span className={styles.stepN}>3</span>
+            <span>Hound answers hold, warn or allow, with its evidence</span>
+          </li>
+          <li>
+            <span className={styles.stepN}>4</span>
+            <span>The exchange decides. Hound never holds funds</span>
+          </li>
+        </ol>
+        <p className="label">Answers</p>
+        <dl className={`kv ${styles.answers}`}>
+          <dt><span className="badge badge-red">Hold</span></dt>
+          <dd>On the warning list: payment stays in the account</dd>
+          <dt><span className="badge badge-hold">Warn</span></dt>
+          <dd>Linked to reported scam activity: confirm first</dd>
+          <dt><span className="badge badge-ok">Allow</span></dt>
+          <dd>No Hound warning, which is not proof it is safe</dd>
+        </dl>
+        <p className={`small ${styles.howFoot}`}>Reported, not proven.</p>
+      </section>
+
       <div className={styles.exchange}>
         <header className={styles.exHead}>
           <span className={styles.exName}>Demo Exchange</span>
           <span className={styles.exTag}>Example withdrawal screen · checks Hound before sending</span>
         </header>
 
-        <form className={styles.form} onSubmit={submit}>
-          <h2 className={styles.title}>Withdraw USDT</h2>
-          <label className={styles.field}>
-            <span>Network</span>
-            <select value={chain} onChange={(e) => setChain(e.target.value as Chain)}>
-              <option value="ethereum">Ethereum (ERC-20)</option>
-              <option value="tron">Tron (TRC-20)</option>
-            </select>
-          </label>
-          <label className={styles.field}>
-            <span>Destination address</span>
-            <input
-              required
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder={chain === "ethereum" ? "0x…" : "T…"}
-              spellCheck={false}
-              autoComplete="off"
-              className="mono"
-            />
-          </label>
-          <label className={styles.field}>
-            <span>Amount (USDT)</span>
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-invalid={!amountOk} />
-            {!amountOk && <span role="alert">Enter an amount above 0.</span>}
-          </label>
-          <button type="submit" className={styles.send} disabled={phase.k === "checking" || !address.trim() || !amountOk}>
-            {phase.k === "checking" ? "Checking destination…" : "Withdraw"}
-          </button>
-          <div className={styles.samples}>
-            <span>Try:</span>
-            {SAMPLES.map((s) => (
-              <button
-                key={s.address}
-                type="button"
-                onClick={() => {
-                  setChain(s.chain);
-                  setAddress(s.address);
-                  setPhase({ k: "form" });
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </form>
+        <div className={styles.exBody}>
+          <form className={styles.form} onSubmit={submit}>
+            <h2 className={styles.title}>Withdraw USDT</h2>
+            <label className={styles.field}>
+              <span>Network</span>
+              <select value={chain} onChange={(e) => setChain(e.target.value as Chain)}>
+                <option value="ethereum">Ethereum (ERC-20)</option>
+                <option value="tron">Tron (TRC-20)</option>
+              </select>
+            </label>
+            <label className={styles.field}>
+              <span>Destination address</span>
+              <input
+                required
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={chain === "ethereum" ? "0x…" : "T…"}
+                spellCheck={false}
+                autoComplete="off"
+                className="mono"
+              />
+            </label>
+            <label className={styles.field}>
+              <span>Amount (USDT)</span>
+              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-invalid={!amountOk} />
+              {!amountOk && <span role="alert" className={styles.fieldErr}>Enter an amount above 0.</span>}
+            </label>
+            <button type="submit" className={styles.send} disabled={phase.k === "checking" || !address.trim() || !amountOk}>
+              {phase.k === "checking" ? "Checking destination…" : "Withdraw"}
+            </button>
+            <div className={styles.samples}>
+              <span>Try:</span>
+              {SAMPLES.map((s) => (
+                <button
+                  key={s.address}
+                  type="button"
+                  onClick={() => {
+                    setChain(s.chain);
+                    setAddress(s.address);
+                    setPhase({ k: "form" });
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </form>
 
-        {phase.k === "error" && (
-          <div className={styles.result} data-decision="error" role="alert">
-            <p className={styles.verdict}>Couldn&apos;t check this address</p>
-            <p>{phase.message}</p>
+          <div className={styles.side}>
+            {(phase.k === "form" || phase.k === "checking") && (
+              <div className={styles.idle}>
+                <p className="label">Destination check</p>
+                <p className={styles.idleTitle}>{phase.k === "checking" ? "Asking Hound…" : "No withdrawal yet"}</p>
+                <ul className="checks">
+                  <li>Pick a wallet under Try:</li>
+                  <li>Press Withdraw</li>
+                  <li>The exchange&apos;s answer shows here</li>
+                </ul>
+              </div>
+            )}
+            {phase.k === "error" && (
+              <div className={styles.result} data-decision="error" role="alert">
+                <span className="badge badge-red">Error</span>
+                <p className={styles.verdict}>Couldn&apos;t check this address</p>
+                <p className={styles.lede}>{phase.message}</p>
+              </div>
+            )}
+            {phase.k === "result" && <Result r={phase.r} address={phase.address} chain={phase.chain} amount={phase.amount} />}
           </div>
-        )}
-        {phase.k === "result" && <Result r={phase.r} address={phase.address} chain={phase.chain} amount={phase.amount} />}
+        </div>
       </div>
     </div>
   );
 }
 
+const BADGE = {
+  hold: ["badge-red", "Hold"],
+  warn: ["badge-hold", "Warn"],
+  allow: ["badge-ok", "Allow"],
+} as const;
+
 function Result({ r, address, chain, amount }: { r: CheckResult; address: string; chain: Chain; amount: number }) {
   const ev = r.evidence;
+  const [badge, word] = BADGE[r.decision];
   return (
     <div className={styles.result} data-decision={r.decision} role={r.decision === "allow" ? "status" : "alert"}>
+      <div className={styles.verdictRow}>
+        <span className={`badge ${badge}`}>Hound: {word}</span>
+        <span className={styles.conf}>Confidence {pct(r.confidence)}</span>
+      </div>
       <p className={styles.verdict}>{HEADLINE[r.decision]}</p>
-      <p className={styles.lede}>
-        {r.decision === "hold" && `Your ${usdt(amount)} has not left your account. This address is part of a traced scam cluster.`}
-        {r.decision === "warn" && "This address is linked to reported scam activity. Confirm you know who you're paying before you send."}
-        {r.decision === "allow" && "No Hound warning for this address. That doesn't prove it's safe."}
-      </p>
-      <ul className={styles.reasons}>
-        {r.reasons.map((x) => (
-          <li key={x}>{x}</li>
-        ))}
+      <ul className={`checks ${styles.lede}`}>
+        {r.decision === "hold" && (
+          <>
+            <li>Your {usdt(amount)} has not left your account</li>
+            <li>This address is part of a traced scam cluster</li>
+          </>
+        )}
+        {r.decision === "warn" && (
+          <>
+            <li>This address is linked to reported scam activity</li>
+            <li>Confirm you know who you&apos;re paying before you send</li>
+          </>
+        )}
+        {r.decision === "allow" && (
+          <>
+            <li>No Hound warning for this address</li>
+            <li>That doesn&apos;t prove it&apos;s safe</li>
+          </>
+        )}
       </ul>
+      {r.reasons.length > 0 && (
+        <>
+          <p className="label">Why</p>
+          <ul className={`checks ${styles.reasons}`}>
+            {r.reasons.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {r.decision !== "allow" && (
         <details className={styles.evidence} open={r.decision === "hold"}>
           <summary>Evidence for the exchange&apos;s fraud team</summary>
-          <dl>
+          <dl className={`kv ${styles.evKv}`}>
             <dt>Address</dt>
             <dd className="mono">{address}</dd>
             {ev.rule_fired && (
@@ -180,10 +259,10 @@ function Result({ r, address, chain, amount }: { r: CheckResult; address: string
               <>
                 <dt>Tether freeze</dt>
                 <dd>
-                  {ev.frozen.frozen_at?.slice(0, 10) ?? "date unknown"}
+                  <span className="badge badge-ice">Frozen {ev.frozen.frozen_at?.slice(0, 10) ?? "date unknown"}</span>
                   {ev.frozen.freeze_tx && (
                     <>
-                      {" · "}
+                      {" "}
                       <a href={explorerUrl(chain, "tx", ev.frozen.freeze_tx) ?? undefined} target="_blank" rel="noreferrer" className="mono">
                         {shortAddr(ev.frozen.freeze_tx)}
                       </a>
@@ -201,29 +280,47 @@ function Result({ r, address, chain, amount }: { r: CheckResult; address: string
           </dl>
           {ev.path && ev.path.length > 0 && (
             <>
-              <p className="eyebrow">How victim money reached it</p>
-              <ol className={styles.path}>
-                {ev.path.map((h) => (
-                  <li key={`${h.from}${h.to}`}>
-                    <span className="mono">
-                      {shortAddr(h.from)} → {shortAddr(h.to)}
-                    </span>
-                    <span>
-                      {h.token ? tok(h.amount, h.token) : usdt(h.amount)} · {pct(h.confidence)} · {h.method}
-                    </span>
-                    <span className="mono">
-                      {h.tx_hashes.slice(0, 2).map((t) => (
-                        <a key={t} href={explorerUrl(chain, "tx", t) ?? undefined} target="_blank" rel="noreferrer">
-                          {shortAddr(t)}{" "}
-                        </a>
-                      ))}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              <p className="label">How victim money reached it</p>
+              <div className={styles.pathWrap}>
+                <table className={styles.path}>
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">From → to</th>
+                      <th scope="col" className={styles.num}>Amount</th>
+                      <th scope="col">Confidence</th>
+                      <th scope="col">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ev.path.map((h, i) => (
+                      <tr key={`${h.from}${h.to}`}>
+                        <td className={styles.hopN}>{i + 1}</td>
+                        <td className="mono">
+                          {shortAddr(h.from)} → {shortAddr(h.to)}
+                        </td>
+                        <td className={styles.num}>{h.token ? tok(h.amount, h.token) : usdt(h.amount)}</td>
+                        <td>
+                          {pct(h.confidence)} · {h.method}
+                        </td>
+                        <td className="mono">
+                          {h.tx_hashes.slice(0, 2).map((t) => (
+                            <a key={t} href={explorerUrl(chain, "tx", t) ?? undefined} target="_blank" rel="noreferrer" className={styles.tx}>
+                              {shortAddr(t)}
+                            </a>
+                          ))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
-          <p className={styles.fine}>Reported, not proven. Hound never holds funds itself; the exchange decides.</p>
+          <ul className={`checks ${styles.fine}`}>
+            <li>Reported, not proven</li>
+            <li>Hound never holds funds itself; the exchange decides</li>
+          </ul>
         </details>
       )}
     </div>

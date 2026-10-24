@@ -1,45 +1,62 @@
-.main {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 3rem 1.5rem 3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+.headMain {
+  flex: 1 1 36rem;
+  max-width: 60rem;
 }
+
+/* Case file next to the title: who, which docket, the filing itself. */
+.caseKv {
+  margin-bottom: 0.2rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+/* Headline tiles: 8 of 8, 3 of 3, then one tile per seized wallet. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tiles {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  margin-top: 1rem;
+}
+
+.stat {
+  padding: 1rem 1.1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.tiles .stat {
+  background: var(--fog);
+}
+
+.statRed {
+  border-color: #4a1a1d;
+  background: #160d0e;
+}
+
+.tiles .statRed {
+  background: #160d0e;
+}
+
+.bandN[data-band="green"] { color: var(--ok); }
+.bandN[data-band="amber"] { color: var(--hold); }
+.bandN[data-band="red"] { color: var(--bad); }
 
 .pair {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
-  gap: 0.5rem 3rem;
-}
-
-.panel {
-  padding: 1.5rem 0 1.75rem;
-  border-top: 1px solid var(--rule-2);
-}
-
-.h1 {
-  font-size: clamp(1.8rem, 3.4vw, 2.4rem);
-  max-width: 24ch;
-  margin: 0 0 0.75rem;
+  margin-top: 1rem;
+  align-items: start;
 }
 
 .h2 {
-  font-size: 1.45rem;
-  line-height: 1.25;
-  margin: 0 0 0.6rem;
-}
-
-.h1 em,
-.h2 em {
-  font-style: normal;
-}
-
-.lede {
-  margin: 0 0 1.25rem;
-  color: var(--ink-2);
-  font-size: 1.02rem;
-  max-width: 62ch;
+  font-size: 1.25rem;
 }
 
 .warn {
@@ -54,54 +71,72 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.92rem;
   font-variant-numeric: tabular-nums;
-  margin-bottom: 0.5rem;
 }
 
 .table th {
   text-align: left;
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-3);
-  padding: 0.4rem 0.75rem 0.4rem 0;
+  padding: 0.6rem 0.85rem;
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--rule-2);
 }
 
 .table td {
-  padding: 0.75rem 0.75rem 0.75rem 0;
-  border-top: 1px solid var(--rule);
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.table tbody tr:hover {
+  background: var(--paper-2);
+}
+
+.num {
+  text-align: right !important;
 }
 
 .band {
   display: inline-block;
-  padding: 0.15rem 0.6rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 4px;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  border: 1px solid transparent;
 }
 
 .band[data-band="green"] {
   color: var(--ok);
   background: var(--ok-wash);
+  border-color: #1f4a35;
 }
 
 .band[data-band="amber"] {
   color: var(--hold);
   background: var(--hold-wash);
+  border-color: #4a3816;
 }
 
 .band[data-band="red"] {
   color: var(--bad);
   background: var(--bad-wash);
+  border-color: #4a1a1d;
 }
 
 .more {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
 }
 
 .more summary {
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--ink-2);
 }
 
@@ -109,35 +144,47 @@
   color: var(--ink);
 }
 
-.note {
-  margin: 0.6rem 0 0;
+.more .table {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.detailList {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
   color: var(--ink-2);
-  font-size: 0.88rem;
+}
+
+.methodKv {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
 }
 
 .addrs {
-  margin: 0.5rem 0 0;
-  padding-left: 1rem;
-  font-size: 0.8rem;
-  color: var(--ink-2);
-}
-
-.scanList {
-  list-style: none;
-  margin: 0.6rem 0 0;
-  padding: 0;
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.scanList li {
   display: grid;
-  grid-template-columns: 8rem 9rem 1fr;
-  gap: 0.75rem;
-  padding: 0.4rem 0;
-  border-top: 1px solid var(--rule);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+  gap: 0.3rem 1.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
 }
 
 .cat {
   color: var(--ink-3);
+}
+
+@media (max-width: 640px) {
+  .table th,
+  .table td {
+    padding: 0.6rem 0.45rem;
+  }
+}
+
+.pair :global(.box-h .label) {
+  margin: 0;
 }
