@@ -12,6 +12,7 @@ test:
 	cd $(BACKEND) && $(PY) -m pytest -q
 
 demo:
+	@test -n "$$ANTHROPIC_API_KEY" || grep -qE '^ANTHROPIC_API_KEY=.+' .env 2>/dev/null || { echo "ANTHROPIC_API_KEY unset (not in the environment or .env): the writer and classifier would fall back to templates"; exit 1; }
 	cd $(BACKEND) && HOUND_CACHE_MODE=prefer_cache $(PY) -m uvicorn hound.api:app --port $(PORT)
 
 schemas-check:
