@@ -732,3 +732,20 @@ def test_spoofed_forwarded_for_is_never_local():
     assert api._is_local(req({}))
     assert not api._is_local(req({"x-forwarded-for": "127.0.0.1"}))
     assert not api._is_local(req({"x-forwarded-for": "127.0.0.1, ::1"}))
+
+
+def test_invalid_curated_case_is_skipped_not_fatal(tmp_path, monkeypatch):
+    live = tmp_path / "data" / "cases_live"
+    live.mkdir(parents=True)
+    (live / "broken.case.json").write_text('{"case_id": "x", "sends": [{"block": 1}]}')
+    (tmp_path / "data" / "cases").mkdir()
+    (tmp_path / "examples").mkdir()
+    import shutil
+    from hound.contracts import ROOT
+    shutil.copy(ROOT / "examples" / "ohnd_replay.case.json", tmp_path / "examples" / "ohnd_replay.case.json")
+    monkeypatch.setattr(api, "ROOT", tmp_path)
+    api._load_curated()
+    assert any(s["file"] == "broken.case.json" for s in api.SKIPPED_CASES)
+    assert "broken.case.json" in client.get("/health").json()["skipped_cases"]
+    monkeypatch.undo()
+    api._load_curated()

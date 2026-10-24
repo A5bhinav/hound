@@ -112,18 +112,28 @@ def mark_verified(case_id):
     TRUSTED.add(case_id)
 
 
+SKIPPED_CASES = []  # invalid curated files: listed in /health instead of crashing startup
+
+
 def _load_curated():
     live = sorted((ROOT / "data" / "cases_live").glob("*.case.json"))  # gitignored, demo laptop only
     files = (sorted((ROOT / "data" / "cases").glob("*.case.json")) + live
              + [ROOT / "examples" / "ohnd_replay.case.json"])
+    SKIPPED_CASES.clear()
     for f in files:
-        if f.exists():
+        if not f.exists():
+            continue
+        try:
             c = validate_case(json.loads(f.read_text()))
-            CASES[c["case_id"]] = c
-            TRUSTED.add(c["case_id"])
-            if f in live:
-                LIVE_CASES.add(c["case_id"])
-    log.info("loaded %d curated cases", len(CASES))
+        except Exception as e:  # noqa: BLE001 - one bad file must never stop the server (demo laptop)
+            SKIPPED_CASES.append({"file": f.name, "error": f"{type(e).__name__}: {str(e)[:200]}"})
+            log.error("skipping invalid curated case %s: %s", f.name, e)
+            continue
+        CASES[c["case_id"]] = c
+        TRUSTED.add(c["case_id"])
+        if f in live:
+            LIVE_CASES.add(c["case_id"])
+    log.info("loaded %d curated cases, skipped %d invalid", len(CASES), len(SKIPPED_CASES))
 
 
 _load_curated()
@@ -677,4 +687,5 @@ def scan():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS), "example": bool(example("ohnd_replay.trace"))}
+    return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS),
+            "example": bool(example("ohnd_replay.trace")), "skipped_cases": [s["file"] for s in SKIPPED_CASES]}
