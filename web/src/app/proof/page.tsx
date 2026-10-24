@@ -12,14 +12,14 @@ export default async function ProofPage() {
     if (!(err instanceof HoundApiError)) throw err;
     return (
       <>
-        <Bar offline={usingFixtures} />
+        <Bar offline={usingFixtures} step="proof" />
         <ApiError message={err.message} />
       </>
     );
   }
   return (
     <>
-      <Bar offline={usingFixtures}>Proof</Bar>
+      <Bar offline={usingFixtures} step="proof" />
       <main className={styles.main}>
         <ScoreboardPanel sb={data.scoreboard} />
         <div className={styles.pair}>

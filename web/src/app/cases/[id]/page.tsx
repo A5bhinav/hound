@@ -15,7 +15,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
     if (!(err instanceof HoundApiError)) throw err;
     return (
       <>
-        <Bar offline={usingFixtures} />
+        <Bar offline={usingFixtures} step={2} />
         <ApiError message={err.message} />
       </>
     );
@@ -23,10 +23,7 @@ export default async function CasePage({ params }: PageProps<"/cases/[id]">) {
 
   return (
     <>
-      <Bar offline={usingFixtures}>
-        {c.source === "doj_replay" ? "Replay · " : ""}
-        {c.victim?.alias ?? c.case_id}
-      </Bar>
+      <Bar offline={usingFixtures} step={2} caseId={c.case_id} />
       <CaseView c={c} initialTrace={initialTrace} />
     </>
   );

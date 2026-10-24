@@ -98,19 +98,102 @@ a {
 
 .bar-nav {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 1.5rem;
   margin-left: auto;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
+}
+
+.steps {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li + li::before {
+  content: "→";
+  margin-right: 0.35rem;
+  color: var(--ink-3);
 }
 
 .bar-nav a {
-  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.55rem;
+  color: var(--ink-2);
   text-decoration: none;
-  border-bottom: 2px solid transparent;
+  border-radius: var(--radius);
 }
 
 .bar-nav a:hover {
-  border-bottom-color: var(--trace);
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.bar-nav a[aria-current] {
+  color: var(--ink);
+  font-weight: 700;
+  background: var(--paper-2);
+}
+
+.step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-2);
+  border: 1.5px solid var(--ink-3);
+}
+
+.bar-nav a[aria-current] .step-n {
+  color: var(--paper);
+  background: var(--trace);
+  border-color: var(--trace);
+}
+
+.proof-link {
+  border: 1px solid var(--rule);
+}
+
+@media (max-width: 900px) {
+  .steps li + li::before {
+    display: none;
+  }
+
+  .bar-nav {
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
+}
+
+/* "Next: …" at the bottom of each step */
+.next-step {
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.next-step-link {
+  display: inline-block;
+  padding: 0.8rem 1.2rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--paper);
+  background: var(--trace);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.next-step-why {
+  margin: 0.6rem 0 0;
+  color: var(--ink-2);
+  max-width: 60ch;
 }
 
 .sample-flag {
@@ -167,4 +250,28 @@ h2 {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Intro above a step's main panel, and the page-level "Next" footer */
+.page-intro {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2.25rem 1.5rem 0.5rem;
+}
+
+.page-intro h1 {
+  max-width: 30ch;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+}
+
+.page-intro p:not(.eyebrow) {
+  max-width: 62ch;
+  color: var(--ink-2);
+  font-size: 1.08rem;
+}
+
+.page-foot {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ApiError, Bar } from "@/components/Chrome";
+import { ApiError, Bar, DEMO_CASE } from "@/components/Chrome";
 import ResetDemo from "@/components/ResetDemo";
 import { HoundApiError, listCases, usingFixtures } from "@/lib/api";
 import { tok } from "@/lib/format";
@@ -31,6 +31,13 @@ function sentLine(c: CaseSummary | Case) {
   return [sends.length > 1 ? `${sent} in ${sends.length} sends` : sent, when].filter(Boolean).join(" · ");
 }
 
+const HOW = [
+  { title: "Report", href: "/intake", text: "The victim calls the hotline, gets a text link and sends a screenshot of the payment." },
+  { title: "Follow the money", href: `/cases/${DEMO_CASE}`, text: "Every wallet the money passed through, and where it sits now." },
+  { title: "Stop the next victim", href: "/exchange", text: "Exchanges hold withdrawals to wallets on the warning list." },
+  { title: "Police report", href: `/cases/${DEMO_CASE}/packet`, text: "One page a detective can act on, with who to contact." },
+];
+
 export default async function Home() {
   let cases: CaseSummary[];
   try {
@@ -49,8 +56,32 @@ export default async function Home() {
     <>
       <Bar offline={usingFixtures} />
       <main className={styles.main}>
-        <h1 className={styles.h1}>Follow a scam victim&apos;s money to where it can still be stopped.</h1>
-        <p className={styles.sub}>Pick a case. Hound traces it from public chain data and never touches funds.</p>
+        <h1 className={styles.h1}>Hound follows stolen crypto and stops it moving again.</h1>
+        <p className={styles.sub}>
+          A scam victim calls. Hound traces their money to where it sits, warns exchanges before the next victim pays the
+          same wallets, and hands police a one-page report.
+        </p>
+        <Link href="/intake" className={styles.start}>
+          Start: report a scam →
+        </Link>
+
+        <h2 className={styles.h2}>How it works</h2>
+        <ol className={styles.how}>
+          {HOW.map((h, i) => (
+            <li key={h.title}>
+              <Link href={h.href} className={styles.howCard}>
+                <span className={styles.howN}>{i + 1}</span>
+                <span className={styles.howTitle}>{h.title}</span>
+                <span className={styles.howText}>{h.text}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+        <p className={styles.proof}>
+          <Link href="/proof">Proof it works:</Link> run blind on a real 2024 DOJ case, Hound found all 3 wallets the DOJ seized.
+        </p>
+
+        <h2 className={styles.h2}>Cases</h2>
         {cases.length === 0 && <p>No cases yet.</p>}
         <ul className={styles.cases}>
           {cases.map((c) => (

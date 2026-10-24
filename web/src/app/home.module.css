@@ -90,3 +90,79 @@
     grid-row: 1 / span 3;
   }
 }
+
+.start {
+  display: inline-block;
+  margin: 0 0 3rem;
+  padding: 0.9rem 1.4rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--paper);
+  background: var(--trace);
+  border-radius: var(--radius);
+  text-decoration: none;
+}
+
+.h2 {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+.how {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.howCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  height: 100%;
+  padding: 1.1rem;
+  color: var(--ink);
+  text-decoration: none;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.howCard:hover,
+.howCard:focus-visible {
+  border-color: var(--trace);
+}
+
+.howN {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--trace);
+}
+
+.howTitle {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.howText {
+  color: var(--ink-2);
+  font-size: 0.98rem;
+}
+
+.proof {
+  margin: 0 0 3rem;
+  color: var(--ink-2);
+}
+
+@media (max-width: 800px) {
+  .how {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

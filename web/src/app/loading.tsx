@@ -1,7 +1,12 @@
+import { Bar } from "@/components/Chrome";
+
 export default function Loading() {
   return (
-    <div className="api-error" style={{ borderLeftColor: "var(--trace)" }} role="status">
-      <p className="eyebrow">Loading cases</p>
-    </div>
+    <>
+      <Bar offline={false} />
+      <p className="page-intro" role="status">
+        Loading…
+      </p>
+    </>
   );
 }

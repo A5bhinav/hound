@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PendingHint from "@/components/PendingHint";
+import { NextStep } from "@/components/Chrome";
 import { ApiError, Bar } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
 import { HoundApiError, getPacket, usingFixtures, type Packet } from "@/lib/api";
@@ -24,7 +25,7 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
     if (!(err instanceof HoundApiError)) throw err;
     return (
       <>
-        <Bar offline={usingFixtures} />
+        <Bar offline={usingFixtures} step={4} caseId={id} />
         <ApiError message={err.message} />
       </>
     );
@@ -33,7 +34,7 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   if (!data) {
     return (
       <>
-        <Bar offline={usingFixtures}>Packet</Bar>
+        <Bar offline={usingFixtures} step={4} caseId={id} />
         <div className="api-error" role="alert">
           <p className="eyebrow">No finished trace yet</p>
           <p>
@@ -48,7 +49,7 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   return (
     <>
       <div className={styles.screenOnly}>
-        <Bar offline={usingFixtures}>Packet · {id}</Bar>
+        <Bar offline={usingFixtures} step={4} caseId={id} />
       </div>
       <main className={styles.sheet}>
         <div className={`${styles.tools} ${styles.screenOnly}`}>
@@ -68,7 +69,9 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
 
         <header className={styles.head}>
           <div>
-            <p className="eyebrow">Hound case packet · {audience === "detective" ? "investigator copy" : "victim copy"}</p>
+            <p className="eyebrow">
+              Step 4 of 4 · Police report · {audience === "detective" ? "copy for the detective" : "copy for the victim"}
+            </p>
             <h1>{trace.replay ? "Replay of a historical case" : "Scam funds trace"}</h1>
             <p className={styles.meta}>
               Case <span className="mono">{trace.case_id}</span> · trace <span className="mono">{trace.trace_id}</span> · generated{" "}
@@ -99,6 +102,11 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
           <p className={`${styles.verify} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
         )}
 
+        <div className={styles.screenOnly}>
+          <NextStep href="/proof" label="See the proof on a real DOJ case">
+            Hound ran blind on a real 2024 case and found the wallets the DOJ seized.
+          </NextStep>
+        </div>
         <footer className={styles.foot}>
           Public blockchain data only. Hound never takes custody of funds and never asks for keys or seed phrases. Send through IC3
           or Chainabuse; do not publish.
@@ -214,7 +222,7 @@ function Tables({ trace }: { trace: Trace }) {
         </div>
       </section>
       <section>
-        <h2 className={styles.h2}>Every hop</h2>
+        <h2 className={styles.h2}>Every transfer</h2>
         <p className={styles.meta}>
           {trace.method.accounting} accounting, up to {trace.method.max_hops} hops, branches under {trace.method.min_amount} USDT not
           expanded{trace.method.as_of_block ? `, chain data cut off at block ${trace.method.as_of_block}` : ""}.

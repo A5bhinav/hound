@@ -28,7 +28,7 @@ type Phase =
 
 // Demo shortcuts: a wallet from the DOJ replay trace, and a labelled exchange hot wallet.
 const SAMPLES: { label: string; chain: Chain; address: string }[] = [
-  { label: "A scam wallet from the DOJ replay", chain: "ethereum", address: "0xa1770ead287dc8e91631a7a323390d5b744f0021" },
+  { label: "A wallet from the DOJ case (on the warning list)", chain: "ethereum", address: "0xa1770ead287dc8e91631a7a323390d5b744f0021" },
   { label: "An exchange hot wallet", chain: "ethereum", address: "0x28c6c06298d514db089934071355e5743bf21d60" },
 ];
 
@@ -72,11 +72,11 @@ export default function ExchangeCheck() {
       <div className={styles.exchange}>
         <header className={styles.exHead}>
           <span className={styles.exName}>Demo Exchange</span>
-          <span className={styles.exTag}>Mock withdrawal screen · Hound check API</span>
+          <span className={styles.exTag}>Example withdrawal screen · checks Hound before sending</span>
         </header>
 
         <form className={styles.form} onSubmit={submit}>
-          <h1 className={styles.title}>Withdraw USDT</h1>
+          <h2 className={styles.title}>Withdraw USDT</h2>
           <label className={styles.field}>
             <span>Network</span>
             <select value={chain} onChange={(e) => setChain(e.target.value as Chain)}>

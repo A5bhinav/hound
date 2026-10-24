@@ -122,8 +122,10 @@ export default function LiveIntake({ replayCase, publicBase }: { replayCase: Cas
     <div className={styles.wrap}>
       <div className={styles.top}>
         <div>
-          <p className="eyebrow">{feed.k === "replay" ? "Replay of a recorded intake, not a live call" : "Live intake"}</p>
-          <h1 className={styles.h1}>{s ? `Case ${s.case_code}` : "Waiting for a call"}</h1>
+          <p className="eyebrow">
+            Step 1 of 4 · Report the scam{feed.k === "replay" ? " · replay of a recorded call, not a live one" : ""}
+          </p>
+          <h1 className={styles.h1}>{s ? `Case ${s.case_code}` : "Waiting for a victim to call"}</h1>
         </div>
         {feed.k === "replay" ? (
           <button type="button" className={styles.replay} onClick={backToLive}>
@@ -169,7 +171,7 @@ export default function LiveIntake({ replayCase, publicBase }: { replayCase: Cas
             )}
             {s.status === "validated" && s.case_id && (
               <Link href={`/cases/${encodeURIComponent(s.case_id)}`} className={styles.go}>
-                Trace this case →
+                Next: Follow the money →
               </Link>
             )}
             {feed.k === "live" && s.status === "validated" && s.case_id && s.upload_url && (

@@ -254,7 +254,7 @@ export default function TraceGraph({
     <section className={styles.wrap} aria-label="Money trail">
       <div className={styles.controls}>
         <span className={styles.progress} aria-live="polite">
-          {shownHop < maxHop ? `Hop ${shownHop} of ${maxHop}` : "Width = victim money"}
+          {shownHop < maxHop ? `Transfer ${shownHop} of ${maxHop}` : "Width = victim money"}
         </span>
         {shownHop < maxHop ? (
           <button type="button" onClick={showAll}>Skip to the end</button>
@@ -307,7 +307,7 @@ export default function TraceGraph({
 
             {Array.from({ length: maxHop + 1 }, (_, d) => (
               <text key={`h${d}`} x={PAD_X + d * colGap} y={24} className={styles.colHead} data-on={d <= shownHop}>
-                {d === 0 ? "Victim" : `Hop ${d}`}
+                {d === 0 ? "Victim" : `Transfer ${d}`}
               </text>
             ))}
 

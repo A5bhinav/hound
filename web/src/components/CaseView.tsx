@@ -8,6 +8,7 @@ import Link from "next/link";
 import CaseCard from "./CaseCard";
 import OtherPayers from "./OtherPayers";
 import TraceGraph from "./TraceGraph";
+import { NextStep, StepLabel } from "./Chrome";
 import styles from "./CaseView.module.css";
 
 /* One job: watch the money move, then see where it stopped. The ribbons are the page; everything else is a short line
@@ -23,6 +24,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
   return (
     <main className={styles.page}>
       <header className={styles.head}>
+        <StepLabel n={2}>Follow the money</StepLabel>
         <h1 className={styles.title}>{title(c)}</h1>
         <p className={styles.summary}>{summaryLine(c, replay)}</p>
       </header>
@@ -60,12 +62,10 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
               {lastProblem(trace) ?? "Check the transaction hash and the amount, then trace again."}
             </p>
           ) : (
-            <nav className={styles.next} aria-label="Next steps">
-              <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
-                Open the packet
-              </Link>
-              <Link href="/exchange">Check an address</Link>
-            </nav>
+            <NextStep href="/exchange" label="Stop the next victim">
+              These wallets are now on the warning list.{" "}
+              <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`}>Or skip to the police report.</Link>
+            </NextStep>
           )}
         </>
       )}
@@ -97,7 +97,7 @@ function summaryLine(c: CaseSummary | Case, replay: boolean) {
   return [
     sends.length ? `${sends.length} ${sends.length === 1 ? "send" : "sends"} · ${sent}` : null,
     when,
-    replay ? "Replay of a public DOJ case" : "Live case",
+    replay ? "A real 2024 DOJ case, replayed" : "Live case",
   ].filter(Boolean).join(" · ");
 }
 
