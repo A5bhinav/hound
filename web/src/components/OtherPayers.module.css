@@ -55,7 +55,6 @@
 .table th {
   text-align: left;
   font-family: var(--font-d);
-  font-stretch: 75%;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;

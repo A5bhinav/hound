@@ -6,10 +6,10 @@
 .exchange {
   max-width: 34rem;
   margin: 0 auto;
-  background: #ffffff;
+  background: var(--paper);
   border: 1px solid var(--rule);
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgb(21 33 46 / 0.08);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 0.35);
   overflow: hidden;
 }
 
@@ -20,7 +20,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.85rem 1.25rem;
-  background: #1d2733;
+  background: var(--paper-2);
   color: #ffffff;
 }
 
@@ -63,7 +63,7 @@
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--rule);
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--paper);
 }
 
 .send {
@@ -71,7 +71,7 @@
   padding: 0.75rem;
   border: 0;
   border-radius: 6px;
-  background: #1d2733;
+  background: var(--paper-2);
   color: #ffffff;
   cursor: pointer;
 }
@@ -111,7 +111,7 @@
 .result[data-decision="hold"],
 .result[data-decision="error"] {
   border-color: var(--exchange);
-  background: #fbeceb;
+  background: var(--bad-wash);
 }
 
 .result[data-decision="warn"] {
@@ -120,14 +120,13 @@
 }
 
 .result[data-decision="allow"] {
-  border-color: #2f7d4f;
-  background: #e8f4ec;
+  border-color: var(--ok);
+  background: var(--ok-wash);
 }
 
 .verdict {
   margin: 0;
   font-family: var(--font-d);
-  font-stretch: 80%;
   font-weight: 800;
   font-size: 1.5rem;
 }

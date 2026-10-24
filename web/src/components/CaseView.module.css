@@ -8,7 +8,7 @@
   margin: 0;
   padding: 0.4rem 1.25rem;
   font-size: 0.8rem;
-  color: #7a5806;
+  color: var(--hold);
   background: var(--hold-wash);
   border-bottom: 1px solid var(--rule);
 }
@@ -27,7 +27,7 @@
   margin: 0;
   padding: 0.85rem 1.25rem;
   list-style: none;
-  background: var(--white);
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
 }
 
@@ -41,13 +41,12 @@
 .stats li + li::before {
   content: "→";
   margin: 0 1rem;
-  color: var(--rule);
+  color: var(--ink-3);
   font-size: 1.3rem;
 }
 
 .stats b {
   font-family: var(--font-d);
-  font-stretch: 80%;
   font-weight: 800;
   font-size: 1.55rem;
   line-height: 1;
@@ -141,7 +140,6 @@
 
 .step {
   font-family: var(--font-d);
-  font-stretch: 75%;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;

@@ -51,7 +51,6 @@
 
 .statN {
   font-family: var(--font-d);
-  font-stretch: 75%;
   font-weight: 800;
   font-size: 2.6rem;
   line-height: 1;
@@ -82,7 +81,7 @@
 
 .chips li[data-reached] {
   border: 1px solid var(--trace);
-  background: #e3ecf5;
+  background: var(--paper-2);
   color: var(--ink);
 }
 
@@ -101,7 +100,6 @@
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-d);
-  font-stretch: 75%;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -122,8 +120,8 @@
 }
 
 .band[data-band="green"] {
-  background: #e8f4ec;
-  border-color: #2f7d4f;
+  background: var(--ok-wash);
+  border-color: var(--ok);
 }
 
 .band[data-band="amber"] {
@@ -132,7 +130,7 @@
 }
 
 .band[data-band="red"] {
-  background: #fbeceb;
+  background: var(--bad-wash);
   border-color: var(--exchange);
 }
 
