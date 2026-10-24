@@ -113,7 +113,8 @@ export interface Trace {
   /** Historical case: the UI must say "replay", never "sitting there right now". */
   replay?: boolean;
   status: "done" | "partial" | "error";
-  source: "engine" | "hand_built";
+  /** "fixture": the backend had no chain adapters and replayed examples/ data. */
+  source: "engine" | "hand_built" | "fixture";
   method: {
     accounting: string;
     max_hops: number;
@@ -139,9 +140,22 @@ export interface AuditEntry {
   detail: string;
 }
 
-/** AUDIT N4: POST /cases/{id}/trace answers at once; GET /traces/{id} returns progress until the run ends. */
+/** POST /cases/{id}/trace answers at once with a job view; GET /traces/{job id} returns progress until the run ends (api.py _job_view). */
 export interface TraceRunning {
   trace_id: string;
+  case_id?: string;
   status: "running";
-  audit_log?: AuditEntry[];
+  started_at?: string;
+  elapsed_s?: number;
+  audit_log_so_far?: AuditEntry[];
 }
+
+/** The job failed; detail is in the server log. */
+export interface TraceFailed {
+  trace_id: string;
+  case_id?: string;
+  status: "error";
+  error: string;
+}
+
+export type TraceJob = Trace | TraceRunning | TraceFailed;

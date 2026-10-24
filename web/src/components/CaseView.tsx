@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import type { AuditEntry, Case, CaseSummary, Trace } from "@/lib/types";
 import { shortAddr } from "@/lib/format";
 import { useTrace } from "@/lib/useTrace";
+import Link from "next/link";
 import CaseCard from "./CaseCard";
+import OtherPayers from "./OtherPayers";
 import TraceGraph from "./TraceGraph";
 import styles from "./CaseView.module.css";
 
@@ -23,9 +25,30 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
           reached; the endpoints say why each branch stopped.
         </p>
       )}
+      {trace?.source === "fixture" && (
+        <p className={styles.note} role="alert">
+          The backend has no live chain adapters, so this replay ran on the committed example data, not live chain reads.
+        </p>
+      )}
       <main className={styles.layout}>
         <CaseCard c={c} trace={trace} freezesShown={freezesShown} />
-        {state.phase === "done" && <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />}
+        {state.phase === "done" && (
+          <div className={styles.right}>
+            <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />
+            {/* Demo order: the trail first, then the twist (BRIEF §6). */}
+            {freezesShown && (
+              <>
+                <OtherPayers trace={state.trace} />
+                <nav className={styles.next} aria-label="Next steps">
+                  <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
+                    Open the detective packet
+                  </Link>
+                  <Link href="/exchange">Check an address at the exchange</Link>
+                </nav>
+              </>
+            )}
+          </div>
+        )}
         {state.phase === "running" && <Progress log={state.log} startedAt={state.startedAt} />}
         {state.phase === "error" && (
           <div className={styles.panel} role="alert">

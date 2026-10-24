@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     return [
       { source: "/api/cases/:id/trace", destination: `${API_URL}/cases/:id/trace` },
       { source: "/api/traces/:id", destination: `${API_URL}/traces/:id` },
+      // Exchange hold screen (query string ?chain=&address= is passed through).
+      { source: "/api/check", destination: `${API_URL}/check` },
     ];
   },
   experimental: {
