@@ -104,11 +104,13 @@ def main(argv: list[str]) -> int:
 
     t0 = time.time()
     if a.bundle and os.environ.get("ETHERSCAN_API_KEY"):
-        # warm the RPC path too, so the bundle works on a laptop with or without an Etherscan key
-        os.environ["HOUND_ETH_TRANSFER_SOURCES"] = "rpc,blockscout_v2,blockscout"
-        tr_rpc = run_trace(case)
-        payments(tr_rpc)
-        os.environ.pop("HOUND_ETH_TRANSFER_SOURCES")
+        # warm the keyless path too (RPC transfers, Blockscout native txs for other payers), so the
+        # bundle works on a laptop with or without an Etherscan key
+        key = os.environ.pop("ETHERSCAN_API_KEY")
+        try:
+            payments(run_trace(case))
+        finally:
+            os.environ["ETHERSCAN_API_KEY"] = key
     trace = run_trace(case)
     remember_live({n["address"] for n in trace["nodes"]} | {s["from"] for s in case["sends"]}
                   | {s["to"] for s in case["sends"]})
