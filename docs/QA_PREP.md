@@ -44,4 +44,4 @@ Use the Coinbase booth quotes (collect Saturday, attribute by role). Fallback: "
 - DOJ case: 38 victims/accounts, finals frozen Jun 21 and 25 2024, seized 4,340,000 / 3,290,000 / 577,578 USDT [complaint]
 - Scoreboard: A-7 +0.9%, A-8 +1.0%, A-9 +10.8%; 8/8 intermediates, 3/3 seized, blind
 - Backtest: median 45 days, p10 36 h, p90 ~13 months, 44% escaped, n=192
-- Weekend scan: 963 reported addresses checked on chain, 24 hold unfrozen USDT, 968,898 USDT
+- Weekend scan: 963 reported addresses checked on chain, 14 hold unfrozen USDT, 91,217.87 USDT
