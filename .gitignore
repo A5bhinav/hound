@@ -19,3 +19,6 @@ node_modules/
 data/cases_live/
 watchlist*.json
 scan_*.json
+
+# e2e run logs
+.e2e/
