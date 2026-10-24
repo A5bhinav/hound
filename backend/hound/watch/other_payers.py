@@ -1,9 +1,11 @@
 """Other payers (AUDIT.md issue 6): count PAYMENTS into the trace's entry layer, never sender addresses.
 
-Entry layer = the trace's depth-0 entry node(s) + non-trace senders into the first-swap layer
-(depth-1 nodes; likely other victims' pass-throughs, capped at 20). For each entry address we
-list inbound payments >= 100 USDT (native ETH counts, at >= MIN_ETH) inside a window ending at
-as_of, excluding anything already a trace node. A sender labelled as an exchange gives the row a
+Entry layer = the scam wallets the victim paid directly (A-1 / B-1 / C-1 in the DOJ replay) +
+non-trace senders into the next layer (likely other victims' pass-throughs, capped at 20). Never
+the victim's own wallet: payments into it are the victim funding herself. For each entry address
+we list inbound payments >= 100 USDT (native ETH counts, at >= MIN_ETH) inside a window ending at
+as_of, excluding trace nodes and the victim's own upstream (anyone who paid a victim wallet in the
+window, e.g. her exchange account). A sender labelled as an exchange gives the row a
 source_exchange; it is never counted as a distinct payer.
 
 UI text: "N payments in from M exchanges into K entry addresses". In the DOJ replay, show
@@ -54,6 +56,14 @@ def _skip_fetch(ch: str, address: str) -> str | None:
     return None
 
 
+def _is_contract(ch: str, address: str) -> bool:
+    try:
+        return chain.is_contract(ch, address)
+    except (chain.ChainAPIError, chain.CacheMiss) as e:
+        log.info("is_contract unknown for %s (%s)", address, type(e).__name__)
+        return False
+
+
 def _fetch(ch: str, address: str, start: int, end: int, token: str) -> list[dict]:
     try:
         if token == "ETH":
@@ -69,11 +79,35 @@ def _fetch(ch: str, address: str, start: int, end: int, token: str) -> list[dict
         return []
 
 
+def _victims(trace: dict) -> set[str]:
+    return {n["address"] for n in trace.get("nodes", []) if n.get("kind") == "victim"}
+
+
+def victim_upstream(trace: dict, start: int, end: int) -> set[str]:
+    """Who paid the victim's own wallet(s) in the window: her exchange account or another wallet of
+    hers. Their payments into the scam are the same victim, never 'other wallets paying in'."""
+    nodes = trace.get("nodes", [])
+    ch = nodes[0]["chain"] if nodes else "ethereum"
+    out: set[str] = set()
+    for v in sorted(_victims(trace)):
+        for token in ("USDT", "ETH" if ch == "ethereum" else None):
+            if token:
+                out |= {t["from"] for t in _fetch(ch, v, start, end, token) if t["to"] == v}
+    return out
+
+
 def entry_layer(trace: dict, start: int, end: int) -> list[str]:
     nodes = trace.get("nodes", [])
+    edges = trace.get("edges", [])
     known = {n["address"] for n in nodes}
-    entry = sorted(n["address"] for n in nodes if n.get("depth") == 0)
-    swap_layer = sorted(n["address"] for n in nodes if n.get("depth") == 1)
+    victims = _victims(trace)
+    entry = sorted({e["to"] for e in edges if e.get("from") in victims and e.get("to") not in victims})
+    if not entry:  # no victim edge in the trace: the shallowest non-victim nodes
+        depths = [n.get("depth") for n in nodes if n["address"] not in victims and n.get("depth") is not None]
+        entry = sorted(n["address"] for n in nodes if depths and n.get("depth") == min(depths)
+                       and n["address"] not in victims)
+    swap_layer = sorted({e["to"] for e in edges if e.get("from") in entry
+                         and e.get("to") not in victims and e.get("to") not in entry})
     ch = nodes[0]["chain"] if nodes else "ethereum"
     senders: dict[str, float] = {}
     for a in swap_layer:
@@ -94,7 +128,7 @@ def payments(trace: dict, window_days: int = 7, as_of: str | None = None) -> lis
     start = end - window_days * 86400
     nodes = trace.get("nodes", [])
     ch = nodes[0]["chain"] if nodes else "ethereum"
-    known = {n["address"] for n in nodes}
+    known = {n["address"] for n in nodes} | victim_upstream(trace, start, end)
     rows: list[dict[str, Any]] = []
     for entry in entry_layer(trace, start, end):
         why = _skip_fetch(ch, entry)
@@ -110,10 +144,14 @@ def payments(trace: dict, window_days: int = 7, as_of: str | None = None) -> lis
                 if t["to"] != entry or t["from"] in known or t["amount"] < minimum:
                     continue
                 lb = chain.label(ch, t["from"])
-                exch = (lb.get("exchange") or lb["name"]) if lb and lb["kind"] in EXCHANGE_KINDS else None
+                if lb and lb["kind"] not in EXCHANGE_KINDS:
+                    continue  # infra / service / sanctioned: not a person paying in
+                if not lb and _is_contract(ch, t["from"]):
+                    continue  # DEX / RFQ desk: the swap leg of victim money, not another payer
+                exch = (lb.get("exchange") or lb["name"]) if lb else None
                 entry_rows.append({
                     "tx_hash": t["tx_hash"], "entry_address": entry, "source_exchange": exch,
-                    "amount": round(t["amount"], 6), "token": t["token"], "time": t["time"], "from": t["from"],
+                    "amount": round(t["amount"], 6), "token": t.get("token", token), "time": t["time"], "from": t["from"],
                     "chain": ch, "window_days": window_days, "window_end": iso(end), "replay": replay,
                     "confidence": 0.7 if exch else 0.6,
                     "threshold": f">= {minimum} {token}" + (" (fixed stand-in for ~100 USD)" if token == "ETH" else ""),

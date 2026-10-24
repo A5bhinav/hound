@@ -36,7 +36,11 @@ def _live_addresses() -> set[str]:
         p = root / "live_addresses.json"
         if p.exists():
             out |= set(json.loads(p.read_text()))
-    return out
+    # public exchange / infrastructure wallets (Coinbase 10, Binance 14, the USDT contract) show up in
+    # live and DOJ data alike; they identify nobody, so they never block a pack
+    from . import labels
+    return {a for a in out if (labels.label("ethereum", a, network=False) or {}).get("kind")
+            not in ("exchange_hot", "infra")}
 
 
 def pack(cache_root: Path | None = None, out_dir: Path | None = None, merge: bool = True,

@@ -3,7 +3,7 @@ BACKEND := $(CURDIR)/backend
 PY ?= $(BACKEND)/.venv/bin/python
 PORT ?= 8000
 
-.PHONY: dev test demo schemas-check
+.PHONY: dev test demo schemas-check e2e
 
 dev:
 	cd $(BACKEND) && $(PY) -m uvicorn hound.api:app --reload --port $(PORT)
@@ -20,3 +20,6 @@ schemas-check:
 	files = sorted(EXAMPLES.glob('*.case.json')) + sorted(EXAMPLES.glob('*.trace.json')); \
 	assert files, f'no examples found in {EXAMPLES}'; \
 	import json; [((validate_case if f.name.endswith('.case.json') else validate_trace)(json.loads(f.read_text())), print('ok', f.name)) for f in files]"
+
+e2e:
+	PY=$(PY) $(PY) scripts/e2e.py
