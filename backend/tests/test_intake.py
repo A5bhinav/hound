@@ -101,3 +101,67 @@ def test_concurrent_upload_refused_while_validating():
     code = client.post("/intake/start", json={}).json()["case_code"]
     intake.SESSIONS[code]["status"] = "validating"
     assert client.post(f"/intake/{code}/screenshot", data={"typed": TX}).status_code == 409
+
+
+def _poll_done(job_id, timeout=10):
+    import time
+    end = time.time() + timeout
+    while time.time() < end:
+        body = client.get(f"/traces/{job_id}").json()
+        if body.get("status") != "running":
+            return body
+        time.sleep(0.05)
+    raise AssertionError("trace never finished")
+
+
+def test_approve_after_trace_feeds_the_watchlist_without_a_retrace(monkeypatch):
+    """The operator reviews the trace, then approves: that approval must register the trace it saw
+    (before, approval only added the id to TRUSTED and the reviewed trace never reached /check)."""
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    registered = []
+    monkeypatch.setattr(api, "register_trace", lambda trace: registered.append(trace["case_id"]) or 0)
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    cid = client.post(f"/intake/{code}/screenshot", data={"typed": f"hash {TX} 11,082.48 USDT"}).json()["case_id"]
+    trace = _poll_done(client.post(f"/cases/{cid}/trace").json()["trace_id"])
+    assert trace["status"] in ("done", "partial")
+    assert cid not in registered, "a validated but unapproved intake case must not feed the watchlist"
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}).json()["status"] == "approved"
+    assert registered == [cid]
+    api.TRUSTED.discard(cid)
+
+
+def test_approve_before_trace_registers_on_the_trace(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    registered = []
+    monkeypatch.setattr(api, "register_trace", lambda trace: registered.append(trace["case_id"]) or 0)
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    cid = client.post(f"/intake/{code}/screenshot", data={"typed": f"hash {TX} 11,082.48 USDT"}).json()["case_id"]
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}).json()["status"] == "approved"
+    assert registered == []  # nothing traced yet, nothing to register
+    _poll_done(client.post(f"/cases/{cid}/trace").json()["trace_id"])
+    assert registered == [cid]
+    api.TRUSTED.discard(cid)
+
+
+def test_tx_hash_is_not_read_as_an_address_or_amount():
+    """A 64-hex hash contains a 40-hex run; that must never become the destination address, and
+    digits at the end of a hash must never become the amount."""
+    h = "0x" + "ab" * 30 + "1234"
+    ex = intake.extract_from_text(f"tx {h} USDT")
+    assert ex["tx_hash"] == h and "to" not in ex and "amount" not in ex
+    to = "0x" + "2f" * 20
+    ex = intake.extract_from_text(f"sent 500 USDT to {to}, tx {h}")
+    assert ex["to"] == to and ex["amount"] == 500 and ex["token"] == "USDT"
+
+
+def test_unreachable_chain_says_so_instead_of_could_not_read(monkeypatch):
+    """Offline (readonly cache miss) or chain API down: the victim is told the check could not run,
+    not that their screenshot was unreadable."""
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", lambda *a, **k: (_ for _ in ()).throw(chain.CacheMiss("readonly")))
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    r = client.post(f"/intake/{code}/screenshot", data={"typed": TX})
+    assert r.status_code == 200 and r.json()["status"] == "needs_retake"
+    assert "reach the blockchain" in r.json()["message"]
