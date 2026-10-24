@@ -2,7 +2,7 @@
 
 **Paste this whole file into your Claude / coding agent.** It contains the problem, the product, the repo layout, the shared data formats, every interface between our parts, and your personal task list. Your agent should read §1 to §8 for context, then do **your section in §9**, building against the interfaces in §8. If your part needs something from someone else that isn't ready, build against the example files and stubs in §8.4 instead of waiting.
 
-Team: Ishaan Pandey (`ish-cs`), Abhinav Jinka (`A5bhinav`), Aaryan Gandhi (`AaryanGG`), CK Duan (`chengkaiduan`). Repo: **github.com/A5bhinav/hound** (public). Last updated Fri Oct 23, 2026, ~10:30 PM. v3 = v2 (Jinka's and CK's reviews of v1 folded in) + a full role split with no gaps + interfaces and schemas. The earlier Hound idea (an AP payments agent) is dead; the name stays, the product is new.
+Team: Ishaan Pandey (`ish-cs`), Abhinav Jinka (`A5bhinav`), Aaryan Gandhi (`AaryanGG`), CK Duan (`chengkaiduan`). Repo: **github.com/A5bhinav/hound** (public). Last updated Fri Oct 23, 2026, 9:35 PM. **Skeleton is on `main`**: schemas, real-data fixtures, every route running on stubs, tests. v3 = v2 (Jinka's and CK's reviews of v1 folded in) + a full role split with no gaps + interfaces and schemas. The earlier Hound idea (an AP payments agent) is dead; the name stays, the product is new.
 
 ---
 
@@ -139,10 +139,11 @@ No phone numbers or real names in committed files.
   "other_payers": [
     { "address": "0x...", "amount": 0.0, "window_days": 7, "source_exchange": "string | null", "confidence": 0.7 }
   ],
-  "stats": { "api_calls": 0, "cache_hits": 0, "empty_results": 0, "elapsed_ms": 0 }
+  "stats": { "api_calls": 0, "cache_hits": 0, "empty_results": 0, "elapsed_ms": 0 },
+  "audit_log": [ { "t": "ISO", "step": "fetch | cache_hit | empty_result | hop | skip_branch | cap_hit | stop | classify | freeze_check | error", "address": "0x... | null", "detail": "string" } ]
 }
 ```
-Edges are aggregated per (from, to) pair; `tx_hashes` lists every underlying transfer. `other_payers` is filled by Jinka's `other_payers()` after the engine runs.
+`audit_log` is the Hyphenate "clean record of its work": every step in order, including skipped branches and caps hit. Edges are aggregated per (from, to) pair; `tx_hashes` lists every underlying transfer. `other_payers` is filled by Jinka's `other_payers()` after the engine runs.
 
 ### 8.4 Python interfaces (function names are fixed; internals are yours)
 ```python
@@ -213,6 +214,7 @@ Your agent works through your list top to bottom. **"Done"** means merged into `
 7. `chain/tron.py`: the same interface via TronGrid (Should tier, after Ethereum works).
 8. `watch/other_payers.py`: senders into the trace's scam wallets in the last N days, amounts, source exchange (look one hop back for an exchange label).
 9. `watch/watchlist.py` + `check.py`: the rules in §4.5. Done = `check()` on A-7 returns hold with evidence; on a Binance hot wallet it returns allow.
+10. **x402 (Should, also wins the Coinbase track):** pay-per-call middleware on `GET /check`.
 
 ### 9.3 CK: proof, Chainabuse, intake, fact-checking
 1. **Tonight:** get `CHAINABUSE_API_KEY`, a Twilio trial (verify your phone) and a Cartesia key. **Find the demo's gold ending**: a fresh case from this month's Chainabuse reports (USDT, Ethereum preferred, Tron OK) where reported money is still sitting unfrozen. Save it to `data/cases/`. If none by Sat 10 AM, tell Ishaan; fallback = "landed at exchange X".
@@ -220,8 +222,9 @@ Your agent works through your list top to bottom. **"Done"** means merged into `
 3. `data/doj/holdout.json`: every address in the complaint (full where we have it, prefix…suffix where not) + DOJ's per-wallet totals.
 4. `proof/doj_ohnd.py` → `doj_scoreboard()`: run the engine from the victims' first USDT addresses and compare endpoints and per-wallet totals with DOJ ¶¶ 83-85.
 5. `proof/backtest.py` → `freeze_backtest()`. Definition: **median hours from first USDT inflow to the AddedBlackList event, over N frozen Ethereum addresses in 2025.** On-screen caveat: it only measures addresses Tether did freeze.
-6. `proof/chainabuse.py` + `proof/scan.py` → `weekend_scan()`. **Budget: the free Chainabuse key is 10 calls/month × 50 reports ≈ 500 reports for the whole weekend.** Cache every response; CK applied for partner tier (don't count on it).
-7. **Sat afternoon (Should tier):** `intake/` voice line (Twilio number → Cartesia voice agent collects the story → SMS upload link) and `case_from_screenshot` (Claude vision extracts the tx hash + addresses from a send-screen screenshot).
+6. **Apify actor (Should, also wins the Apify track):** scrape public scam-victim posts for tx hashes / addresses into `data/cases/` candidates, so the gold-case hunt doesn't burn the Chainabuse quota.
+7. `proof/chainabuse.py` + `proof/scan.py` → `weekend_scan()`. **Budget: the free Chainabuse key is 10 calls/month × 50 reports ≈ 500 reports for the whole weekend.** Cache every response; CK applied for partner tier (don't count on it).
+8. **Sat afternoon (Should tier):** `intake/` voice line (Twilio number → Cartesia voice agent collects the story → SMS upload link) and `case_from_screenshot` (Claude vision extracts the tx hash + addresses from a send-screen screenshot).
 
 ### 9.4 Aaryan: UI, packet page, video, Devpost
 1. **Tonight:** `web/` Next.js scaffold reading `HOUND_API_URL`. Build against `examples/ohnd_replay.trace.json` until the API is live.
@@ -241,15 +244,24 @@ Your agent works through your list top to bottom. **"Done"** means merged into `
 - **Last:** Ethereum-to-Tron hop, more cases.
 - Feature freeze **Sat 10 PM**. Video Sat night. Devpost draft **Sat 11:30 PM**. Bug bash + 5 pitch rehearsals Sun 6-8:30 AM. **Hard deadline Sun 9:00 AM** (at the venue by 8). Judging Sun 10:30 AM-12:30 PM, **all four present** or we're not judged.
 
-## 11. Prize stack
-| Track | Hound's real job there |
-|---|---|
-| Overall / Most Technically Advanced / Hacker's Choice | Tracing engine checked blind against a real DOJ case + live weekend findings |
-| **Best People-First Social Impact** | Older scam victims, prevention |
-| Microsoft "Built for the Real World" | Responsible design, real data, path to exchanges |
-| Cartesia | Phone intake for people who can't navigate a crypto app |
-| Armadin Best Security Hack | Fraud tracing + exchange hold |
-Dropped: Nessie, Hyphenate, Elastic, Coinbase x402 (bolt-ons). Ask #0-ask-directors whether there's a cap on tracks per project.
+## 11. Prize stack (from the official hacker guide)
+**Tier 1: Hound fits as designed. Showcase it in the pitch, README and Devpost; no extra build.**
+| Track | Prize | How Hound wins it |
+|---|---|---|
+| **Hyphenate: Autonomous Systems for Finance** | **$8K / $5K / $3K + expedited interviews (top 5)** | Their 4 questions: **Real enough?** Blind against a real DOJ case, real chain data. **Would you hire it?** Seat = *exchange fraud / AML investigator*: read-only access, can't move money, cites every hop (`audit_log`), warns instead of holding when unsure. **Something new?** Tracing that starts from the victim and spreads the warning beyond reported addresses. **The moment:** recovering the addresses DOJ redacted, then reaching DOJ's seized wallets blind. They want: a demo video that **opens with the moment**, a live demo where **they may try their own scenario** (the engine must return a partial trace with honest dead ends, never crash), one line on the seat, and what's real vs simulated. |
+| Microsoft "Built for the Real World" | Surface laptop each + FDE tech talk | Customer understanding (victims, exchanges), measurable usefulness (scoreboard + backtest numbers), path to production (exchange check API), responsible design (§12), end to end |
+| Cartesia | Meta glasses (TBD) | Voice is the front door for people who can't use a crypto app. 25% of judging is accessibility + responsible use. README must list the Cartesia features used and known limitations |
+| Armadin Best Security Hack | TBD (criteria "coming soon") | Fraud tracing + exchange hold |
+| Overall / Most Technically Complex / **Best People-First** / Hacker's Choice | MacBook / keyboard / Apple Watch / mouse | Core build |
+
+**Tier 2: cheap adds, each does real work (Should tier, after the Must tier works)**
+| Track | Prize | Integration | Owner |
+|---|---|---|---|
+| **Apify** | $2K / $1K / $800 / $400 / $400 + $400 Best Actor | An Apify actor that scrapes public scam-victim posts (e.g. r/Scams) for tx hashes and addresses. Feeds the gold-case hunt and the weekend scan, and saves the Chainabuse quota (~500 reports all weekend) | CK |
+| **Coinbase x402** | $500 USDC per member ($2K) | Pay-per-call on `GET /check` so any wallet or AI agent pays a fraction of a cent to check an address before sending. This is the business model, not a bolt-on | Jinka, after `check()` works |
+| CRS: Identity / Fraud Innovation (+ Best Financial AI Agent $500) | FDE interview each | On a warn at the exchange hold, check the customer's CRS **sandbox test identity** for vulnerability signals (60+, sudden large liquidation) and upgrade warn → hold | Optional, Sat evening if on schedule |
+
+Skipped: Nessie, Elastic, Fetch.ai, Factory Droid, Meta, Visa, CREAO, Convex, Moss, SpaceXAI, Bitdeer, Figma, Notability. Ask #0-ask-directors whether there's a cap on tracks per project.
 
 ## 12. Honesty rules (shown on screen, enforced in code)
 - Confidence on every hop, every dead end visible, "Tether already froze this" badge.

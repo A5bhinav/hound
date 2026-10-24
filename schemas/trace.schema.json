@@ -4,117 +4,426 @@
   "title": "Trace",
   "description": "Output of the trace engine. Input to the UI, packet, watchlist and proof. See BRIEF.md 8.3. Amounts are whole token units, times ISO 8601 UTC, Ethereum addresses lowercase.",
   "type": "object",
-  "required": ["trace_id", "case_id", "created_at", "method", "nodes", "edges", "endpoints", "other_payers", "stats"],
+  "required": [
+    "trace_id",
+    "case_id",
+    "created_at",
+    "method",
+    "nodes",
+    "edges",
+    "endpoints",
+    "other_payers",
+    "stats",
+    "audit_log"
+  ],
   "additionalProperties": false,
   "properties": {
-    "trace_id": { "type": "string", "minLength": 1 },
-    "case_id": { "type": "string", "minLength": 1 },
-    "created_at": { "type": "string", "format": "date-time" },
-    "replay": { "type": "boolean", "description": "true for historical cases (UI must say replay, never 'sitting there right now')" },
+    "trace_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "replay": {
+      "type": "boolean",
+      "description": "true for historical cases (UI must say replay, never 'sitting there right now')"
+    },
     "method": {
       "type": "object",
-      "required": ["accounting", "max_hops", "max_branches_per_node", "min_amount"],
+      "required": [
+        "accounting",
+        "max_hops",
+        "max_branches_per_node",
+        "min_amount"
+      ],
       "additionalProperties": false,
       "properties": {
-        "accounting": { "enum": ["FIFO"] },
-        "max_hops": { "type": "integer", "minimum": 1 },
-        "max_branches_per_node": { "type": "integer", "minimum": 1 },
-        "min_amount": { "type": "number", "minimum": 0 }
+        "accounting": {
+          "enum": [
+            "FIFO"
+          ]
+        },
+        "max_hops": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_branches_per_node": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_amount": {
+          "type": "number",
+          "minimum": 0
+        }
       }
     },
-    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
-    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
-    "endpoints": { "type": "array", "items": { "$ref": "#/$defs/endpoint" } },
-    "other_payers": { "type": "array", "items": { "$ref": "#/$defs/other_payer" } },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "endpoints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/endpoint"
+      }
+    },
+    "other_payers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/other_payer"
+      }
+    },
     "stats": {
       "type": "object",
-      "required": ["api_calls", "cache_hits", "empty_results", "elapsed_ms"],
+      "required": [
+        "api_calls",
+        "cache_hits",
+        "empty_results",
+        "elapsed_ms"
+      ],
       "additionalProperties": false,
       "properties": {
-        "api_calls": { "type": "integer", "minimum": 0 },
-        "cache_hits": { "type": "integer", "minimum": 0 },
-        "empty_results": { "type": "integer", "minimum": 0 },
-        "elapsed_ms": { "type": "integer", "minimum": 0 }
+        "api_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cache_hits": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "empty_results": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "audit_log": {
+      "type": "array",
+      "description": "Hyphenate 'clean record of its work': every engine step, in order. Never omit skipped branches or caps hit.",
+      "items": {
+        "type": "object",
+        "required": [
+          "t",
+          "step",
+          "detail"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "t": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "step": {
+            "enum": [
+              "fetch",
+              "cache_hit",
+              "empty_result",
+              "hop",
+              "skip_branch",
+              "cap_hit",
+              "stop",
+              "classify",
+              "freeze_check",
+              "error"
+            ]
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
       }
     }
   },
   "$defs": {
-    "chain": { "enum": ["ethereum", "tron"] },
+    "chain": {
+      "enum": [
+        "ethereum",
+        "tron"
+      ]
+    },
     "node": {
       "type": "object",
-      "required": ["address", "chain", "kind", "depth"],
+      "required": [
+        "address",
+        "chain",
+        "kind",
+        "depth"
+      ],
       "additionalProperties": false,
       "properties": {
-        "address": { "type": "string", "minLength": 1 },
-        "chain": { "$ref": "#/$defs/chain" },
-        "kind": { "enum": ["victim", "intermediate", "exchange_deposit", "exchange_hot", "holding", "mixer", "bridge", "unknown"] },
-        "label": { "type": ["string", "null"] },
-        "label_source": { "enum": ["exchange_list", "ofac", "classifier", null] },
+        "address": {
+          "type": "string",
+          "minLength": 1
+        },
+        "chain": {
+          "$ref": "#/$defs/chain"
+        },
+        "kind": {
+          "enum": [
+            "victim",
+            "intermediate",
+            "exchange_deposit",
+            "exchange_hot",
+            "holding",
+            "mixer",
+            "bridge",
+            "unknown"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label_source": {
+          "enum": [
+            "exchange_list",
+            "ofac",
+            "classifier",
+            null
+          ]
+        },
         "classifier": {
-          "type": ["object", "null"],
-          "required": ["kind", "confidence", "reasons"],
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "kind",
+            "confidence",
+            "reasons"
+          ],
           "additionalProperties": false,
           "properties": {
-            "kind": { "type": "string" },
-            "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-            "reasons": { "type": "array", "items": { "type": "string" } }
+            "kind": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         },
-        "balance_usdt": { "type": ["number", "null"] },
+        "balance_usdt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
         "frozen": {
-          "type": ["object", "null"],
-          "required": ["is_frozen"],
+          "type": [
+            "object",
+            "null"
+          ],
+          "required": [
+            "is_frozen"
+          ],
           "additionalProperties": false,
           "properties": {
-            "is_frozen": { "type": "boolean" },
-            "frozen_at": { "type": ["string", "null"], "format": "date-time" },
-            "freeze_tx": { "type": ["string", "null"] }
+            "is_frozen": {
+              "type": "boolean"
+            },
+            "frozen_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "freeze_tx": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         },
-        "depth": { "type": "integer", "minimum": 0 }
+        "depth": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "edge": {
       "type": "object",
-      "required": ["from", "to", "token", "amount", "attributed_amount", "tx_hashes", "first_time", "last_time", "hop", "confidence", "method"],
+      "required": [
+        "from",
+        "to",
+        "token",
+        "amount",
+        "attributed_amount",
+        "tx_hashes",
+        "first_time",
+        "last_time",
+        "hop",
+        "confidence",
+        "method"
+      ],
       "additionalProperties": false,
       "properties": {
-        "from": { "type": "string" },
-        "to": { "type": "string" },
-        "token": { "type": "string" },
-        "amount": { "type": "number", "minimum": 0, "description": "total moved on this (from, to) pair" },
-        "attributed_amount": { "type": "number", "minimum": 0, "description": "FIFO share traced to the victim(s); display only" },
-        "tx_hashes": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-        "first_time": { "type": "string", "format": "date-time" },
-        "last_time": { "type": "string", "format": "date-time" },
-        "hop": { "type": "integer", "minimum": 1 },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "method": { "enum": ["direct", "peel", "consolidation", "swap", "bridge_match"] }
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "total moved on this (from, to) pair"
+        },
+        "attributed_amount": {
+          "type": "number",
+          "minimum": 0,
+          "description": "FIFO share traced to the victim(s); display only"
+        },
+        "tx_hashes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "first_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "hop": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "method": {
+          "enum": [
+            "direct",
+            "peel",
+            "consolidation",
+            "swap",
+            "bridge_match"
+          ]
+        }
       }
     },
     "endpoint": {
       "type": "object",
-      "required": ["address", "reason", "victim_inflow", "freezable"],
+      "required": [
+        "address",
+        "reason",
+        "victim_inflow",
+        "freezable"
+      ],
       "additionalProperties": false,
       "properties": {
-        "address": { "type": "string" },
-        "reason": { "enum": ["exchange", "holding", "frozen", "dead_end", "dust", "max_hops"] },
-        "victim_inflow": { "type": "number", "minimum": 0 },
-        "balance_usdt": { "type": ["number", "null"] },
-        "freezable": { "type": "boolean", "description": "true only if balance_usdt >= victim_inflow share and not already frozen" },
-        "exchange": { "type": ["string", "null"] }
+        "address": {
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "exchange",
+            "holding",
+            "frozen",
+            "dead_end",
+            "dust",
+            "max_hops"
+          ]
+        },
+        "victim_inflow": {
+          "type": "number",
+          "minimum": 0
+        },
+        "balance_usdt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "freezable": {
+          "type": "boolean",
+          "description": "true only if balance_usdt >= victim_inflow share and not already frozen"
+        },
+        "exchange": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "other_payer": {
       "type": "object",
-      "required": ["address", "amount", "window_days", "confidence"],
+      "required": [
+        "address",
+        "amount",
+        "window_days",
+        "confidence"
+      ],
       "additionalProperties": false,
       "properties": {
-        "address": { "type": "string" },
-        "amount": { "type": "number", "minimum": 0 },
-        "window_days": { "type": "integer", "minimum": 1 },
-        "source_exchange": { "type": ["string", "null"] },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        "address": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "window_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source_exchange": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       }
     }
   }

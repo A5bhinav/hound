@@ -670,5 +670,13 @@
     "cache_hits": 0,
     "empty_results": 0,
     "elapsed_ms": 0
-  }
+  },
+  "audit_log": [
+    {
+      "t": "2026-10-24T05:00:00Z",
+      "step": "stop",
+      "address": null,
+      "detail": "fixture built from BigQuery transfers among the 9 known path wallets; not engine output"
+    }
+  ]
 }
