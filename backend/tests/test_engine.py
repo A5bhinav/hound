@@ -35,7 +35,12 @@ def test_reaches_doj_seized_wallets_blind():
     ends = {e["address"]: e for e in trace["endpoints"]}
     a_branch_finals = set(FINALS) - {A9}
     assert a_branch_finals <= set(ends), f"missing finals: {a_branch_finals - set(ends)}"
-    assert all(ends[a]["reason"] == "frozen" and not ends[a]["freezable"] for a in a_branch_finals)
+    # Replay: freezes are hidden from the engine, so the finals end as holding (money still
+    # there at the cutoff block). The freeze is attached to the node for the UI to reveal.
+    nodes = {n["address"]: n for n in trace["nodes"]}
+    for a in a_branch_finals:
+        assert ends[a]["reason"] == "holding" and ends[a]["victim_remaining"] > 0
+        assert nodes[a]["frozen"]["is_frozen"] and not ends[a]["freezable"]
     assert A6 in {n["address"] for n in trace["nodes"]}, "must pass through the A-6 consolidation"
 
 
@@ -49,21 +54,48 @@ def test_taint_is_conserved():
     assert abs(victim_out - seeded) < 1e-3
 
 
+def test_conservation_per_seed_to_the_micro_unit():
+    # Every seed's money ends somewhere visible: endpoints (holding, capped, dust, exchange,
+    # max_hops) plus what is still sitting in intermediate wallets.
+    from hound.engine.fifo import propagate
+    trace = run()
+    for seed in trace["seeds"]:
+        sid = seed["seed_id"]
+        ended = sum(e["attributed_by_seed"].get(sid, 0) for e in trace["endpoints"] if e["reason"] != "holding")
+        holding = sum(e["attributed_by_seed"].get(sid, 0) for e in trace["endpoints"] if e["reason"] == "holding")
+        assert ended + holding <= seed["amount"] + 1e-6
+
+
+def test_reruns_are_identical():
+    def stable(t):
+        t = dict(t)
+        t.pop("created_at"); t.pop("stats"); t.pop("audit_log")
+        return t
+    assert stable(run()) == stable(run())
+
+
 def test_audit_log_records_every_step():
     steps = {e["step"] for e in run()["audit_log"]}
-    assert {"fetch", "freeze_check", "hop", "stop"} <= steps
+    assert {"fetch", "freeze_check", "hop", "stop", "classify"} <= steps
+
+
+def test_poison_lookalikes_are_never_nodes():
+    # Real zero-value lookalikes of A-6 (58e…b2d0dcb) exist in the data (AUDIT N2).
+    nodes = {n["address"] for n in run()["nodes"]}
+    zero = {t["to"] for t in TRANSFERS if t["amount"] == 0} | {t["from"] for t in TRANSFERS if t["amount"] == 0}
+    assert not (nodes & (zero - {n for n in nodes if any(t["amount"] > 0 and n in (t["from"], t["to"]) for t in TRANSFERS)}))
 
 
 def test_fifo_takes_oldest_first():
     from collections import deque
-    q = deque([[100.0, 0.0], [50.0, 50.0]])
-    assert _dequeue(q, 100.0) == 0.0          # clean lot leaves first
-    assert _dequeue(q, 50.0) == 50.0
+    q = deque([[100, None], [50, "s1"]])
+    assert _dequeue(q, 100) == [(None, 100)]      # clean lot leaves first
+    assert _dequeue(q, 80) == [("s1", 50), (None, 30)]  # then the seed, then pre-window money
 
 
 def test_cycles_do_not_loop_forever():
     a, b = "0xa", "0xb"
     ts = [{"tx_hash": f"t{i}", "from": x, "to": y, "amount": 10.0, "time": f"2024-01-0{i+1}T00:00:00Z", "block": i}
           for i, (x, y) in enumerate([("0xv", a), (a, b), (b, a), (a, b)])]
-    r = propagate(ts, {a, b}, {("t0", a)})
-    assert abs(r["remaining_tainted"][b] - 10.0) < 1e-9
+    r = propagate(ts, {a, b}, {("t0", a): "s1"})
+    assert r["remaining"][b] == {"s1": 10_000_000}

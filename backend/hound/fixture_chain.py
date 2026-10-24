@@ -21,11 +21,22 @@ def _all():
     return json.loads((EXAMPLES / "ohnd_transfers.json").read_text())
 
 
-def get_transfers(chain, address, token=None, before=None, after=None):
+def get_transfers(chain, address, token=None, as_of=None, after=None):
+    """as_of: a block number (inclusive) or an ISO time."""
     if chain != "ethereum":
         raise ValueError(f"fixture chain only has ethereum data, asked for {chain}")
-    return [t for t in _all() if address in (t["from"], t["to"])
-            and (after is None or t["time"] >= after) and (before is None or t["time"] <= before)]
+    out = []
+    for t in _all():
+        if address not in (t["from"], t["to"]) or t["amount"] <= 0 or t["from"] == t["to"]:
+            continue  # zero-value transfers are address-poisoning lookalikes (AUDIT N2)
+        if after is not None and t["time"] < after:
+            continue
+        if isinstance(as_of, int) and t["block"] > as_of:
+            continue
+        if isinstance(as_of, str) and t["time"] > as_of:
+            continue
+        out.append(t)
+    return out
 
 
 def label(chain, address):

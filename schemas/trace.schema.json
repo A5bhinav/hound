@@ -14,7 +14,10 @@
     "endpoints",
     "other_payers",
     "stats",
-    "audit_log"
+    "audit_log",
+    "status",
+    "source",
+    "seeds"
   ],
   "additionalProperties": false,
   "properties": {
@@ -60,6 +63,28 @@
         "min_amount": {
           "type": "number",
           "minimum": 0
+        },
+        "max_api_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "engine_version": {
+          "type": "string"
+        },
+        "as_of_block": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "freeze_visibility": {
+          "enum": [
+            "visible",
+            "hidden"
+          ]
+        },
+        "confidence_model": {
+          "type": "object"
         }
       }
     },
@@ -153,6 +178,47 @@
           },
           "detail": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "status": {
+      "enum": [
+        "done",
+        "partial",
+        "error"
+      ]
+    },
+    "source": {
+      "enum": [
+        "engine",
+        "hand_built"
+      ],
+      "description": "the scoreboard refuses hand_built traces"
+    },
+    "seeds": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "seed_id",
+          "tx_hash",
+          "token",
+          "amount"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "seed_id": {
+            "type": "string"
+          },
+          "tx_hash": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
           }
         }
       }
@@ -344,6 +410,14 @@
             "swap",
             "bridge_match"
           ]
+        },
+        "attributed_by_seed": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "seed_id -> amount"
         }
       }
     },
@@ -367,7 +441,13 @@
             "frozen",
             "dead_end",
             "dust",
-            "max_hops"
+            "max_hops",
+            "capped",
+            "high_volume",
+            "budget",
+            "time_cap",
+            "swap_unresolved",
+            "tether_destroyed"
           ]
         },
         "victim_inflow": {
@@ -389,6 +469,19 @@
             "string",
             "null"
           ]
+        },
+        "attributed_by_seed": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "seed_id -> amount"
+        },
+        "victim_remaining": {
+          "type": "number",
+          "minimum": 0,
+          "description": "victim money still sitting here at the end of the data window"
         }
       }
     },

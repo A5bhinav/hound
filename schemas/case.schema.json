@@ -4,52 +4,164 @@
   "title": "Case",
   "description": "A victim report. Output of intake, input to the trace engine. See BRIEF.md 8.2. No phone numbers or real names in committed files.",
   "type": "object",
-  "required": ["case_id", "created_at", "source", "sends", "status"],
+  "required": [
+    "case_id",
+    "created_at",
+    "source",
+    "sends",
+    "status"
+  ],
   "additionalProperties": false,
   "properties": {
-    "case_id": { "type": "string", "minLength": 1 },
-    "created_at": { "type": "string", "format": "date-time" },
-    "source": { "enum": ["phone", "screenshot", "chainabuse", "doj_replay"] },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "enum": [
+        "phone",
+        "screenshot",
+        "chainabuse",
+        "doj_replay"
+      ]
+    },
     "victim": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "alias": { "type": "string" },
-        "age_band": { "type": "string" },
-        "exchange_used": { "type": ["string", "null"] }
+        "alias": {
+          "type": "string"
+        },
+        "age_band": {
+          "type": "string"
+        },
+        "exchange_used": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "story": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "scam_app": { "type": ["string", "null"] },
-        "platform": { "type": ["string", "null"] },
-        "first_contact": { "type": ["string", "null"] },
-        "summary": { "type": ["string", "null"] }
+        "scam_app": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "platform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "first_contact": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "sends": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/send" }
+      "items": {
+        "$ref": "#/$defs/send"
+      }
     },
-    "status": { "enum": ["intake", "tracing", "traced", "packet_ready"] }
+    "status": {
+      "enum": [
+        "intake",
+        "tracing",
+        "traced",
+        "packet_ready"
+      ]
+    },
+    "data_cutoff_block": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "replay: every fetch is bounded to this block (AUDIT N1)"
+    },
+    "freeze_visibility": {
+      "enum": [
+        "visible",
+        "hidden"
+      ],
+      "description": "hidden = replay: the engine never uses freezes as stops; the UI reveals them after the run"
+    },
+    "as_of": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "story date for the hold counterfactual (replay) or the live run time"
+    }
   },
   "$defs": {
-    "chain": { "enum": ["ethereum", "tron"] },
+    "chain": {
+      "enum": [
+        "ethereum",
+        "tron"
+      ]
+    },
     "send": {
       "type": "object",
-      "required": ["chain", "tx_hash", "from", "to", "token", "amount", "time"],
+      "required": [
+        "chain",
+        "tx_hash",
+        "from",
+        "to",
+        "token",
+        "amount",
+        "time"
+      ],
       "additionalProperties": false,
       "properties": {
-        "chain": { "$ref": "#/$defs/chain" },
-        "tx_hash": { "type": "string", "minLength": 1 },
-        "from": { "type": "string", "minLength": 1 },
-        "to": { "type": "string", "minLength": 1 },
-        "token": { "type": "string" },
-        "amount": { "type": "number", "exclusiveMinimum": 0 },
-        "time": { "type": "string", "format": "date-time" }
+        "chain": {
+          "$ref": "#/$defs/chain"
+        },
+        "tx_hash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "token": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     }
   }
