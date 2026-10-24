@@ -13,18 +13,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from hound.proof.chainabuse import chainabuse_reports
+from hound.proof.chainabuse import chainabuse_reports, group_by_address
 from hound.proof.ethcall import usdt_balance, usdt_is_blacklisted
 
 ROOT = Path(__file__).resolve().parents[3]
-OUT = ROOT / "data" / "cases" / "gold_candidates.json"
+OUT = ROOT / "data" / "cases_live" / "scan_latest.json"  # gitignored: live addresses never public
 CATEGORIES = ("PIGBUTCHERING", "ROMANCE", "FAKE_RETURNS", "OTHER_INVESTMENT_SCAM")
 
 
 def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = None, min_usdt: float = 100.0) -> dict[str, Any]:
     reported: dict[str, dict[str, Any]] = {}
     for cat in categories:
-        for r in chainabuse_reports(chain="ethereum", since=since, category=cat):
+        for r in group_by_address(chainabuse_reports(chain="ethereum", since=since, category=cat)):
             cur = reported.setdefault(r["address"], r)
             if cur is not r:
                 cur["report_count"] += r["report_count"]

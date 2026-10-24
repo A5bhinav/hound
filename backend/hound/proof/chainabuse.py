@@ -44,6 +44,8 @@ def _budget() -> dict[str, Any]:
 
 
 def _spend() -> None:
+    if os.environ.get("HOUND_CHAINABUSE_SPEND") != "1":
+        raise ChainabuseBudgetExceeded("refusing to spend Chainabuse quota: set HOUND_CHAINABUSE_SPEND=1 for this one run")
     b = _budget()
     month = datetime.now(timezone.utc).strftime("%Y-%m")
     if b["month"] != month:
@@ -58,6 +60,8 @@ def _spend() -> None:
 
 def get_reports(**params: Any) -> dict[str, Any]:
     """Raw GET /reports. Cached forever by query string; one budget unit per uncached call."""
+    if "address" in params and params["address"] is not None:
+        raise ValueError("per-address Chainabuse calls are banned (AUDIT 17): hunt candidates on the website, query by category only")
     clean = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in params.items() if v is not None}
     qs = urllib.parse.urlencode(sorted(clean.items()))
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -70,41 +74,53 @@ def get_reports(**params: Any) -> dict[str, Any]:
     with urllib.request.urlopen(req, timeout=60) as r:
         data = json.load(r)
     json.dump({"fetched_at": datetime.now(timezone.utc).isoformat(), "query": clean, "response": data}, open(cpath, "w"))
+    ledger = CACHE_DIR / "ledger.json"
+    rows = json.load(open(ledger)) if ledger.exists() else []
+    rows.append({"at": datetime.now(timezone.utc).isoformat(), "query": clean, "count": data.get("count"), "cache_file": cpath.name})
+    json.dump(rows, open(ledger, "w"), indent=1)
     print(f"[chainabuse] {qs} -> {data.get('count')} reports (budget {_budget()['calls']}/10)")
     return {"fetched_at": datetime.now(timezone.utc).isoformat(), "query": clean, "response": data}
 
 
 def chainabuse_reports(chain: str | None = None, since: str | None = None, category: str | None = None,
                        per_page: int = 50, page: int = 1) -> list[dict[str, Any]]:
-    """§8.4: list of {address, chain, category, reported_at, report_count, confidence}.
-
-    Aggregates per address across the returned reports. confidence: 0.9 if any
-    report is checked by Chainabuse moderators, 0.7 if from a trusted contributor,
-    else 0.5. report_count counts reports in THIS response naming the address.
+    """AUDIT 17 contract: one row per (report, address):
+    {report_id, address, chain, category, reported_at, checked, trusted, claimed_losses[]}.
+    report_count is NOT a field here; callers compute it by grouping on address
+    (see scan.group_by_address). Never pass address=; category-only queries.
     """
     if since is None:
         since = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00Z")
     res = get_reports(chain=CHAIN_MAP.get(chain, chain) if chain else None, since=since, category=category,
                       perPage=per_page, page=page, orderByField="CREATED_AT", orderByDirection="ASC")
-    agg: dict[tuple[str, str], dict[str, Any]] = {}
+    rows: list[dict[str, Any]] = []
     for rep in res["response"].get("reports", []):
         for a in rep.get("addresses", []):
             if not a.get("address") or not a.get("chain"):
                 continue
             ch = CHAIN_BACK.get(a["chain"], a["chain"].lower())
             addr = a["address"].lower() if ch == "ethereum" else a["address"]
-            key = (ch, addr)
-            cur = agg.setdefault(key, {"address": addr, "chain": ch, "category": rep.get("scamCategory"),
-                                        "reported_at": rep["createdAt"], "report_count": 0, "confidence": 0.5,
-                                        "report_ids": [], "losses_usd": 0.0})
-            cur["report_count"] += 1
-            cur["report_ids"].append(rep["id"])
-            cur["reported_at"] = min(cur["reported_at"], rep["createdAt"])
-            if rep.get("checked"):
-                cur["confidence"] = max(cur["confidence"], 0.9)
-            elif rep.get("trusted"):
-                cur["confidence"] = max(cur["confidence"], 0.7)
-            for loss in rep.get("losses", []) or []:
-                if loss.get("asset") == "USD":
-                    cur["losses_usd"] += float(loss.get("amount") or 0)
-    return sorted(agg.values(), key=lambda x: (-x["report_count"], x["reported_at"]))
+            rows.append({"report_id": rep["id"], "address": addr, "chain": ch, "category": rep.get("scamCategory"),
+                         "reported_at": rep["createdAt"], "checked": bool(rep.get("checked")), "trusted": bool(rep.get("trusted")),
+                         "claimed_losses": [{"amount": l.get("amount"), "asset": l.get("asset")} for l in (rep.get("losses") or [])]})
+    return rows
+
+
+def group_by_address(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Dedupe report rows into one entry per (chain, address) with report_count and a confidence
+    derived from moderation: 0.9 if any report is checked, 0.7 if any trusted, else 0.5."""
+    agg: dict[tuple[str, str], dict[str, Any]] = {}
+    for r in rows:
+        cur = agg.setdefault((r["chain"], r["address"]), {"address": r["address"], "chain": r["chain"], "category": r["category"],
+                                                           "reported_at": r["reported_at"], "report_count": 0, "report_ids": [],
+                                                           "confidence": 0.5, "claimed_losses_usd": 0.0})
+        cur["report_count"] += 1
+        cur["report_ids"].append(r["report_id"])
+        cur["reported_at"] = min(cur["reported_at"], r["reported_at"])
+        if r["checked"]:
+            cur["confidence"] = max(cur["confidence"], 0.9)
+        elif r["trusted"]:
+            cur["confidence"] = max(cur["confidence"], 0.7)
+        for l in r["claimed_losses"]:
+            if l.get("asset") == "USD" and l.get("amount"):
+                cur["claimed_losses_usd"] += float(l["amount"])

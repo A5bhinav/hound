@@ -1,0 +1,200 @@
+{
+  "case": "US v. 4,340,000 Tether et al.",
+  "docket": "1:25-cv-00386 (N.D. Ohio)",
+  "generated_at": "2026-10-24T04:51:27.643422+00:00",
+  "min_usdt_for_match": 1000.0,
+  "resolved": {
+    "d95": {
+      "address": "0xd95da710ca21c985799a168109db702044be2cd4",
+      "method": "sender of all six \u00b669 ETH transfers (amount \u00b10.5%, date \u00b12d)",
+      "evidence_tx": [
+        "0x39f5908eff18078de843427f245a8e3be6d64914241265ed2e3e893948741adc",
+        "0xe95cc581e567558ef87503f2fe9d5135fb3b03023186a95395aefcab9e202d30",
+        "0xe235b29e26540a3184627a0d2ecd3e60bebefc3f53d6c22a2e5f37b96ea50b12",
+        "0x638cfc893b851ec6524542275a3a4eef75e453fd270ad6ce07a4f3321e74fde4",
+        "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029",
+        "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
+      ]
+    },
+    "A-1": {
+      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "method": "recipient of \u00b669 ETH sends from d95 (2 txs)",
+      "evidence_tx": [
+        "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029",
+        "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
+      ]
+    },
+    "B-1": {
+      "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
+      "method": "recipient of \u00b669 ETH sends from d95 (2 txs)",
+      "evidence_tx": [
+        "0xe235b29e26540a3184627a0d2ecd3e60bebefc3f53d6c22a2e5f37b96ea50b12",
+        "0x638cfc893b851ec6524542275a3a4eef75e453fd270ad6ce07a4f3321e74fde4"
+      ]
+    },
+    "C-1": {
+      "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
+      "method": "recipient of \u00b669 ETH sends from d95 (2 txs)",
+      "evidence_tx": [
+        "0x39f5908eff18078de843427f245a8e3be6d64914241265ed2e3e893948741adc",
+        "0xe95cc581e567558ef87503f2fe9d5135fb3b03023186a95395aefcab9e202d30"
+      ]
+    },
+    "A-2": {
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "method": "unique counterparty of resolved wallets matching 0x783\u20262da1a06 with \u22651000 USDT moved (24 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x1c59ca552995ad00b1b7484351375c7add16be1ca9d3ae9c56010d87c4738b85",
+        "0x8582e8deb587326eb9389afc7d6ab20bbcc8b60c171e47de7e15e0f99bc82d96",
+        "0x28426fc8a1510414231dbd52eccc8db2935fba8c9bb04c5faa03b024cda3b3a6",
+        "0xc381be1b1d10f94765b649302d41e5da5aba0809da9555908d312749085d36fa",
+        "0x7473911b003678d1cfe1338b29080a04794b18d3d8b44ed9b87d1ef4d16173d3"
+      ],
+      "largest_transfer_usdt": 200000.0
+    },
+    "A-3": {
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "method": "unique counterparty of resolved wallets matching 0x9eb\u20265db5e1f with \u22651000 USDT moved (85 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x286e45c4a7835270c37e0447ac144226efce5d7f1794cfaa204af2307ebdc42c",
+        "0xc5c769cddf70f527a57fc6afed90838df232061756fce4dd6e840ed227e97f34",
+        "0x94014e20a44f5c364ea6004eb90b084e796657028dbf8e7160b8e021ad65675f",
+        "0x3dd242c7727322631a3c774938af62d2b12baae8fa11c6a461e519770b5865a7",
+        "0x9dc751b7bc96146235504ecbf2e339e1d34d6d2edbce5884fecfbb04e3fbc1f0"
+      ],
+      "largest_transfer_usdt": 470000.0
+    },
+    "A-4": {
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "method": "unique counterparty of resolved wallets matching 0x07f\u202693e9d53 with \u22651000 USDT moved (101 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0xe1e89a1b9a7f8183d0d639fb304c0eaac1d7870f4ec6bd1e5c67b6e7bf75d277",
+        "0x89edcc72529afb18da1c8823120459aed9a0766cba9a81b3a260f664d02acc4a",
+        "0xd7e5a8921e7b8063ffddb1ee49874c86ad9924061c6c5b972cf57180dbea853d",
+        "0xb348fc33e3c70001820eeca2dbd9179c27f1c5026cbc465ff92c4e71798524be",
+        "0x864d22ca634ec63cca5cf6792ff34f053eb517f093b56bb7e3d2db69e524390b"
+      ],
+      "largest_transfer_usdt": 499999.0
+    },
+    "A-5": {
+      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "method": "unique counterparty of resolved wallets matching 0xdf6\u2026f0ed53f with \u22651000 USDT moved (81 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x2f39bd6c948d587bea7e3f40a74174e55d78a9b4aff5543d24047be8472d19fc",
+        "0xb82f3be9f81f80ea9d091749afbb98f7f5548ae44fa7832996cc0810232afbf7",
+        "0x4e31e5e578fa83e709c1bc2f8754d71a402aa663dadd18afe0ddc55bda68aa64",
+        "0xc8c0a6b18680d8c7402398faaff73a4a73e4f33c03a993f29753f1d3b312e836",
+        "0xa6b82d953996df0aee1543f696164a3b41b5523f1c57bdf609bb81c4e0b22a0c"
+      ],
+      "largest_transfer_usdt": 300000.0
+    },
+    "A-6": {
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "method": "unique counterparty of resolved wallets matching 0x58e\u2026b2d0dcb with \u22651000 USDT moved (22 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x126b39d1afda6f2b60cb596d50df7a58006da0033968e7addb4fb5bf2c2d0d6a",
+        "0xd471108e93662dcf855166c0052519c79179a789efa0e93eb16c3bbf8a68dd26",
+        "0x9690825b3d9e620032a990d7b9225b5e9efbe20cecab9d50c5f10268631b96f2",
+        "0x93502d0701133b07e98a09722c90d86ff2034564c73f5a8e02b3825257784361",
+        "0xc4861bcc1d6be39a4cbc05914b6210d3fa39b56ed3609d669e1ee0c478dcccc2"
+      ],
+      "largest_transfer_usdt": 500000.0
+    },
+    "B-2": {
+      "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
+      "method": "unique counterparty of resolved wallets matching 0x212\u20264d9c794 with \u22651000 USDT moved (32 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x9560ec0bd117110832dd774ffefd48630260e4de84ff882eb2c67062150ab3f1",
+        "0x0126a0d3d05ccc1a94490b75a2fe67788a5a9d8fb7a55ed96e9c692ce1db0b15",
+        "0xe93fe22298181c1f706cbc0f31f1e143501d7c2c1d29e1928131cfd05e72e6db",
+        "0xbcccb05779b4b897e4f447fde0c6452e7580be95b3822ed6085de9b186794b15",
+        "0x0f33ee2ccf878ca41c8943a95845fbae3da6f808ce6cd8a23e9a98a8554ef09b"
+      ],
+      "largest_transfer_usdt": 200000.0
+    },
+    "B-3": {
+      "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+      "method": "unique counterparty of resolved wallets matching 0x4471\u2026eb6911a with \u22651000 USDT moved (82 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x48cd8fc8f7af4c81f632c7ff61ce016dd81fe6fac745318e2e922629d818138c",
+        "0xb0a506d1f620f36bc3744f80cdab983544cf6cbeb7519f29e5c2cbc8aa0a73c9",
+        "0x8de382f65865f3781dc00336afd296673564a638b726fa9050358c0db16fc427",
+        "0xcdf4bf1c0a1da0a053c26a8226bb40626b0613f4f759b8e97ac77a09e43c8924",
+        "0xabb1ed98592389dc691640bb279f5f96dfc293e2891f2572d4beb31bfb37c704"
+      ],
+      "largest_transfer_usdt": 310000.0
+    },
+    "B-4": {
+      "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
+      "method": "unique counterparty of resolved wallets matching 0x28b8\u2026fd17376 with \u22651000 USDT moved (20 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x02a71c5159d1b6879c39cdb1eb95ee01ec89be7e77f26cdd5dcb6ed597fbec28",
+        "0xfb1482a4e1e59c8cebb1c0e4c0c6cc785ff11acfe48b765fc3677df552596c84",
+        "0x23bd46faaa84d831321bdad1c97e0bb5b3dc4eabc559f5c3891d028f7a8b0c5f",
+        "0xa98d1d44596c11e70b759d93126bb265f99674ce717b5b7a879a87c30093c783",
+        "0x459a48c25de386da158ddf4ad645cb31419a6366425acc1cd5103142e3fc0f7b"
+      ],
+      "largest_transfer_usdt": 200000.0
+    },
+    "A-7": {
+      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "method": "unique counterparty of resolved wallets matching 0xa17\u202644f0021 with \u22651000 USDT moved (26 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0xa75703cfe07a2db98fbf650f3eeb538111a0d20404f79446dd769f9c3f42e96e",
+        "0x1ecab114318d9d3520cccc7bda6181ca6afe1a58af9043177bd9146f68248aff",
+        "0xb663bfa776ebfdc7d2d2c677e5da222c77fb4890e7b537901b6ab68bcb457fad",
+        "0xfc2ec57ac36d31b94cfd68dd14fc74222f62604a360692f9578ba07be150843d",
+        "0xf669deee29cf186b52105c64bd83eba2bb9735b5b5a29b474fde664784639783"
+      ],
+      "largest_transfer_usdt": 3000000.0
+    },
+    "A-8": {
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "method": "unique counterparty of resolved wallets matching 0x4e5\u2026d47abb5 with \u22651000 USDT moved (11 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x1d9afb6b61b697c27474608a067f29793864d1587acbc23d22435ea4acf723f7",
+        "0x3b4047cafed4611e0b5e694411641347933c5ddc9755b1489d3d5a3722beb34b",
+        "0x595ba2151e63d0ae9dbe5cbdccc4005ed39766ac2db0a761c66af094816934c8",
+        "0x5275ccd23a1629403fc6b9d8561eef205f38ade7af791526f9fede53a8211b21",
+        "0xb7a9cd7bc9c25e75ae3867f9d1426e0f1e87c76ff0b05cd2a366b2c5b75bc148"
+      ],
+      "largest_transfer_usdt": 2000000.0
+    },
+    "A-9": {
+      "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+      "method": "unique counterparty of resolved wallets matching 0xafd\u2026b2378a5 with \u22651000 USDT moved (18 txs); zero-value poison dropped",
+      "evidence_tx": [
+        "0x8fbdc30beb0c22c29232202ad1daefe49daaadf1cde482d12e311768f3e7e8bb",
+        "0x1fae6d964a52e4dbe4b71aa6a914bb416818de632eee058dbdede027fbdb13de",
+        "0x581a146a5c55dbbe4e16f2a1a84b0582a5ef913e7bd3c676092bb7e72c162e28",
+        "0x6913322940d96dce53cb833969ae4e1be91a65870e369e89e321c294fcd656fe",
+        "0xb8cb0891e621fedde17d992ed8cc6773ce2997fca714cf643ef4f04e2c2ebad8"
+      ],
+      "largest_transfer_usdt": 1000000.0
+    }
+  },
+  "poison_lookalikes_dropped": [
+    "0x212a06474a0c71c21d5c006953e0abc634d9c794",
+    "0x58e7c5605b96073567f441d230cba6154b2d0dcb",
+    "0x9eb6b0aa84175025bac7ef316c2246d005db5e1f"
+  ],
+  "inputs_never_scored": [
+    "d95",
+    "A-1",
+    "B-1",
+    "C-1"
+  ],
+  "reach_targets": [
+    "A-2",
+    "A-3",
+    "A-4",
+    "A-5",
+    "A-6",
+    "B-2",
+    "B-3",
+    "B-4",
+    "A-7",
+    "A-8",
+    "A-9"
+  ]
+}

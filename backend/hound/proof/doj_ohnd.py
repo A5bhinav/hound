@@ -1,9 +1,16 @@
-"""DOJ answer-key scoreboard for US v. 4,340,000 Tether (N.D. Ohio 1:25-cv-00386).
+"""DOJ answer-key scoreboard, three tiers (BRIEF §0, AUDIT issue 2 / 14 / N2).
 
-Compares a Trace (schemas/trace.schema.json) produced by the engine against the
-addresses and per-wallet totals in the complaint. The complaint addresses live in
-data/doj/holdout.json and must never be in the label DB; `assert_holdout_clean`
-is the test hook for that rule.
+Case: US v. 4,340,000 Tether et al., N.D. Ohio 1:25-cv-00386.
+
+Tier 1 REACH   : DOJ wallets the engine was NOT given. Intermediates A-2..A-6, B-2..B-4
+                 (x/8) and finals A-7..A-9 (x/3). Inputs d95/A-1/B-1/C-1 never count.
+Tier 2 AMOUNT  : A.H.'s ¶74 row only (A-7 314,657 / A-8 11,954 / A-9 43,071 USDT), compared
+                 with what the engine attributed to each final. ≤5% green, 5-20% amber, >20% red.
+Context only   : ¶¶83-85 totals (38 victims/accounts, mixed LIFO/PIFO/FIFO, subpoena data).
+
+Matching uses FULL addresses from data/doj/resolved.json only. No prefix/suffix regex, so
+poison lookalikes can never score. Traces with source "hand_built" are refused. Traces with
+fetch errors are marked incomplete instead of scored as misses.
 """
 from __future__ import annotations
 
@@ -11,17 +18,26 @@ import json
 from pathlib import Path
 from typing import Any
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data" / "doj"
-HOLDOUT_PATH = DATA_DIR / "holdout.json"
+DATA = Path(__file__).resolve().parents[3] / "data" / "doj"
+HOLDOUT_PATH = DATA / "holdout.json"
+RESOLVED_PATH = DATA / "resolved.json"
 CASE_ID = "1:25-cv-00386"
+INPUTS = ("d95", "A-1", "B-1", "C-1")
+INTERMEDIATES = ("A-2", "A-3", "A-4", "A-5", "A-6", "B-2", "B-3", "B-4")
+FINALS = ("A-7", "A-8", "A-9")
 
 
 def load_holdout(path: Path = HOLDOUT_PATH) -> dict[str, Any]:
-    with open(path) as f:
-        return json.load(f)
+    return json.load(open(path))
 
 
-def _addr_set(trace: dict[str, Any]) -> set[str]:
+def load_resolved(path: Path = RESOLVED_PATH) -> dict[str, str]:
+    """label -> full lowercase address."""
+    r = json.load(open(path))["resolved"]
+    return {lab: v["address"].lower() for lab, v in r.items()}
+
+
+def _trace_addresses(trace: dict[str, Any]) -> set[str]:
     out: set[str] = set()
     for n in trace.get("nodes", []):
         if n.get("chain", "ethereum") == "ethereum" and n.get("address"):
@@ -33,69 +49,86 @@ def _addr_set(trace: dict[str, Any]) -> set[str]:
     return out
 
 
-def _endpoint_inflow(trace: dict[str, Any], address: str) -> float | None:
+def _attributed_to(trace: dict[str, Any], address: str) -> float | None:
+    """USDT the engine attributes to `address`: endpoint victim_inflow, else summed attributed edge amounts."""
     for ep in trace.get("endpoints", []):
-        if ep.get("address", "").lower() == address:
-            return float(ep.get("victim_inflow") or 0.0)
-    return None
+        if ep.get("address", "").lower() == address and ep.get("victim_inflow") is not None:
+            return float(ep["victim_inflow"])
+    tot = 0.0
+    seen = False
+    for e in trace.get("edges", []):
+        if e.get("to", "").lower() == address and e.get("attributed_amount") is not None:
+            tot += float(e["attributed_amount"])
+            seen = True
+    return tot if seen else None
 
 
-def doj_scoreboard(trace: dict[str, Any] | None = None, holdout: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Score a Trace against the DOJ complaint.
+def _band(ours: float | None, doj: float) -> str:
+    if ours is None:
+        return "missing"
+    err = abs(ours - doj) / doj
+    return "green" if err <= 0.05 else "amber" if err <= 0.20 else "red"
 
-    Returns the §8.4 shape: case, targets, reached, totals_vs_doj, holdout, plus a
-    summary. Partial credit is reported honestly: intermediates reached x/11,
-    consolidation (A-6) reached, finals reached x/3.
-    """
+
+def doj_scoreboard(trace: dict[str, Any] | None = None, holdout: dict[str, Any] | None = None,
+                   resolved: dict[str, str] | None = None) -> dict[str, Any]:
     h = holdout or load_holdout()
-    groups = h["addresses"]
-    labelled = [(x["label"], x["address"].lower(), grp) for grp in ("starts", "intermediates", "finals") for x in groups[grp]]
-    targets = [{"label": lab, "address": addr, "group": grp} for lab, addr, grp in labelled]
+    res = resolved or load_resolved()
+    status = "no_trace" if trace is None else "scored"
+    refused = None
+    if trace is not None and trace.get("source") == "hand_built":
+        refused = "trace.source is hand_built: UI fixture, not engine output"
+        status = "refused"
+    if trace is not None and (trace.get("stats") or {}).get("fetch_errors"):
+        status = "incomplete"
 
-    if trace is None:
-        reached_set: set[str] = set()
-    else:
-        reached_set = _addr_set(trace)
+    reached_set = _trace_addresses(trace) if (trace is not None and refused is None) else set()
+    by_addr = {addr: lab for lab, addr in res.items()}
 
-    reached = [t | {"reached": t["address"] in reached_set} for t in targets]
-    inter = [t for t in reached if t["group"] == "intermediates"]
-    finals = [t for t in reached if t["group"] == "finals"]
-    a6 = next((t for t in reached if t["label"] == "A-6"), None)
+    def row(lab: str, group: str) -> dict[str, Any]:
+        a = res[lab]
+        return {"label": lab, "address": a, "group": group, "reached": a in reached_set}
 
-    totals_vs_doj = []
-    for fin in groups["finals"]:
-        addr = fin["address"].lower()
-        ours = _endpoint_inflow(trace, addr) if trace else None
-        doj_total = fin["victim_usdt_traced_total"]
-        totals_vs_doj.append({
-            "label": fin["label"],
-            "address": addr,
-            "doj_victim_usdt": doj_total,
-            "doj_ah_fifo_usdt": h["ah_fifo_to_finals"].get(fin["label"]),
-            "ours_victim_inflow": ours,
-            "frozen_at": fin["frozen_at"],
-            "freeze_tx": fin["freeze_tx"],
-        })
+    reach = [row(l, "intermediate") for l in INTERMEDIATES] + [row(l, "final") for l in FINALS]
+    inputs = [{"label": l, "address": res[l], "group": "input"} for l in INPUTS]
+
+    ah = h["amount_tier_ah_para74_usdt"]
+    amount = []
+    for lab in FINALS:
+        a = res[lab]
+        ours = _attributed_to(trace, a) if (trace is not None and refused is None) else None
+        amount.append({"label": lab, "address": a, "doj_ah_para74_usdt": ah[lab], "ours_attributed_usdt": ours,
+                       "pct_error": (None if ours is None else round(abs(ours - ah[lab]) / ah[lab] * 100, 1)),
+                       "band": _band(ours, ah[lab])})
+
+    # Precision next to recall: every endpoint the engine reached, with amounts, labelled if it is a DOJ wallet.
+    endpoints = []
+    for ep in (trace or {}).get("endpoints", []) if refused is None else []:
+        a = ep.get("address", "").lower()
+        endpoints.append({"address": a, "doj_label": by_addr.get(a), "reason": ep.get("reason"),
+                          "victim_inflow": ep.get("victim_inflow"), "balance_usdt": ep.get("balance_usdt")})
+
+    finals_h = {e["label"]: e for e in h["entries"] if e["label"] in FINALS}
+    context = {"para83_85_totals_usdt": h["context_only_para83_85"],
+               "freezes": {l: {"frozen_at": finals_h[l]["frozen_at"], "freeze_tx": finals_h[l]["freeze_tx"]} for l in FINALS},
+               "accounting": h["accounting"], "note": "context only, never scored"}
 
     summary = {
-        "intermediates_reached": sum(t["reached"] for t in inter),
-        "intermediates_total": len(inter),
-        "consolidation_reached": bool(a6 and a6["reached"]),
-        "finals_reached": sum(t["reached"] for t in finals),
-        "finals_total": len(finals),
-        "accounting_note": h["accounting"],
+        "status": status,
+        "refused_reason": refused,
+        "intermediates_reached": sum(r["reached"] for r in reach if r["group"] == "intermediate"),
+        "intermediates_total": len(INTERMEDIATES),
+        "consolidation_a6_reached": next(r["reached"] for r in reach if r["label"] == "A-6"),
+        "finals_reached": sum(r["reached"] for r in reach if r["group"] == "final"),
+        "finals_total": len(FINALS),
+        "amount_bands": {r["label"]: r["band"] for r in amount},
         "blind": True,
+        "start_disclosure": "DOJ printed the start in ¶69, truncated; we resolved it; the engine got nothing else.",
     }
-    return {
-        "case": CASE_ID,
-        "docket": h["docket"],
-        "source_pdf": h["source_pdf"],
-        "targets": targets,
-        "reached": reached,
-        "totals_vs_doj": totals_vs_doj,
-        "holdout": h["all_holdout_addresses"],
-        "summary": summary,
-    }
+    return {"case": CASE_ID, "docket": h["docket"], "source_pdf": h["source_pdf"],
+            "inputs": inputs, "targets": reach, "reached": [r for r in reach if r["reached"]],
+            "amount": amount, "totals_vs_doj": amount, "endpoints": endpoints,
+            "context": context, "holdout": h["all_holdout_addresses"], "summary": summary}
 
 
 def assert_holdout_clean(label_addresses: set[str] | list[str], holdout: dict[str, Any] | None = None) -> None:
