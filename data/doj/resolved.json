@@ -1,0 +1,21 @@
+{
+  "case": "1:25-cv-00386",
+  "note": "Full addresses recovered by Ishaan's Claude from BigQuery (amount + date matching, zero-value transfers ignored). A-2..A-5 ordering inferred; CK confirms against PDF p.17-19. SCORING ONLY: the engine must never read this file.",
+  "addresses": {
+    "d95": "0xd95da710ca21c985799a168109db702044be2cd4",
+    "A-1": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+    "A-2": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "A-3": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+    "A-4": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "A-5": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+    "A-6": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+    "A-7": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+    "A-8": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+    "A-9": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+    "B-1": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
+    "B-2": "0x212a021291a4a4007bc8892b2176c41204d9c794",
+    "B-3": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+    "B-4": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
+    "C-1": "0xa327e6cfdd29022a530950079877861636f4dbb8"
+  }
+}
