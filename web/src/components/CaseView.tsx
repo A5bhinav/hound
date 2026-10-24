@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AuditEntry, Case, CaseSummary, Trace } from "@/lib/types";
-import { shortAddr } from "@/lib/format";
+import { shortAddr, tok0 } from "@/lib/format";
 import { useTrace } from "@/lib/useTrace";
 import Link from "next/link";
 import CaseCard from "./CaseCard";
@@ -34,6 +34,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         <CaseCard c={c} trace={trace} freezesShown={freezesShown} />
         {state.phase === "done" && (
           <div className={styles.right}>
+            <StatStrip trace={state.trace} freezesShown={freezesShown} />
             <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />
             {/* Demo order: the trail first, then the twist (BRIEF §6). */}
             {freezesShown && (
@@ -59,6 +60,24 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         )}
       </main>
     </>
+  );
+}
+
+/** The trail in four numbers, readable from the back of the room. Frozen count waits for the reveal. */
+function StatStrip({ trace, freezesShown }: { trace: Trace; freezesShown: boolean }) {
+  const wallets = trace.nodes.filter((n) => n.depth > 0).length;
+  const hops = Math.max(0, ...trace.nodes.map((n) => n.depth));
+  // What reached the places it stopped: endpoints count each victim dollar once (loop edges would double count).
+  const reached = trace.endpoints.reduce((s, e) => s + (e.victim_inflow ?? 0), 0);
+  const ends = trace.endpoints.length;
+  const frozen = trace.nodes.filter((n) => n.frozen?.is_frozen).length;
+  return (
+    <ul className={styles.stats} aria-label="Trace summary">
+      <li><b>{wallets}</b><span>wallets, {hops} hops</span></li>
+      <li><b>{tok0(reached, "USDT")}</b><span>of the victim&apos;s money followed</span></li>
+      <li><b>{ends}</b><span>places it stopped</span></li>
+      {freezesShown && frozen > 0 && <li data-tone="frozen"><b>{frozen}</b><span>frozen by Tether</span></li>}
+    </ul>
   );
 }
 

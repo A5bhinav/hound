@@ -7,24 +7,34 @@ import { KIND_LABEL, daysBetween, pct, shortAddr, tok0, tone } from "@/lib/forma
 import NodeDetail from "./NodeDetail";
 import styles from "./TraceGraph.module.css";
 
-const COL_W = 340;
-const ROW_H = 104;
+const COL_W = 360;
+const ROW_H = 118;
 const STEP_MS = 900;
 
 const TONE_COLOR = {
   trace: "#2c5a86",
   exchange: "#b8322a",
   hold: "#c28e14",
-  frozen: "#2f7f95",
+  frozen: "#1f7a8c",
   dead: "#8b959f",
 } as const;
+// Meaning is carried by the fill, not the outline: solid teal = Tether froze it, solid red = exchange,
+// solid blue = the victim, white = an intermediate wallet (readable from across a room).
 const TONE_FILL = {
-  trace: "#f7f9fb",
-  exchange: "#f7f9fb",
+  trace: "#ffffff",
+  exchange: "#b8322a",
   hold: "#f6e7bf",
-  frozen: "#dcedf1",
+  frozen: "#1f7a8c",
   dead: "#eef1f4",
 } as const;
+const TONE_INK = {
+  trace: "#15212e",
+  exchange: "#ffffff",
+  hold: "#15212e",
+  frozen: "#ffffff",
+  dead: "#4b5967",
+} as const;
+const VICTIM_FILL = "#2c5a86";
 
 /** Label and colours for a node; frozen styling waits until freezes are revealed. */
 function nodeLook(n: TraceNode, freezesShown: boolean, swapped: boolean) {
@@ -32,11 +42,13 @@ function nodeLook(n: TraceNode, freezesShown: boolean, swapped: boolean) {
   const name = full.length > 22 ? `${full.slice(0, 21)}…` : full;
   const frozen = freezesShown && n.frozen?.is_frozen;
   const t = tone(n, freezesShown);
-  const sub = frozen ? "TETHER FROZE THIS" : swapped ? "SWAP ETH → USDT" : KIND_LABEL[n.kind].toUpperCase();
+  const victim = n.depth === 0 && t === "trace";
+  const sub = frozen ? "Tether froze this" : victim ? "Victim" : swapped ? "Swap ETH → USDT" : KIND_LABEL[n.kind];
   return {
     text: `${name}\n${sub}`,
-    color: TONE_COLOR[t],
-    fill: TONE_FILL[t],
+    color: victim ? VICTIM_FILL : TONE_COLOR[t],
+    fill: victim ? VICTIM_FILL : TONE_FILL[t],
+    ink: victim ? "#ffffff" : TONE_INK[t],
     dead: t === "dead",
   };
 }
@@ -84,12 +96,25 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
         hop: e.hop,
         text: `${tok0(e.attributed_amount, e.token)}\n${pct(e.confidence)} · ${e.method}`,
         // Thickness compares value, so non-USDT flows are converted at the trace's own swap rate.
-        width: 1.5 + Math.log10(Math.max(e.attributed_amount * toUsdt(e.token), 10)) * 0.9,
+        width: 1.5 + Math.log10(Math.max(e.attributed_amount * toUsdt(e.token), 10)) * 1.6,
       },
       classes: e.confidence < 0.6 ? "weak" : "",
     });
   }
   return els;
+}
+
+/** Fit the whole trail, but never below a zoom where labels are readable from across a room;
+ *  when the trail is wider than the screen, start on the victim column and let the presenter pan. */
+function fitReadable(cy: Core) {
+  cy.fit(undefined, 40);
+  if (cy.zoom() < 0.9) {
+    cy.zoom(0.9);
+    const first = cy.nodes('[depth = 0]');
+    if (first.length) cy.center(first);
+    // center() puts the victim column mid-screen; slide it to the left edge so the trail reads left to right.
+    cy.panBy({ x: -(cy.width() / 2) + 170, y: 0 });
+  }
 }
 
 const swapAddresses = (trace: Trace) => new Set((trace.swaps?.resolved ?? []).map((s) => s.address));
@@ -186,16 +211,16 @@ export default function TraceGraph({
         container: box.current,
         elements: buildElements(trace, !hideFreezes),
         layout: { name: "preset", padding: 40 },
-        minZoom: 0.3,
-        maxZoom: 2,
+        minZoom: 0.5,
+        maxZoom: 2.5,
         wheelSensitivity: 0.2,
         style: [
           {
             selector: "node",
             style: {
               shape: "round-rectangle",
-              width: 196,
-              height: 58,
+              width: 232,
+              height: 72,
               "background-color": "data(fill)",
               "border-color": "data(color)",
               "border-width": 2.5,
@@ -203,11 +228,12 @@ export default function TraceGraph({
               "text-wrap": "wrap",
               "text-valign": "center",
               "font-family": mono,
-              "font-size": 14,
-              color: "#15212e",
+              "font-size": 16,
+              "font-weight": 600,
+              color: "data(ink)",
               "line-height": 1.35,
-              "transition-property": "opacity",
-              "transition-duration": 450,
+              "transition-property": "opacity, background-color, border-color, color",
+              "transition-duration": 600,
             },
           },
           { selector: "node.dead", style: { "border-style": "dashed" } },
@@ -223,7 +249,7 @@ export default function TraceGraph({
               label: "data(text)",
               "font-family": display,
               "font-weight": 700,
-              "font-size": 15,
+              "font-size": 17,
               color: "#4b5967",
               "text-margin-y": 0,
             },
@@ -240,7 +266,8 @@ export default function TraceGraph({
               label: "data(text)",
               "text-wrap": "wrap",
               "font-family": mono,
-              "font-size": 13,
+              "font-size": 14,
+              "font-weight": 600,
               color: "#15212e",
               "text-background-color": "#e8edf1",
               "text-background-opacity": 1,
@@ -260,6 +287,7 @@ export default function TraceGraph({
         if (ev.target === cy) setSelected(null);
       });
       cyRef.current = cy;
+      fitReadable(cy);
 
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (reduced) reveal(maxHop);
@@ -290,7 +318,8 @@ export default function TraceGraph({
         <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>
           Show all hops
         </button>
-        <button type="button" onClick={() => cyRef.current?.fit(undefined, 40)}>Fit to screen</button>
+        <button type="button" onClick={() => cyRef.current && fitReadable(cyRef.current)}>Fit to screen</button>
+        <button type="button" onClick={() => cyRef.current?.fit(undefined, 40)}>Whole trail</button>
         {hideFreezes && !freezesShown && frozen.length > 0 && (
           <button
             type="button"
@@ -305,11 +334,13 @@ export default function TraceGraph({
       </div>
       {hideFreezes && freezesShown && frozen.length > 0 && (
         <p className={styles.freezeReveal} role="status">
-          {freezeRevealText(frozen, asOf)}
+          <strong>{freezeRevealText(frozen, asOf)}</strong>
+          <span>Hound pointed at them from the victim&apos;s report alone.</span>
         </p>
       )}
       <ul className={styles.legend} aria-label="Legend">
-        <li data-tone="trace">Victim / intermediate</li>
+        <li data-tone="victim">Victim</li>
+        <li data-tone="trace">Intermediate wallet</li>
         <li data-tone="exchange">Exchange</li>
         <li data-tone="hold">Holding</li>
         <li data-tone="frozen">Tether froze this</li>
@@ -329,5 +360,5 @@ function freezeRevealText(frozen: TraceNode[], asOf?: string | null) {
   const lo = Math.min(...days);
   const hi = Math.max(...days);
   const span = lo === hi ? `${lo} days` : `${lo} to ${hi} days`;
-  return `The engine never saw it: Tether froze ${who} ${span} after the victim's report (${asOf.slice(0, 10)}).`;
+  return `The engine never saw it. Tether froze ${who} ${span} after the victim's report.`;
 }
