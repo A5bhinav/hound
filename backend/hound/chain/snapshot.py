@@ -36,15 +36,22 @@ def _live_addresses() -> set[str]:
     return out
 
 
-def pack(cache_root: Path | None = None, out_dir: Path | None = None, merge: bool = True) -> dict[str, int]:
+def pack(cache_root: Path | None = None, out_dir: Path | None = None, merge: bool = True,
+         allow_live: bool = False) -> dict[str, int]:
+    """Pack chain namespaces from `cache_root` into `out_dir`. allow_live=True only for the private
+    live bundle under data/cases_live/ (gitignored); the public snapshot always refuses live addresses."""
+    if allow_live and cache.LIVE_SNAPSHOT_DIR not in [out_dir, *(out_dir.parents if out_dir else [])]:
+        raise ValueError("allow_live is only for data/cases_live/cache (never the public snapshot)")
     root = cache_root or cache.cache_dir()
     out = out_dir or cache.SNAPSHOT_DIR
     out.mkdir(parents=True, exist_ok=True)
     secrets = cache._secret_values()
-    live = _live_addresses()
+    live = set() if allow_live else _live_addresses()
     counts = {}
     for ns in NAMESPACES:
-        merged: dict[str, dict] = dict(cache._snapshot(ns)) if (merge and out == cache.SNAPSHOT_DIR) else {}
+        base = cache._snapshot(ns) if out == cache.SNAPSHOT_DIR else cache._live_snapshot(ns) if \
+            out == cache.LIVE_SNAPSHOT_DIR else {}
+        merged: dict[str, dict] = dict(base) if merge else {}
         for f in sorted((root / ns).glob("*/*.json")):
             try:
                 entry = json.loads(f.read_text())
