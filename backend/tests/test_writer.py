@@ -7,7 +7,7 @@ import pytest
 
 from hound.contracts import example
 from hound.llm import writer
-from hound.llm.facts import WriterInputError, build_facts, citable, flatten, sanitize, sanitize_label, short_addr
+from hound.llm.facts import LEFTOVER_REASONS, WriterInputError, build_facts, citable, flatten, sanitize, sanitize_label, short_addr
 from hound.llm.writer import TemplateError, render, validate, write_case
 
 TRACE = example("ohnd_replay.trace")
@@ -541,7 +541,9 @@ def test_every_schema_endpoint_reason_writes_both_audiences(reason, replay, audi
     for e in t["endpoints"]:
         e["reason"] = reason
     out = write_case(t, c, audience)
-    if audience == "victim" and reason != "some_future_reason":
+    if audience == "victim" and reason in LEFTOVER_REASONS:
+        assert "was sent on from" in out["text"]
+    elif audience == "victim" and reason != "some_future_reason":
         assert writer._WHERE[reason] in out["text"] or "ended up in a wallet" in out["text"]
 
 
@@ -608,3 +610,162 @@ def test_review_banned_promises_and_spelled_out_domains(para, audience):
 def test_footer_scam_line_is_code_written_and_not_validated_as_a_draft():
     out = write_case(TRACE, CASE, "victim")
     assert out["text"].rstrip().splitlines()[-2] == writer.FOOTER_NEVER
+
+
+# ------------------------------------------------------------ round 2: leftovers, freezable, partial, hops
+
+def _with_endpoint(t, **ep):
+    row = {"address": t["endpoints"][0]["address"], "reason": "dust", "victim_inflow": 40.0,
+           "victim_remaining": 40.0, "attributed_by_seed": {}, "balance_usdt": None, "freezable": False,
+           "exchange": None}
+    row.update(ep)
+    t["endpoints"].append(row)
+    return t
+
+
+def _freeze_node(t, addr):
+    for n in t["nodes"]:
+        if n["address"].lower() == addr.lower():
+            n["frozen"] = {"is_frozen": True, "frozen_at": "2026-10-02T00:00:00Z", "freeze_tx": "0x" + "ab" * 32}
+
+
+@pytest.mark.parametrize("reason", LEFTOVER_REASONS)
+def test_leftover_row_never_inherits_parent_freeze_or_balance(reason):
+    t, c = live()
+    parent = t["endpoints"][0]["address"]
+    _freeze_node(t, parent)
+    for e in t["endpoints"]:
+        if e["address"] == parent:
+            e["balance_usdt"] = 1e6
+    before = build_facts(t, c)["derived"]
+    _with_endpoint(t, reason=reason, balance_usdt=999.0, freezable=True)
+    f = build_facts(t, c)
+    left = [r for r in f["derived"]["endpoints"] if r["leftover"] and r["address"] == parent.lower()]
+    assert len(left) == 1 and left[0]["address"] == parent.lower()
+    assert not left[0]["is_frozen"] and left[0]["frozen_at"] is None and left[0]["freeze_tx"] is None
+    assert left[0]["balance_usdt"] is None and not left[0]["freezable"]
+    # the 40 that LEFT the frozen wallet is not counted as frozen or freezable
+    assert (f["derived"]["frozen_count"], f["derived"]["frozen_usdt"]) == (before["frozen_count"], before["frozen_usdt"])
+    assert f["derived"]["freezable_usdt"] == before["freezable_usdt"]
+    det = write_case(t, c, "detective")["text"]
+    line = next(l for l in det.splitlines() if l.startswith("- 40.00 USDT"))
+    assert "sent on from " + parent.lower() in line and "not followed" in line
+    assert "victim inflow" not in line and "frozen" not in line and "balance" not in line
+    vic = write_case(t, c, "victim")["text"]
+    vline = next(l for l in vic.splitlines() if l.startswith("- 40.00 USDT"))
+    assert "was sent on from" in vline and "Tether froze" not in vline
+
+
+@pytest.mark.parametrize("reason", ["high_volume", "dead_end", "max_hops", "budget", "time_cap"])
+def test_unexpanded_or_service_stop_is_never_freezable(reason):
+    t, c = live()
+    _with_endpoint(t, address="0x" + "05" * 20, reason=reason, victim_inflow=10000.0, victim_remaining=10000.0,
+                   balance_usdt=5e7, freezable=True)
+    f = build_facts(t, c)
+    row = next(r for r in f["derived"]["endpoints"] if r["address"] == "0x" + "05" * 20)
+    assert not row["freezable"]
+    if reason == "high_volume":
+        assert row["balance_usdt"] is None
+    det = write_case(t, c, "detective")["text"]
+    line = next(l for l in det.splitlines() if ("0x" + "05" * 20) in l and l.startswith("- 0x"))
+    assert "FREEZABLE NOW" not in line and "50,000,000" not in (line if reason == "high_volume" else "")
+
+
+def test_done_trace_has_no_partial_banner():
+    for audience in ("victim", "detective"):
+        text = write_case(TRACE, CASE, audience)["text"]
+        assert "INCOMPLETE" not in text and "PARTIAL TRACE" not in text
+
+
+def test_partial_trace_banner_lists_incomplete_branches_both_audiences():
+    t, c = live()
+    t["status"] = "partial"
+    failed = t["endpoints"][-1]["address"]
+    t["endpoints"][-1]["reason"] = "dead_end"
+    t["audit_log"] = list(t.get("audit_log") or []) + [
+        {"t": "2026-10-24T00:00:00Z", "step": "error", "address": failed,
+         "detail": "fetch failed after the adapter's retries (CacheMiss)"},
+        {"t": "2026-10-24T00:00:00Z", "step": "error", "address": None,
+         "detail": "seed s2 not found on chain: no USDT transfer 0xabc into the recipient was returned"}]
+    _with_endpoint(t, address="0x" + "07" * 20, reason="budget", victim_inflow=500.0, victim_remaining=500.0)
+    f = build_facts(t, c)
+    assert f["derived"]["partial"] and f["derived"]["audit_error_count"] == 2 and f["derived"]["missing_seed_count"] == 1
+    assert {i["what"] for i in f["derived"]["incomplete"]} == {"fetch_failed", "seed_not_found", "budget"}
+    assert next(r for r in f["derived"]["endpoints"] if r["address"] == failed.lower())["reason"] == "fetch_error"
+    det = write_case(t, c, "detective")["text"]
+    head = det.split("\n\n")[0]
+    assert head.startswith("PARTIAL TRACE: status partial, 2 errors")
+    assert failed.lower() in head and ("0x" + "07" * 20) in head and "reported send s2" in head
+    assert "reason fetch_error" in det
+    vic = write_case(t, c, "victim")["text"]
+    vhead = vic.split("\n\n")[0]
+    assert vhead.startswith("THIS TRACE IS INCOMPLETE") and short_addr(failed.lower()) in vhead
+    assert "reported send s2" in vhead and "could not load" in vic
+
+
+def test_partial_banner_comes_first_on_the_claude_path_too(claude):
+    t = copy.deepcopy(TRACE)
+    t["status"] = "partial"
+    claude(fixture("good_detective.json"))
+    out = write_case(t, CASE, "detective")
+    blocks = out["text"].split("\n\n")
+    assert out["source"] == "claude" and blocks[0].startswith("REPLAY") and blocks[1].startswith("PARTIAL TRACE: status partial")
+
+
+def test_no_seed_found_refuses_the_packet():
+    t, c = live()
+    t["status"] = "partial"
+    t["audit_log"] = [{"t": "x", "step": "error", "address": None, "detail": f"seed {s['seed_id']} not found on chain: no"}
+                      for s in t["seeds"]]
+    with pytest.raises(WriterInputError, match="none of the"):
+        write_case(t, c, "detective")
+
+
+def test_detective_packet_lists_every_hop_with_tx_counts():
+    det = write_case(TRACE, CASE, "detective")["text"]
+    hop_lines = [l for l in det.splitlines() if l.startswith("- hop ")]
+    assert len(hop_lines) == len(TRACE["edges"])
+    for e in TRACE["edges"]:
+        n = len(set(e["tx_hashes"]))
+        assert any(e["from"].lower() in l and e["to"].lower() in l and f"{n:,} transactions" in l for l in hop_lines), e
+    eth = [l for l in hop_lines if " ETH attributed" in l]
+    assert len(eth) == sum(1 for e in TRACE["edges"] if e["token"] == "ETH")
+    assert "Contacts for a live case: freeze requests to Tether via law enforcement" in det
+    live_det = write_case(*live(), "detective")["text"]
+    assert "\nContacts: freeze requests to Tether via law enforcement; reports to IC3 at https://www.ic3.gov" in live_det
+
+
+@pytest.mark.parametrize("text", [
+    "Law enforcement can ask Tether to release the frozen funds to you.",
+    "Your money could be restored to you through the court process.",
+    "The frozen USDT can be released to you after a court order.",
+    "You could be made whole.",
+    "The court can give the frozen funds to you.",
+    "Funds that Tether froze are usually handed to the victims they belong to.",
+])
+def test_victim_recovery_promises_rejected(text):
+    with pytest.raises(TemplateError, match="banned"):
+        validate(text, build_facts(TRACE, CASE), audience="victim")
+
+
+@pytest.mark.parametrize("text", [
+    "The frozen balance can be seized and returned to the victim.",
+    "The balance is available for forfeiture and remission to the victim.",
+])
+def test_detective_recovery_promises_rejected(text):
+    with pytest.raises(TemplateError, match="banned"):
+        validate(text, build_facts(TRACE, CASE), audience="detective")
+
+
+def test_claude_client_is_bounded(monkeypatch):
+    import anthropic
+    seen = {}
+
+    class Fake:
+        def __init__(self, **kw):
+            seen.update(kw)
+            raise RuntimeError("stop here")
+    monkeypatch.setattr(anthropic, "Anthropic", Fake)
+    with pytest.raises(RuntimeError, match="stop here"):
+        writer._call_claude([{"role": "user", "content": "x"}])
+    assert seen == {"timeout": writer.CLAUDE_TIMEOUT_S, "max_retries": 0} and writer.CLAUDE_TIMEOUT_S <= 30

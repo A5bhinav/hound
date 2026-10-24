@@ -9,10 +9,11 @@ The packet goes to victims and to law enforcement, so a made-up number is a liab
 3. If ANTHROPIC_API_KEY is set, Claude writes the template (JSON {"paragraphs": [...]}).
    Otherwise, or if Claude's template fails validation twice, a deterministic template
    is used. `validate()` runs on EVERY template, the deterministic ones included.
-4. Header (REPLAY banner), the detective endpoint list and the footer are written by code.
+4. Header (REPLAY banner), the PARTIAL TRACE banner, the detective endpoint list, hop table
+   and contacts, and the footer are written by code.
 
 The live Claude path is covered only by recorded outputs in tests/test_writer.py; it still
-needs one real call with a real ANTHROPIC_API_KEY before the demo.
+needs one real call with a real ANTHROPIC_API_KEY before the demo (check source: claude).
 """
 import json
 import logging
@@ -29,6 +30,7 @@ MODEL = os.environ.get("HOUND_WRITER_MODEL", "claude-opus-5-5")
 FORMATS = ("usdt", "short", "date", "int", "raw")
 MAX_PARAGRAPHS = 8
 MAX_PARAGRAPH_CHARS = 1200
+CLAUDE_TIMEOUT_S = 20
 
 FOOTER_REPORTED = "Reported, not proven."
 FOOTER_NEVER = "Hound never charges, never asks for keys or seed phrases; anyone offering paid recovery is a scam."
@@ -55,7 +57,8 @@ _BANNED = [
     re.compile(r"\b(?:will|shall|going\s+to)\s+(?:be\s+)?(?:recover|return|refund)(?:ed|s)?\b", re.I),
     re.compile(r"\bwe\s+(?:will|shall|can|are\s+going\s+to)\s+(?:\w+\s+){0,2}(?:recover|return|refund)", re.I),
     re.compile(r"\bget\s+(?:\S+\s+){1,5}back\b", re.I),
-    re.compile(r"\b(?:can|could|will|should|may|might|going\s+to)\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
+    re.compile(r"\b(?:can|could|will|should|may|might|going\s+to)\s+(?:\w+\s+){0,4}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
+    re.compile(r"\breturned\s+to\s+(?:the\s+)?(?:victims?|you|owners?)\b|\bremission\b|\bmade\s+whole\b", re.I),
     re.compile(r"\b(?:expects?|expected|hopes?|plans?|aims?|likely|able)\s+to\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
     re.compile(r"\b(?:will|going\s+to|should)\s+(?:\w+\s+){0,2}come\s+back\b", re.I),
     # promises about the other side: an arrest or a charge is not Hound's to promise
@@ -68,7 +71,9 @@ _BANNED = [
 _BANNED_VICTIM = [re.compile(p, re.I) for p in (
     r"\brecover\w*", r"\brefund\w*", r"\breturn(?:ed|s|ing)?\b", r"\bcome\s+back\b", r"\bcomes\s+back\b",
     r"\b(?:clawed?|paid|sent|given|getting|got)\s+(?:\w+\s+){0,2}back\b", r"\brepa(?:y|id|yment)\w*",
-    r"\breclaim\w*", r"\brestitution\b", r"\byour\s+money\s+again\b", r"\bsee\s+(?:it|them|your\s+\w+)\s+again\b")]
+    r"\breclaim\w*", r"\brestitution\b", r"\byour\s+money\s+again\b", r"\bsee\s+(?:it|them|your\s+\w+)\s+again\b",
+    r"\brestor\w*", r"\bmade\s+whole\b", r"\bremission\b", r"\breleas\w*\s+(?:\w+\s+){0,4}to\s+(?:you|the\s+victims?)\b",
+    r"\b(?:give|gave|given|giving|hand|handed|handing|hands)\s+(?:\w+\s+){0,4}to\s+(?:you|the\s+victims?)\b")]
 _NON_ASCII = re.compile(r"[^\x00-\x7F¶]")  # the paragraph sign is allowlisted (complaint citations)
 _VICTIMS = re.compile(r"\bvictims\b", re.I)
 _ACCUSE = ACCUSE
@@ -265,9 +270,8 @@ _WHERE = {
     "holding": "was still sitting in a wallet when we looked",
     "frozen": "is in a wallet Tether has frozen",
     "dead_end": "went somewhere we could not follow",
-    "dust": "was a tiny leftover amount",
+    "fetch_error": "reached a wallet whose history we could not load, so this branch is incomplete",
     "max_hops": "went further than we followed",
-    "capped": "went on past the limit we set for this trace",
     "high_volume": "reached a very busy wallet, likely a service",
     "infra": "passed through shared infrastructure such as an exchange router, which we do not follow",
     "budget": "was not followed further because the trace hit its data budget",
@@ -284,6 +288,48 @@ def _header(facts):
             "the method. It is not a live investigation, and nothing here asks anyone to act on it today."]
 
 
+# Incomplete-branch wording, keyed by facts.derived.incomplete[i].what. {A} is the address placeholder.
+_INCOMPLETE = {
+    "fetch_failed": "the history of {A} could not be loaded, so where money went after it is unknown",
+    "swap_fetch_failed": "the swap history at {A} could not be loaded, so money that passed through it may be missing",
+    "seed_not_found": "reported send {S} was not found on the blockchain, so it is not in the totals",
+    "seed_short": "only part of reported send {S} was found arriving after its swap",
+    "order_guess": "the order of some transfers at {A} is a best guess",
+    "lookup_failed": "a label, freeze or balance check failed at {A}",
+    "budget": "{A} was not followed because the trace hit its data budget",
+    "time_cap": "{A} was not followed because the trace hit its time limit",
+    "max_hops": "{A} is past the hop limit, so money after it was not followed",
+    "other_error": "an error was logged at {A}",
+}
+
+
+def _status_block(facts, audience):
+    """Code-written PARTIAL banner, both audiences, shown before any narrative (Claude or template)."""
+    d = facts["derived"]
+    if not d["partial"]:
+        return []
+    fmt = "short" if audience == "victim" else "raw"
+    lines = []
+    for i, it in enumerate(d["incomplete"]):
+        p = f"derived.incomplete.{i}"
+        text = _INCOMPLETE.get(it["what"], _INCOMPLETE["other_error"])
+        if "{A}" in text and not it.get("address"):
+            text = "an error was logged that is not tied to one wallet"
+        text = text.replace("{A}", f"{{{{{p}.address|{fmt}}}}}").replace("{S}", f"{{{{{p}.seed_id|raw}}}}")
+        lines.append(f"- {text}.")
+    if audience == "victim":
+        head = ("THIS TRACE IS INCOMPLETE. Some blockchain data could not be loaded or the trace hit a limit, so "
+                "the amounts below may be missing money.")
+    else:
+        head = ("PARTIAL TRACE: status {{trace.status|raw}}, {{derived.audit_error_count|int}} errors in the audit "
+                "log. Totals and endpoints below may be incomplete.") if facts["trace"]["status"] else (
+                "PARTIAL TRACE: {{derived.audit_error_count|int}} errors in the audit log. Totals and endpoints "
+                "below may be incomplete.")
+    if lines:
+        head += " Incomplete branches ({{derived.incomplete_count|int}}):\n" + "\n".join(lines)
+    return [head]
+
+
 def fallback_paragraphs(facts, audience):
     d, replay = facts["derived"], facts["trace"]["replay"]
     paras = []
@@ -294,6 +340,11 @@ def fallback_paragraphs(facts, audience):
         lines = []
         for i, r in enumerate(d["endpoints"]):
             p = f"derived.endpoints.{i}"
+            if r["leftover"]:
+                how = "in tiny amounts" if r["reason"] == "dust" else "in more branches than this trace follows"
+                lines.append(f"- {{{{{p}.victim_funds|usdt}}}} was sent on from {{{{{p}.address|short}}}} {how}, "
+                             "and we did not follow it further.")
+                continue
             where = _WHERE.get(r["reason"], "is where we stopped following it")
             if r["is_frozen"] and r["reason"] == "holding":
                 where = "ended up in a wallet"
@@ -340,6 +391,12 @@ def _endpoint_section(facts):
     lines = ["Endpoints (all of them, largest attributed victim funds first):"]
     for i, r in enumerate(rows):
         p = f"derived.endpoints.{i}"
+        if r["leftover"]:
+            how = ("in small branches below the minimum amount" if r["reason"] == "dust"
+                   else "in branches past the per-wallet branch limit")
+            lines.append(f"- {{{{{p}.victim_funds|usdt}}}} victim funds sent on from {{{{{p}.address|raw}}}} {how}, "
+                         f"not followed (reason {{{{{p}.reason|raw}}}}). Not held at that wallet.")
+            continue
         line = (f"- {{{{{p}.address|raw}}}}: {{{{{p}.victim_funds|usdt}}}} victim funds attributed, "
                 f"{{{{{p}.victim_inflow|usdt}}}} victim inflow, reason {{{{{p}.reason|raw}}}}")
         # A replay balance is a placeholder (0.00 next to large attributed funds reads as an error).
@@ -362,6 +419,30 @@ def _endpoint_section(facts):
             line += f", exchange label {{{{case.untrusted.endpoint_exchange.{i}|raw}}}}"
         lines.append(line + ".")
     return "\n".join(lines)
+
+
+def _hop_section(facts):
+    """Every edge in the trace with its transaction count, so the detective can check each hop."""
+    hops = facts["derived"]["hops"]
+    lines = ["Hops (every edge in the trace, in hop order; transaction hashes are in the trace export):"]
+    for i, h in enumerate(hops):
+        p = f"derived.hops.{i}"
+        amt = (f"{{{{{p}.attributed_amount|usdt}}}}" if h["token"] == "USDT"
+               else f"{{{{{p}.attributed_amount|raw}}}} {{{{{p}.token|raw}}}}")
+        line = ("- " + (f"hop {{{{{p}.hop|int}}}}: " if h["hop"] is not None else "")
+                + f"{{{{{p}.from|raw}}}} to {{{{{p}.to|raw}}}}, {amt} attributed, {{{{{p}.tx_count|int}}}} transactions")
+        if h["confidence"] is not None:
+            line += f", confidence {{{{{p}.confidence|raw}}}}"
+        if h["method"]:
+            line += f", method {{{{{p}.method|raw}}}}"
+        lines.append(line + ".")
+    return "\n".join(lines)
+
+
+def _contacts_section(facts):
+    lead = "Contacts for a live case" if facts["trace"]["replay"] else "Contacts"
+    return (lead + ": freeze requests to {{const.contacts.tether|raw}}; reports to IC3 at {{const.contacts.ic3|raw}}; "
+            "for an exchange endpoint, that exchange's compliance team by legal process.")
 
 
 # ---------------------------------------------------------------- Claude
@@ -408,7 +489,8 @@ def _prompt(facts, audience):
 def _call_claude(messages):
     """One Claude call. Returns the paragraphs list. Raises on any API, refusal or parse problem."""
     import anthropic
-    client = anthropic.Anthropic()
+    # bounded: a stalled network must fall back to the template fast, never hang the packet route
+    client = anthropic.Anthropic(timeout=CLAUDE_TIMEOUT_S, max_retries=0)
     with client.beta.messages.stream(
         model=MODEL,
         max_tokens=8000,
@@ -479,14 +561,16 @@ def write_case(trace, case, audience="victim"):
 
     blocks, cited = [], []
     try:
-        for tpl in _header(facts) + paras:
+        for tpl in _header(facts) + _status_block(facts, audience) + paras:
             text, c = render(tpl, facts, audience=audience)
             blocks.append(text)
             cited += c
         if audience == "detective":
-            text, c = render(_endpoint_section(facts), facts, allow_untrusted=True, audience=audience)
-            blocks.append(text)
-            cited += c
+            for tpl, untrusted in ((_endpoint_section(facts), True), (_hop_section(facts), False),
+                                   (_contacts_section(facts), False)):
+                text, c = render(tpl, facts, allow_untrusted=untrusted, audience=audience)
+                blocks.append(text)
+                cited += c
     except TemplateError as e:
         raise AssertionError(f"writer bug: a code-written template failed validation: {e}") from e
 
