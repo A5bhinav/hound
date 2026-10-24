@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from hound.contracts import ROOT, example, validate_case
 from hound.engine.trace import DEFAULTS, _redact, run_trace
+from hound.llm.facts import WriterInputError
 from hound.llm.writer import write_case
 from hound.proof.backtest import serve as backtest_serve
 from hound.proof.doj_ohnd import doj_scoreboard
@@ -230,7 +231,11 @@ def packet(case_id: str, audience: str = "detective"):
         trace = TRACES.get(LAST_DONE.get(case_id))
     if trace is None:
         raise HTTPException(409, f"case {case_id!r} has no finished trace yet; POST /cases/{case_id}/trace and poll it first")
-    return {"packet": write_case(trace, case, audience), "trace": trace}
+    try:
+        return {"packet": write_case(trace, case, audience), "trace": trace}
+    except WriterInputError as e:
+        log.warning("packet %s: writer refused input: %s", case_id, e)
+        raise HTTPException(422, str(e))
 
 
 @app.post("/demo/reset")

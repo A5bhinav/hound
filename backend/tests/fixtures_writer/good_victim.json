@@ -1,0 +1,7 @@
+{
+ "paragraphs": [
+  "This is a look back at a real case that has already been handled. Nobody here is asking you to do anything.",
+  "The money sent from the victim wallets, {{derived.traced_usdt|usdt}} in total, was moved through {{derived.wallet_count|int}} wallets. Most of it ended up in the wallet {{derived.endpoints.0.address|short}}, which Tether froze on {{derived.endpoints.0.frozen_at|date}}.",
+  "Tether has frozen {{derived.frozen_usdt|usdt}} of the traced money. If this happened to you, report it at {{const.contacts.ic3|raw}} and keep every record."
+ ]
+}
