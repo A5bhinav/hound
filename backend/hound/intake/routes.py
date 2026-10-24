@@ -269,24 +269,39 @@ def active(request: Request):
 # A case code is 6 characters (about 10^9 values) and unlocks a victim's case, so wrong guesses are capped
 # per caller: 20 misses in 10 minutes and that caller gets 429 until the window passes. Guessing a live code
 # then takes years instead of hours.
+# The per-caller key comes from forwarding headers a caller can forge, so a global ceiling backs it up:
+# 300 wrong codes in 10 minutes from everyone together locks code lookups for all remote callers.
 MISS_LIMIT = 20
+MISS_GLOBAL = 300
 MISS_WINDOW_S = 600
+MISS_KEYS_MAX = 5000  # forged keys must not grow this table without bound
 _MISSES: dict[str, list[float]] = {}
+_ALL_MISSES: list[float] = []
 
 
 def guessing_locked(request: Request) -> bool:
     now = time.time()
     key = _client_key(request)
     with _LOCK:
+        _ALL_MISSES[:] = [t for t in _ALL_MISSES if now - t < MISS_WINDOW_S]
         hits = [t for t in _MISSES.get(key, []) if now - t < MISS_WINDOW_S]
-        _MISSES[key] = hits
-        return len(hits) >= MISS_LIMIT
+        if hits:
+            _MISSES[key] = hits
+        else:
+            _MISSES.pop(key, None)
+        return len(hits) >= MISS_LIMIT or len(_ALL_MISSES) >= MISS_GLOBAL
 
 
 def note_miss(request: Request) -> None:
-    key = _client_key(request)
+    key, now = _client_key(request), time.time()
     with _LOCK:
-        _MISSES.setdefault(key, []).append(time.time())
+        if key not in _MISSES and len(_MISSES) >= MISS_KEYS_MAX:
+            for k in [k for k, v in _MISSES.items() if not v or now - v[-1] >= MISS_WINDOW_S]:
+                del _MISSES[k]
+            if len(_MISSES) >= MISS_KEYS_MAX:
+                _MISSES.pop(next(iter(_MISSES)))  # oldest key first (dicts keep insertion order)
+        _MISSES.setdefault(key, []).append(now)
+        _ALL_MISSES.append(now)
         n = len(_MISSES[key])
     if n in (MISS_LIMIT // 2, MISS_LIMIT):
         log.warning("intake: %d wrong case codes from one caller in %ds", n, MISS_WINDOW_S)

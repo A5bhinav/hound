@@ -529,6 +529,7 @@ def test_validated_sessions_outlive_the_upload_window(monkeypatch):
 
 def test_wrong_case_codes_are_locked_out(monkeypatch):
     intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
     remote = TestClient(api.app, client=("198.51.100.4", 1))
     for i in range(intake.MISS_LIMIT):
         assert remote.get(f"/intake/ZZZZ{i:02d}").status_code == 404
@@ -538,3 +539,41 @@ def test_wrong_case_codes_are_locked_out(monkeypatch):
     assert remote.get(f"/intake/{code}").status_code == 429
     assert TestClient(api.app, client=("198.51.100.5", 1)).get(f"/intake/{code}").status_code == 200
     intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
+
+
+def test_forged_caller_headers_still_hit_the_global_guess_ceiling(monkeypatch):
+    intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
+    monkeypatch.setattr(intake, "MISS_GLOBAL", 30)
+    remote = TestClient(api.app, client=("198.51.100.9", 1))
+    for i in range(30):  # a new forged address every request
+        assert remote.get(f"/intake/ZZZ{i:03d}", headers={"X-Forwarded-For": f"10.0.{i}.1"}).status_code == 404
+    assert remote.get("/intake/ZZZZZZ", headers={"X-Forwarded-For": "10.9.9.9"}).status_code == 429
+    intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
+
+
+def test_guess_table_stays_bounded(monkeypatch):
+    intake._MISSES.clear()
+    monkeypatch.setattr(intake, "MISS_KEYS_MAX", 50)
+    remote = TestClient(api.app, client=("198.51.100.10", 1))
+    monkeypatch.setattr(intake, "MISS_GLOBAL", 10_000)
+    for i in range(200):
+        remote.get(f"/intake/ZZ{i:04d}", headers={"X-Forwarded-For": f"10.1.{i // 250}.{i % 250}"})
+    assert len(intake._MISSES) <= 50
+    intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
+
+
+def test_own_code_on_the_case_list_never_locks_the_victim_out():
+    intake._MISSES.clear()
+    intake._ALL_MISSES.clear()
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    intake.SESSIONS[code].update(status="validated", case_id="intake-mine")
+    remote = TestClient(api.app, client=("198.51.100.20", 1))
+    for _ in range(intake.MISS_LIMIT + 5):
+        assert remote.get(f"/cases?code={code}").status_code == 200
+    assert remote.get(f"/intake/{code}").status_code == 200
+    intake._MISSES.clear()
+    intake._ALL_MISSES.clear()

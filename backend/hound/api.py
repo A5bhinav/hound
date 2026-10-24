@@ -221,7 +221,8 @@ def _owner(request, case_id):
         return False
     if intake.owns_case(code, case_id):
         return True
-    intake.note_miss(request)  # a wrong code for this case counts as a guess
+    if code.strip().upper() not in intake.SESSIONS:
+        intake.note_miss(request)  # a code that exists nowhere is a guess; a real code on another case is not
     return False
 
 
