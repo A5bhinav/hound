@@ -89,10 +89,9 @@ def _session_view(s: dict[str, Any]) -> dict[str, Any]:
 
 def _authorised(request: Request) -> bool:
     """Cartesia tool calls carry X-Hound-Intake-Token; local callers (demo button, tests) are trusted."""
-    token = os.environ.get("HOUND_INTAKE_TOKEN")
-    if token and request.headers.get("x-hound-intake-token") == token:
-        return True
     from hound import api as hound_api  # lazy: api imports this module at startup
+    if hound_api.token_matches(request.headers.get("x-hound-intake-token"), os.environ.get("HOUND_INTAKE_TOKEN")):
+        return True
     return hound_api._is_local(request)
 
 
@@ -221,6 +220,8 @@ async def approve(case_code: str, request: Request):
     """Operator step (localhost or intake token): the on-chain check proves the payment exists, not
     that the caller made it. Only after a human confirms does the case feed the watchlist.
     Body {"case_id": "..."} must name the case the operator actually reviewed."""
+    from hound import api as hound_api
+    hound_api.reject_cross_site(request, "POST /intake/approve")
     if not _authorised(request):
         raise HTTPException(403, "operator only")
     try:
@@ -228,7 +229,6 @@ async def approve(case_code: str, request: Request):
     except Exception:  # noqa: BLE001
         body = {}
     wanted = (body or {}).get("case_id")
-    from hound import api as hound_api
     with _LOCK:
         s = SESSIONS.get(case_code.upper())
         if not s or s["status"] != "validated" or not s.get("case_id"):

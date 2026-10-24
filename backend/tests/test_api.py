@@ -564,10 +564,38 @@ def test_demo_reset_is_localhost_only_without_token(monkeypatch):
 
 def test_demo_reset_with_token_needs_the_header(monkeypatch):
     monkeypatch.setenv("HOUND_ADMIN_TOKEN", "s3cret")
-    assert client.post("/demo/reset").status_code == 403
+    assert remote.post("/demo/reset").status_code == 403
     assert remote.post("/demo/reset", headers={"X-Hound-Admin": "wrong"}).status_code == 403
+    assert remote.post("/demo/reset", headers={"X-Hound-Admin": "sécret".encode("latin-1")}).status_code == 403  # non-ASCII: no 500
     assert remote.post("/demo/reset", headers={"X-Hound-Admin": "s3cret"}).status_code == 200
     monkeypatch.delenv("HOUND_ADMIN_TOKEN")
+
+
+def test_demo_reset_stays_local_with_a_token_set(monkeypatch):
+    # The Reset button on the operator laptop sends no token; setting one for remote use must not break it.
+    monkeypatch.setenv("HOUND_ADMIN_TOKEN", "s3cret")
+    assert client.post("/demo/reset").status_code == 200
+    assert client.post("/demo/reset", headers={"x-forwarded-for": "198.51.100.7"}).status_code == 403
+
+
+def test_demo_reset_refuses_cross_site_requests():
+    assert client.post("/demo/reset", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "https://evil.example"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "null"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "http://localhost:3000", "Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert client.post("/demo/reset", headers={"Origin": "http://testserver"}).status_code == 200  # its own host
+
+
+def test_no_api_docs_routes():
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404
+
+
+def test_remote_can_still_post_and_trace_cases():
+    # judges trace through the web proxy: no admin or CSRF gate on case creation and tracing
+    created = remote.post("/cases", json={"source": "phone", "sends": [SEND]}, headers={"Origin": "https://judge.example"})
+    assert created.status_code == 200
+    assert remote.post(f"/cases/{CASE}/trace", headers={"Origin": "https://judge.example"}).status_code in (200, 202)
 
 
 def test_cases_live_are_marked_live(monkeypatch, tmp_path):

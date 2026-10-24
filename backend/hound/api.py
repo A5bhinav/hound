@@ -56,7 +56,7 @@ from hound.watch.other_payers import other_payers
 from hound.watch import watchlist
 from hound.watch.watchlist import register_trace
 
-app = FastAPI(title="Hound")
+app = FastAPI(title="Hound", docs_url=None, redoc_url=None, openapi_url=None)  # no route map over the tunnel
 # Browsers reach the API through the Next proxy (same origin), so CORS only needs local dev origins
 # plus the one public web origin the operator names.
 PUBLIC_ORIGINS = [o.strip() for o in os.environ.get("HOUND_PUBLIC_ORIGIN", "").split(",") if o.strip()]
@@ -627,13 +627,48 @@ def _get_packet(case_id, audience, generation=None):
     return written, trace
 
 
+def token_matches(sent, token):
+    """Constant-time header check; bytes so a non-ASCII header value is a mismatch, not a TypeError."""
+    return bool(token) and hmac.compare_digest((sent or "").encode("utf-8"), token.encode("utf-8"))
+
+
+def _origin_netloc(origin):
+    m = re.match(r"^[a-z][a-z0-9+.-]*://([^/?#]+)", origin.strip().lower())
+    return m.group(1) if m else None
+
+
+def reject_cross_site(request, what):
+    """CSRF guard for state-changing operator calls: a page on another site must not be able to
+    drive the operator's browser into them. Refuses Sec-Fetch-Site: cross-site, and an Origin that
+    is neither localhost nor the host this request was addressed to (direct or via the Next proxy)."""
+    if request.headers.get("sec-fetch-site", "").strip().lower() == "cross-site":
+        log.warning("%s refused: Sec-Fetch-Site cross-site", what)
+        raise HTTPException(403, f"{what} refused: cross-site request")
+    origin = request.headers.get("origin")
+    if origin is None:
+        return
+    netloc = _origin_netloc(origin)
+    if netloc is not None:
+        if _host_name(netloc) in LOCAL_HOSTNAMES:
+            return
+        own = {h.split(",")[0].strip().lower() for h in (request.headers.get("host"),
+                                                          request.headers.get("x-forwarded-host")) if h}
+        if netloc in own:
+            return
+    log.warning("%s refused: Origin %r is not this host or localhost", what, origin[:100])
+    raise HTTPException(403, f"{what} refused: cross-origin request")
+
+
 def _require_admin(request):
+    """Local caller OR a valid X-Hound-Admin token (the local Reset button keeps working with a token set)."""
+    reject_cross_site(request, "POST /demo/reset")
+    if _is_local(request):
+        return
     token = os.environ.get("HOUND_ADMIN_TOKEN")
-    if token:
-        if not hmac.compare_digest(request.headers.get("x-hound-admin", ""), token):
-            raise HTTPException(403, "POST /demo/reset needs header X-Hound-Admin equal to HOUND_ADMIN_TOKEN")
-    elif not _is_local(request):
+    if not token:
         raise HTTPException(403, "POST /demo/reset is localhost only (or set HOUND_ADMIN_TOKEN and send X-Hound-Admin)")
+    if not token_matches(request.headers.get("x-hound-admin"), token):
+        raise HTTPException(403, "POST /demo/reset needs header X-Hound-Admin equal to HOUND_ADMIN_TOKEN")
 
 
 PREWARM_AUDIENCES = ("victim", "detective")

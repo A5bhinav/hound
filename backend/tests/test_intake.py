@@ -49,7 +49,11 @@ def test_typed_hash_validates_on_chain_and_marks_verified(monkeypatch):
     assert client.post(f"/intake/{code}/screenshot", data={"typed": TX}).status_code == 409
     # operator approval is what makes it trusted
     assert client.post(f"/intake/{code}/approve", json={"case_id": "intake-wrong"}).status_code == 409
-    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}).json()["status"] == "approved" and cid in api.TRUSTED
+    # CSRF: another site cannot drive the operator's browser into approving
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}, headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}, headers={"Origin": "https://evil.example"}).status_code == 403
+    assert cid not in api.TRUSTED
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}, headers={"Origin": "http://localhost:3000"}).json()["status"] == "approved" and cid in api.TRUSTED
     remote = TestClient(api.app, client=("203.0.113.9", 40000))
     assert remote.post(f"/intake/{code}/approve", json={"case_id": cid}).status_code == 403
 
