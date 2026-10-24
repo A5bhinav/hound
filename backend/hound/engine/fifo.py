@@ -29,7 +29,7 @@ def order_key(t):
 
 
 def propagate(transfers, explored, seeds):
-    """seeds: {(tx_hash, to): seed_id}. Returns per-seed totals for addresses and edges."""
+    """seeds: {(tx_hash, to): seed_id | [(seed_id, base_units)]}. Returns per-seed totals."""
     queues = defaultdict(deque)
     tainted_in = defaultdict(lambda: defaultdict(int))      # address -> seed -> base units in
     edge_seed = defaultdict(lambda: defaultdict(int))       # (from, to) -> seed -> base units
@@ -43,9 +43,18 @@ def propagate(transfers, explored, seeds):
         if amt <= 0 or src == dst:
             continue
         seed = seeds.get((t["tx_hash"], dst))
-        if seed is not None:
+        if isinstance(seed, str):
             parts = [(seed, amt)]
             seeded[seed] += amt
+        elif seed:  # multi-seed lot from a swap: [(seed_id, base)], remainder is clean
+            parts = [(sid, a) for sid, a in seed if a > 0]
+            for sid, a in parts:
+                seeded[sid] += a
+            rest = amt - sum(a for _, a in parts)
+            if rest < 0:
+                raise ValueError(f"swap seeds exceed the transfer amount in {t['tx_hash']}")
+            if rest:
+                parts.append((None, rest))
         elif src in explored:
             parts = _dequeue(queues[src], amt)
         else:

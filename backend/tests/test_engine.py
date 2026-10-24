@@ -21,37 +21,51 @@ FINALS = {
 def run():
     return run_trace(example("ohnd_replay.case"), get_transfers=fixture_chain.get_transfers,
                      label=fixture_chain.label, freeze_status=fixture_chain.freeze_status,
-                     get_balance=fixture_chain.get_balance)
+                     get_balance=fixture_chain.get_balance, get_native_txs=fixture_chain.get_native_txs)
 
 
 A9 = "0xafd770d8898a0e323c607fe91358345e7b2378a5"
+A8 = "0x4e5cda8f0d772ac57e947545192a0657ad47abb5"
+A7 = "0xa1770ead287dc8e91631a7a323390d5b744f0021"
+# DOJ's intermediates, resolved from the complaint; the engine never sees this list.
+INTERMEDIATES = {
+    "0xcf9bbfa762ef5a84ba3d25350de941a6db485027", "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f", "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "0xdf6fa72c71577c3a3209db202d4815021f0ed53f", A6, "0xe799442b78b502cfa156895099ae26709c2d6ad0",
+    "0x212a021291a4a4007bc8892b2176c41204d9c794", "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+    "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376", "0xa327e6cfdd29022a530950079877861636f4dbb8",
+}
 
 
 def test_reaches_doj_seized_wallets_blind():
-    # Seeds = the 20 A-branch inflows into A-1. Under FIFO they reach A-7 and A-8.
-    # A-9 is fed mostly by the B branch (0x447190... matches DOJ's B-3, 447...eb691),
-    # so reaching A-9 needs B-branch seeds: CK's scoreboard adds them.
+    # A.H.'s six real ETH sends, freezes hidden, data cut off one block before the last freeze.
     trace = run()
-    ends = {e["address"]: e for e in trace["endpoints"]}
-    a_branch_finals = set(FINALS) - {A9}
-    assert a_branch_finals <= set(ends), f"missing finals: {a_branch_finals - set(ends)}"
-    # Replay: freezes are hidden from the engine, so the finals end as holding (money still
-    # there at the cutoff block). The freeze is attached to the node for the UI to reveal.
     nodes = {n["address"]: n for n in trace["nodes"]}
-    for a in a_branch_finals:
-        assert ends[a]["reason"] == "holding" and ends[a]["victim_remaining"] > 0
-        assert nodes[a]["frozen"]["is_frozen"] and not ends[a]["freezable"]
-    assert A6 in {n["address"] for n in trace["nodes"]}, "must pass through the A-6 consolidation"
+    assert INTERMEDIATES <= set(nodes), f"missed intermediates: {INTERMEDIATES - set(nodes)}"
+    inflow = {e["to"]: 0.0 for e in trace["edges"]}
+    for e in trace["edges"]:
+        inflow[e["to"]] += e["attributed_amount"] if e["token"] == "USDT" else 0
+    # DOJ para 74 counts money traced INTO each wallet. Bands: green <=5%, amber 5-20%, red >20%.
+    assert abs(inflow[A7] - 314657) / 314657 < 0.20
+    assert abs(inflow[A9] - 43071) / 43071 < 0.20
+    # Known miss: A-6 only starts paying A-8 on May 30, after A.H.'s lots have passed through.
+    assert inflow.get(A8, 0) == 0
+    assert nodes[A7]["frozen"]["is_frozen"], "freeze must be attached for the UI reveal"
+
+
+def test_eth_seeds_are_conserved():
+    for sid, p in run()["swaps"]["per_seed"].items():
+        assert abs(p["eth_sent"] - (p["eth_swapped"] + p["eth_gas"] + p["eth_unresolved"])) < 1e-6, (sid, p)
+        assert p["usdt_out"] > 0
 
 
 def test_taint_is_conserved():
     trace = run()
-    seeded = sum(s["amount"] for s in example("ohnd_replay.case")["sends"])
     for e in trace["edges"]:
         assert e["attributed_amount"] <= e["amount"] + 1e-6
-    victims = {s["from"] for s in example("ohnd_replay.case")["sends"]}
-    victim_out = sum(e["attributed_amount"] for e in trace["edges"] if e["from"] in victims)
-    assert abs(victim_out - seeded) < 1e-3
+    usdt_seeded = sum(p["usdt_out"] for p in trace["swaps"]["per_seed"].values())
+    ended = sum(e["victim_remaining"] for e in trace["endpoints"])
+    assert ended <= usdt_seeded + 1e-3
 
 
 def test_conservation_per_seed_to_the_micro_unit():
@@ -59,11 +73,9 @@ def test_conservation_per_seed_to_the_micro_unit():
     # max_hops) plus what is still sitting in intermediate wallets.
     from hound.engine.fifo import propagate
     trace = run()
-    for seed in trace["seeds"]:
-        sid = seed["seed_id"]
-        ended = sum(e["attributed_by_seed"].get(sid, 0) for e in trace["endpoints"] if e["reason"] != "holding")
-        holding = sum(e["attributed_by_seed"].get(sid, 0) for e in trace["endpoints"] if e["reason"] == "holding")
-        assert ended + holding <= seed["amount"] + 1e-6
+    for sid, p in trace["swaps"]["per_seed"].items():
+        ended = sum(e["attributed_by_seed"].get(sid, 0) for e in trace["endpoints"])
+        assert ended <= p["usdt_out"] + 1e-6, (sid, ended, p["usdt_out"])
 
 
 def test_reruns_are_identical():
@@ -99,3 +111,23 @@ def test_cycles_do_not_loop_forever():
           for i, (x, y) in enumerate([("0xv", a), (a, b), (b, a), (a, b)])]
     r = propagate(ts, {a, b}, {("t0", a): "s1"})
     assert r["remaining"][b] == {"s1": 10_000_000}
+
+
+def test_high_volume_and_fetch_errors_are_visible_not_fatal():
+    class TooManyTransfers(Exception):
+        pass
+
+    def flaky(chain, address, after=None, as_of=None):
+        if address == A6:
+            raise TooManyTransfers("over 10,000 transfers")
+        if address == "0x212a021291a4a4007bc8892b2176c41204d9c794":
+            raise ConnectionError("rpc down")
+        return fixture_chain.get_transfers(chain, address, after=after, as_of=as_of)
+
+    t = run_trace(example("ohnd_replay.case"), get_transfers=flaky, label=fixture_chain.label,
+                  freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance,
+                  get_native_txs=fixture_chain.get_native_txs)
+    reasons = {e["address"]: e["reason"] for e in t["endpoints"]}
+    assert reasons[A6] == "high_volume"
+    assert reasons["0x212a021291a4a4007bc8892b2176c41204d9c794"] == "dead_end"
+    assert t["status"] == "partial" and t["stats"]["fetch_errors"] == 1

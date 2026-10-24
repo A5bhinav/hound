@@ -137,6 +137,10 @@
         "elapsed_ms": {
           "type": "integer",
           "minimum": 0
+        },
+        "fetch_errors": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -220,6 +224,26 @@
           "amount": {
             "type": "number"
           }
+        }
+      }
+    },
+    "swaps": {
+      "type": "object",
+      "description": "ETH to USDT same-tx swaps for ETH seeds (AUDIT issue 1)",
+      "required": [
+        "resolved",
+        "unresolved",
+        "per_seed"
+      ],
+      "properties": {
+        "resolved": {
+          "type": "array"
+        },
+        "unresolved": {
+          "type": "array"
+        },
+        "per_seed": {
+          "type": "object"
         }
       }
     }

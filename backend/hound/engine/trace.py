@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 
 from hound.contracts import validate_trace
 from hound.engine.fifo import from_base, propagate
+from hound.engine.swaps import resolve_eth_seeds
 from hound.llm.classify import classify, features
 
 log = logging.getLogger("hound.engine")
@@ -45,7 +46,9 @@ def _now():
 def _chain_defaults():
     try:
         from hound import chain  # Jinka's adapters; exports the BRIEF 8.4 functions
-        return {k: getattr(chain, k) for k in ("get_transfers", "label", "freeze_status", "get_balance")}
+        deps = {k: getattr(chain, k) for k in ("get_transfers", "label", "freeze_status", "get_balance")}
+        deps["get_native_txs"] = getattr(chain, "get_native_txs", None)
+        return deps
     except (ImportError, AttributeError) as e:
         raise RuntimeError(
             "hound.chain adapters are not merged yet (need get_transfers, label, freeze_status, "
@@ -62,7 +65,7 @@ class Audit:
         log.info("%s %s %s", step, address or "", detail)
 
 
-def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_balance=None, **method):
+def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_balance=None, get_native_txs=None, **method):
     started = time.monotonic()
     if get_transfers is None:
         deps = _chain_defaults()
@@ -70,6 +73,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
         label = label or deps["label"]
         freeze_status = freeze_status or deps["freeze_status"]
         get_balance = get_balance or deps["get_balance"]
+        get_native_txs = get_native_txs or deps.get("get_native_txs")
     label = label or (lambda c, a: None)
     freeze_status = freeze_status or (lambda c, a: NO_FREEZE)
     m = {**DEFAULTS, **method}
@@ -86,19 +90,35 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     chain = chains.pop()
     seed_list = [{"seed_id": f"s{i + 1}", "tx_hash": s["tx_hash"], "token": s["token"], "amount": s["amount"]}
                  for i, s in enumerate(sends)]
-    seeds = {(s["tx_hash"], s["to"]): seed_list[i]["seed_id"] for i, s in enumerate(sends)}
+    seeds = {(s["tx_hash"], s["to"]): seed_list[i]["seed_id"] for i, s in enumerate(sends) if s["token"] != "ETH"}
     start_time = min(s["time"] for s in sends)
     victims = {s["from"] for s in sends}
     if hidden:
         audit("freeze_check", f"replay mode: freezes hidden from the engine, cutoff block {cutoff}")
-
+    swaps = None
+    eth_sends = [dict(s, seed_id=seed_list[i]["seed_id"]) for i, s in enumerate(sends) if s["token"] == "ETH"]
+    if eth_sends:
+        if get_native_txs is None:
+            raise RuntimeError("case has ETH sends but no get_native_txs adapter was provided (AUDIT issue 1)")
+        native, usdt_legs = [], []
+        for x in sorted({s["to"] for s in eth_sends}):
+            native += get_native_txs(chain, x, after=None, as_of=cutoff)
+            usdt_legs += get_transfers(chain, x, after=None, as_of=cutoff)
+            stats["api_calls"] += 2
+        swaps = resolve_eth_seeds(eth_sends, native, usdt_legs)
+        seeds.update(swaps["seeds"])
+        audit("hop", f"{len(swaps['swaps'])} same-tx ETH to USDT swaps resolved, {len(swaps['unresolved'])} unresolved")
+        for u in swaps["unresolved"]:
+            audit("stop", f"swap_unresolved: ETH out in {u['tx_hash']} has no USDT leg in the same tx", u["address"])
     depth = {s["to"]: 1 for s in sends}
     for v in victims:
         depth.setdefault(v, 0)
     explored, stopped, labels, classes = set(), {}, {}, {}
     leftovers = []   # (address, reason, {seed: base}) for capped / dust money
     transfers = {}
-    frontier = sorted({s["to"] for s in sends})
+    frontier = sorted({s["to"] for s in sends} | ({k[1] for k in swaps["seeds"]} if swaps else set()))
+    for k in (swaps["seeds"] if swaps else {}):
+        depth.setdefault(k[1], 1)
     result, status = None, "done"
 
     for hop in range(1, m["max_hops"] + 1):
@@ -122,9 +142,23 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 if fz.get("is_frozen"):
                     stopped[addr] = "frozen"
                     audit("stop", f"Tether froze this address at {fz.get('frozen_at')}", addr)
-            rows = get_transfers(chain, addr, after=start_time, as_of=cutoff)
+            # FIFO needs the FULL history up to the cutoff: money that was already sitting here
+            # is older than the victim's lots and must leave first (AUDIT issue 7).
+            try:
+                rows = get_transfers(chain, addr, after=None, as_of=cutoff)
+            except Exception as e:  # noqa: BLE001 - adapters raise their own types
+                stats["api_calls"] += 1
+                if type(e).__name__ == "TooManyTransfers":
+                    stopped[addr] = "high_volume"
+                    audit("stop", f"high volume address (exchange or service sized): {e}", addr)
+                else:
+                    stats["fetch_errors"] = stats.get("fetch_errors", 0) + 1
+                    stopped[addr] = "dead_end"
+                    status = "partial"
+                    audit("error", f"fetch failed after the adapter's retries: {type(e).__name__}: {e}", addr)
+                continue
             stats["api_calls"] += 1
-            audit("fetch", f"{len(rows)} transfers since {start_time}" + (f" up to block {cutoff}" if cutoff else ""), addr)
+            audit("fetch", f"{len(rows)} transfers (full history" + (f" up to block {cutoff})" if cutoff else ")"), addr)
             if not rows:
                 stats["empty_results"] += 1
                 audit("empty_result", "no transfers returned; treated as a dead end, check the adapter", addr)
@@ -183,9 +217,38 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     frozen = {a: (freeze_status(chain, a) or NO_FREEZE) for a in sorted(set(victims) | explored | set(stopped))}
     trace = _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, get_balance,
                    classes, seed_list, leftovers, hidden, status)
+    if swaps is not None:
+        trace["swaps"] = _swap_summary(swaps, eth_sends)
+        for s in eth_sends:  # the ETH legs from the victim side, so the graph starts at d95
+            trace["edges"].insert(0, {
+                "from": s["from"], "to": s["to"], "token": "ETH", "amount": float(s["amount"]),
+                "attributed_amount": float(s["amount"]), "attributed_by_seed": {s["seed_id"]: float(s["amount"])},
+                "tx_hashes": [s["tx_hash"]], "first_time": s["time"], "last_time": s["time"], "hop": 1,
+                "confidence": CONFIDENCE_MODEL["base"]["direct"], "method": "direct"})
     trace["stats"] = {**stats, "elapsed_ms": int((time.monotonic() - started) * 1000)}
     trace["audit_log"] = audit.entries
     return validate_trace(trace)
+
+
+def _swap_summary(sw, eth_sends):
+    eth = lambda w: round(w / 10 ** 18, 9)
+    rows = [{"address": r["address"], "tx_hash": r["tx_hash"], "time": r["time"], "recipient": r["recipient"],
+             "eth_out": eth(r["eth_out_wei"]), "usdt_in": from_base(r["usdt_in_base"]),
+             "victim_eth": {k: eth(v) for k, v in sorted(r["by_seed_wei"].items())},
+             "victim_usdt": {k: from_base(v) for k, v in sorted(r["by_seed_usdt_base"].items())}} for r in sw["swaps"]]
+    per_seed = {}
+    for s in eth_sends:
+        sid = s["seed_id"]
+        per_seed[sid] = {
+            "eth_sent": float(s["amount"]),
+            "eth_swapped": eth(sum(r["by_seed_wei"].get(sid, 0) for r in sw["swaps"])),
+            "eth_gas": eth(sw["gas"].get(sid, 0)),
+            "eth_unresolved": eth(sum(u["by_seed_wei"].get(sid, 0) for u in sw["unresolved"])),
+            "usdt_out": from_base(sum(r["by_seed_usdt_base"].get(sid, 0) for r in sw["swaps"])),
+        }
+    return {"resolved": rows, "unresolved": [{"address": u["address"], "tx_hash": u["tx_hash"],
+                                              "eth_out": eth(u["eth_out_wei"])} for u in sw["unresolved"]],
+            "per_seed": per_seed}
 
 
 def _amounts(by_seed):

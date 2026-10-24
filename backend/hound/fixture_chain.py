@@ -39,6 +39,21 @@ def get_transfers(chain, address, token=None, as_of=None, after=None):
     return out
 
 
+@lru_cache(maxsize=1)
+def _native():
+    return json.loads((EXAMPLES / "ohnd_eth_txs.json").read_text())
+
+
+def get_native_txs(chain, address, as_of=None, after=None):
+    """Native ETH txs touching `address` (value, gas, block, tx_index), same filters as get_transfers."""
+    if chain != "ethereum":
+        raise ValueError(f"fixture chain only has ethereum data, asked for {chain}")
+    return [t for t in _native() if address in (t["from"], t["to"])
+            and (after is None or t["time"] >= after)
+            and not (isinstance(as_of, int) and t["block"] > as_of)
+            and not (isinstance(as_of, str) and t["time"] > as_of)]
+
+
 def label(chain, address):
     return None  # holdout: no DOJ labels, and the fixture has no exchange labels
 

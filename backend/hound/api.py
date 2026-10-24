@@ -75,7 +75,8 @@ def trace_case(case_id: str):
         log.warning("REAL CHAIN ADAPTERS MISSING, tracing on fixture data: %s", e)
         from hound import fixture_chain as fc
         trace = run_trace(case, get_transfers=fc.get_transfers, label=fc.label,
-                          freeze_status=fc.freeze_status, get_balance=fc.get_balance)
+                          freeze_status=fc.freeze_status, get_balance=fc.get_balance,
+                          get_native_txs=fc.get_native_txs)
     trace["other_payers"] = other_payers(trace)
     TRACES[trace["trace_id"]] = trace
     case["status"] = "traced"

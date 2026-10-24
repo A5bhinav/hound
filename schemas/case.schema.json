@@ -34,10 +34,16 @@
       "additionalProperties": false,
       "properties": {
         "alias": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "age_band": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "exchange_used": {
           "type": [
