@@ -1,0 +1,240 @@
+{
+  "case": "US v. 4,340,000 Tether et al.",
+  "docket": "1:25-cv-00386 (N.D. Ohio)",
+  "filed": "2025-02-27",
+  "source_pdf": "https://www.justice.gov/usao-ndoh/media/1391461/dl",
+  "chain": "ethereum",
+  "rule": "HOLDOUT. None of these addresses may appear in the label DB, engine code, engine fixtures (except the four INPUT seeds) or prompts. Scoring reads data/doj/resolved.json (full addresses, resolved by amount+date, zero-value poison dropped), never a prefix/suffix regex.",
+  "accounting": {
+    "named_victims": "FIFO (\u00b6\u00b671,73,80)",
+    "28_additional": "LIFO, Proceeds-In-First-Out, or FIFO (\u00b681)",
+    "5_unidentified_accounts": "LIFO (\u00b682)"
+  },
+  "seeds_ah_eth_sends_para69": [
+    {
+      "to": "C-1",
+      "eth": 8.395779,
+      "time": "2024-04-02T02:27:23.000000Z",
+      "tx_hash": "0x39f5908eff18078de843427f245a8e3be6d64914241265ed2e3e893948741adc"
+    },
+    {
+      "to": "C-1",
+      "eth": 16.142295,
+      "time": "2024-04-19T02:05:47.000000Z",
+      "tx_hash": "0xe95cc581e567558ef87503f2fe9d5135fb3b03023186a95395aefcab9e202d30"
+    },
+    {
+      "to": "B-1",
+      "eth": 15.265363,
+      "time": "2024-04-23T21:29:47.000000Z",
+      "tx_hash": "0xe235b29e26540a3184627a0d2ecd3e60bebefc3f53d6c22a2e5f37b96ea50b12"
+    },
+    {
+      "to": "B-1",
+      "eth": 15.08,
+      "time": "2024-04-30T02:09:35.000000Z",
+      "tx_hash": "0x638cfc893b851ec6524542275a3a4eef75e453fd270ad6ce07a4f3321e74fde4"
+    },
+    {
+      "to": "A-1",
+      "eth": 33.00419,
+      "time": "2024-05-17T02:03:23.000000Z",
+      "tx_hash": "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029"
+    },
+    {
+      "to": "A-1",
+      "eth": 26.618573,
+      "time": "2024-05-21T01:14:11.000000Z",
+      "tx_hash": "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
+    }
+  ],
+  "amount_tier_ah_para74_usdt": {
+    "A-7": 314657,
+    "A-8": 11954,
+    "A-9": 43071,
+    "total": 369683
+  },
+  "context_only_para83_85": {
+    "A-7": 2690294,
+    "A-8": 1765180,
+    "A-9": 795255,
+    "note": "38 victims/accounts, mixed LIFO/PIFO/FIFO, subpoena data. Never scored."
+  },
+  "entries": [
+    {
+      "label": "d95",
+      "prefix": "0xd95",
+      "suffix": "4be2cd4",
+      "full": "0xd95da710ca21c985799a168109db702044be2cd4",
+      "role": "A.H.'s pass-through; sent six ETH transfers to A-1/B-1/C-1 (\u00b669). INPUT, never scored.",
+      "source_page": 16,
+      "source_para": "69"
+    },
+    {
+      "label": "A-1",
+      "prefix": "0xcf9",
+      "suffix": "b485027",
+      "full": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "role": "received ETH from A.H.; swapped ETH->USDT here (\u00b670)",
+      "source_page": 16,
+      "source_para": "69-72"
+    },
+    {
+      "label": "B-1",
+      "prefix": "0xe79",
+      "suffix": "c2d6ad0",
+      "full": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
+      "role": "received ETH from A.H.",
+      "source_page": 16,
+      "source_para": "69-72"
+    },
+    {
+      "label": "C-1",
+      "prefix": "0xa32",
+      "suffix": "6f4dbb8",
+      "full": "0xa327e6cfdd29022a530950079877861636f4dbb8",
+      "role": "received ETH from A.H.",
+      "source_page": 16,
+      "source_para": "69-72"
+    },
+    {
+      "label": "A-2",
+      "prefix": "0x783",
+      "suffix": "2da1a06",
+      "full": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "role": "REACH tier",
+      "source_page": 17,
+      "source_para": "70-73"
+    },
+    {
+      "label": "A-3",
+      "prefix": "0x9eb",
+      "suffix": "5db5e1f",
+      "full": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "role": "FIFO lands here; 4 transfers May 21-30 2024 to A-6 (\u00b671)",
+      "source_page": 17,
+      "source_para": "70-73"
+    },
+    {
+      "label": "A-4",
+      "prefix": "0x07f",
+      "suffix": "93e9d53",
+      "full": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "role": "REACH tier",
+      "source_page": 17,
+      "source_para": "70-73"
+    },
+    {
+      "label": "A-5",
+      "prefix": "0xdf6",
+      "suffix": "f0ed53f",
+      "full": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "role": "REACH tier",
+      "source_page": 17,
+      "source_para": "70-73"
+    },
+    {
+      "label": "A-6",
+      "prefix": "0x58e",
+      "suffix": "b2d0dcb",
+      "full": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "role": "CONSOLIDATION: all victims' funds pass here before A-7/A-8/A-9 (\u00b6\u00b673-79)",
+      "source_page": 18,
+      "source_para": "70-73"
+    },
+    {
+      "label": "B-2",
+      "prefix": "0x212",
+      "suffix": "4d9c794",
+      "full": "0x212a021291a4a4007bc8892b2176c41204d9c794",
+      "role": "REACH tier",
+      "source_page": 18,
+      "source_para": "70-73"
+    },
+    {
+      "label": "B-3",
+      "prefix": "0x4471",
+      "suffix": "eb6911a",
+      "full": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+      "role": "B-branch FIFO lands here, then to A-6 (\u00b673)",
+      "source_page": 18,
+      "source_para": "70-73"
+    },
+    {
+      "label": "B-4",
+      "prefix": "0x28b8",
+      "suffix": "fd17376",
+      "full": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
+      "role": "REACH tier",
+      "source_page": 18,
+      "source_para": "70-73"
+    },
+    {
+      "label": "A-7",
+      "prefix": "0xa17",
+      "suffix": "44f0021",
+      "full": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "role": "REACH tier + AMOUNT tier (A.H. \u00b674 row)",
+      "source_page": 3,
+      "source_para": "7, 74, 83-85",
+      "frozen_at": "2024-06-21",
+      "freeze_tx": "0x5b124d778136157b2f9e27e5fc6179780598288a9f36be7bd558301068f48b7a",
+      "freeze_block": 20140818,
+      "doj_total_all_victims_usdt_CONTEXT_ONLY": 2690294,
+      "defendant_usdt": 4340000
+    },
+    {
+      "label": "A-8",
+      "prefix": "0x4e5",
+      "suffix": "d47abb5",
+      "full": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "role": "REACH tier + AMOUNT tier (A.H. \u00b674 row)",
+      "source_page": 3,
+      "source_para": "7, 74, 83-85",
+      "frozen_at": "2024-06-25",
+      "freeze_tx": "0xa76529e1aa4576206a8c4c5fab2b136d94f24768b957dd7809de41bf9f55f4a5",
+      "freeze_block": 20170086,
+      "doj_total_all_victims_usdt_CONTEXT_ONLY": 1765180,
+      "defendant_usdt": 3290000
+    },
+    {
+      "label": "A-9",
+      "prefix": "0xafd",
+      "suffix": "b2378a5",
+      "full": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+      "role": "REACH tier + AMOUNT tier (A.H. \u00b674 row)",
+      "source_page": 4,
+      "source_para": "7, 74, 83-85",
+      "frozen_at": "2024-06-21",
+      "freeze_tx": "0x547c5335f4887c8b06ef4f1eec7726404ad6c23ce8a9f794cd14d3e4d21da776",
+      "freeze_block": 20140808,
+      "doj_total_all_victims_usdt_CONTEXT_ONLY": 795255,
+      "defendant_usdt": 577578
+    }
+  ],
+  "poison_lookalikes_seen": [
+    "0x58baad887c9946e88f10b460d586c72f572d0dcb",
+    "0x5881b36b3d1f8a329824ff9688fa3c92952d0dcb",
+    "0x58e99dc8685689228824ae998458415da62d0dcb",
+    "0x212a020c25c269a1e33806eaebe2c24642d9c794",
+    "0x212832d73429f8e0c5c16894aa43158f73abc794",
+    "0x3396ddff25bc6828f75ad2ffbd71833e1e073705"
+  ],
+  "all_holdout_addresses": [
+    "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "0x212a021291a4a4007bc8892b2176c41204d9c794",
+    "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
+    "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+    "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+    "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+    "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+    "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+    "0xa327e6cfdd29022a530950079877861636f4dbb8",
+    "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+    "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+    "0xd95da710ca21c985799a168109db702044be2cd4",
+    "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+    "0xe799442b78b502cfa156895099ae26709c2d6ad0"
+  ]
+}

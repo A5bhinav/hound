@@ -1,6 +1,6 @@
 """Build data/labels/*.json from public, MIT-licensed datasets.
 
-    cd backend && .venv/bin/python -m hound.chain.build_labels
+    cd backend && .venv/bin/python backend/tools/build_labels.py
 
 Sources:
   - brianleect/etherscan-labels (MIT): Etherscan label dump, 2023
@@ -22,8 +22,10 @@ from pathlib import Path
 
 import httpx
 
-from .cache import REPO_ROOT
-from . import holdout
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from hound.chain.cache import REPO_ROOT  # noqa: E402
+import holdout_guard as holdout  # noqa: E402
 
 log = logging.getLogger("hound.chain.build_labels")
 
@@ -161,7 +163,7 @@ def build() -> dict:
         "sources": SRC,
         "licence": "Each source is MIT-licensed; see the linked repositories.",
         "rule": "Exchange / mixer / bridge / service slugs from an allowlist only. No 'blocked' or exploit "
-                "slugs. Every DOJ holdout address is excluded (see hound/chain/holdout.py).",
+                "slugs. Every DOJ holdout address is excluded (see backend/tools/holdout_guard.py).",
         "dropped_holdout": dropped_holdout,
     }
     return {"meta": meta, "ethereum": labels, "ofac": ofac}

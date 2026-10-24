@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from hound.contracts import ROOT, example, validate_case
 from hound.engine.trace import run_trace
 from hound.llm.writer import write_case
-from hound.proof.backtest import freeze_backtest
+from hound.proof.backtest import serve as backtest_serve
 from hound.proof.doj_ohnd import doj_scoreboard
 from hound.proof.scan import weekend_scan
 from hound.watch.check import check
@@ -112,8 +112,8 @@ def scoreboard():
 
 
 @app.get("/proof/backtest")
-def backtest():
-    return freeze_backtest()
+def backtest():  # serves the batch result written by `python -m hound.proof.backtest`
+    return backtest_serve()
 
 
 @app.get("/scan/latest")

@@ -1,0 +1,23 @@
+[
+  {
+    "event": "AddedBlackList",
+    "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+    "time": "2024-06-21T14:53:11Z",
+    "tx_hash": "0x5b124d778136157b2f9e27e5fc6179780598288a9f36be7bd558301068f48b7a",
+    "source": "Tether USDT contract event (public chain data)"
+  },
+  {
+    "event": "AddedBlackList",
+    "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+    "time": "2024-06-21T14:51:11Z",
+    "tx_hash": "0x547c5335f4887c8b06ef4f1eec7726404ad6c23ce8a9f794cd14d3e4d21da776",
+    "source": "Tether USDT contract event (public chain data)"
+  },
+  {
+    "event": "AddedBlackList",
+    "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+    "time": "2024-06-25T17:07:23Z",
+    "tx_hash": "0xa76529e1aa4576206a8c4c5fab2b136d94f24768b957dd7809de41bf9f55f4a5",
+    "source": "Tether USDT contract event (public chain data)"
+  }
+]
