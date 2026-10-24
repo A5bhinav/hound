@@ -129,5 +129,19 @@ export interface Trace {
   endpoints: Endpoint[];
   other_payers: OtherPayer[];
   stats: { api_calls: number; cache_hits: number; empty_results: number; elapsed_ms: number };
-  audit_log: { t: string; step: string; address?: string | null; detail: string }[];
+  audit_log: AuditEntry[];
+}
+
+export interface AuditEntry {
+  t: string;
+  step: string;
+  address?: string | null;
+  detail: string;
+}
+
+/** AUDIT N4: POST /cases/{id}/trace answers at once; GET /traces/{id} returns progress until the run ends. */
+export interface TraceRunning {
+  trace_id: string;
+  status: "running";
+  audit_log?: AuditEntry[];
 }

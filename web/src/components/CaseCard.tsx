@@ -25,26 +25,30 @@ const FACTS: [string, (c: CaseSummary) => string | null | undefined][] = [
   ["First contact", (c) => c.story?.first_contact],
 ];
 
-export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: Trace }) {
+/** trace is null while it is still running. */
+export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: Trace | null }) {
   // GET /cases has no sends; the trace's seeds are the same transfers.
-  const sends = "sends" in c ? c.sends : null;
-  const total = sends ? sends.reduce((s, x) => s + x.amount, 0) : trace.seeds.reduce((s, x) => s + x.amount, 0);
-  const chain = trace.nodes[0]?.chain ?? "ethereum";
+  const sendList = "sends" in c ? c.sends : (trace?.seeds ?? []);
+  const total = sendList.reduce((s, x) => s + x.amount, 0);
+  const chain = trace?.nodes[0]?.chain ?? ("sends" in c ? c.sends[0]?.chain : undefined) ?? "ethereum";
   const facts = FACTS.map(([k, get]) => [k, get(c)] as const).filter(([, v]) => v && v !== "unknown");
   const asOf = "as_of" in c ? c.as_of : null;
+  const replay = trace?.replay ?? c.source === "doj_replay";
 
   return (
     <aside className={styles.card}>
       <p className="eyebrow">
-        {trace.replay ? "Replay · historical case" : "Case"} · {c.case_id}
+        {replay ? "Replay · historical case" : "Case"} · {c.case_id}
       </p>
       <h1 className={styles.alias} data-long={(c.victim?.alias ?? c.case_id).length > 28 || undefined}>
         {c.victim?.alias ?? c.case_id}
       </h1>
-      <p className={styles.sent}>
-        {usdt(total)} in {(sends ?? trace.seeds).length} sends
-      </p>
-      {trace.replay && asOf && <p className={styles.replay}>Traced as of {asOf.slice(0, 10)}, the date the victim reported.</p>}
+      {sendList.length > 0 && (
+        <p className={styles.sent}>
+          {usdt(total)} in {sendList.length} sends
+        </p>
+      )}
+      {replay && asOf && <p className={styles.replay}>Traced as of {asOf.slice(0, 10)}, the date the victim reported.</p>}
 
       {facts.length > 0 && (
         <dl className={styles.facts}>
@@ -58,9 +62,9 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
       )}
       {c.story?.summary && <p className={styles.summary}>{c.story.summary}</p>}
 
-      <p className="eyebrow">Sends</p>
+      {sendList.length > 0 && <p className="eyebrow">Sends</p>}
       <ul className={`${styles.list} ${styles.sends}`}>
-        {(sends ?? trace.seeds).map((s) => (
+        {sendList.map((s) => (
           <li key={s.tx_hash}>
             <span>{usdt(s.amount)}</span>
             <span className={styles.meta}>
@@ -73,6 +77,14 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
         ))}
       </ul>
 
+      {trace && <Endpoints trace={trace} />}
+    </aside>
+  );
+}
+
+function Endpoints({ trace }: { trace: Trace }) {
+  return (
+    <>
       <p className="eyebrow">Where the money stopped</p>
       <ul className={styles.list}>
         {trace.endpoints.map((p) => (
@@ -95,6 +107,6 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
         {trace.method.as_of_block ? ` · cutoff block ${trace.method.as_of_block}` : ""} · {trace.stats.api_calls} API calls ·{" "}
         {trace.stats.empty_results} empty results
       </p>
-    </aside>
+    </>
   );
 }
