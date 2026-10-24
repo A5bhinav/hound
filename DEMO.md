@@ -55,6 +55,9 @@ The site has two front doors. **http://localhost:3000** is the victim's: Call us
 6. Before the next judge: **Reset demo** at the bottom of http://localhost:3000/how (click twice). It calls `POST /demo/reset`.
 
 ## A judge who wants to try it as a victim
+Kit and full steps: **docs/demo-kit/README.md**. In short: they call (681) 275-5467 with any story, save **houndhelp.vercel.app/demo/receipt.png** (A.H.'s real 33 ETH payment), upload it on their case page, and see 101,352 USDT followed, all frozen by Tether.
+
+### Typing instead of the screenshot
 On their phone, at the public web URL: **Report online** → answer the questions → **Let me type it instead** and paste A.H.'s first tx hash (`0x39f5…1adc`, full value in `examples/ohnd_replay.case.json`) → "We found your payment" → **See what we found**: where the money went, what to do now, and their own report (unredacted, because they hold the case code).
 
 ## When something breaks
