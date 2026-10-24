@@ -1,48 +1,22 @@
-/* Victim-facing pages opened from a text message: phone first, one column, no app chrome. */
+/* Victim-facing pages opened from a text message: phone first, one calm column under the site header. */
 .page {
-  max-width: 40rem;
+  width: 100%;
+  max-width: 46rem;
   margin: 0 auto;
-  padding: 1rem 1.25rem 3rem;
-  min-height: 100vh;
+  padding: clamp(2rem, 5vw, 4rem) var(--gutter) 4rem;
 }
 
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding-bottom: 1rem;
-  margin-bottom: 1.75rem;
-  border-bottom: 1px solid var(--rule);
-}
-
+/* The case code inside the eyebrow: same mono, brighter, so it can be read back on the phone. */
 .code {
-  padding: 0.3rem 0.65rem;
-  font-family: var(--font-m);
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
   color: var(--ink);
-  background: var(--paper-2);
-  border: 1px solid var(--rule-2);
-  border-radius: 6px;
-  white-space: nowrap;
+  font-weight: 500;
 }
 
 .h1 {
-  margin: 0 0 1.25rem;
-  font-size: clamp(1.85rem, 7vw, 2.4rem);
-  line-height: 1.1;
+  margin: 0 0 1.75rem;
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
 }
 
-.sub {
-  margin: -0.5rem 0 1.5rem;
-  font-size: 1.15rem;
-  color: var(--ink-2);
-}
-
-@media (min-width: 720px) {
-  .page {
-    padding-top: 1.5rem;
-  }
+.page .sub {
+  margin: -0.75rem 0 2rem;
 }

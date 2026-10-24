@@ -29,11 +29,11 @@ export default async function MyCase({ params }: PageProps<"/my/[code]">) {
           <>
             <header className="page-head">
               <div>
-                <p className="label">Your case · {code}</p>
+                <p className="eyebrow">Your case · {code}</p>
                 <h1>We can&apos;t find that case code</h1>
               </div>
             </header>
-            <div className="grid g2">
+            <div className={`grid g2 ${styles.big}`}>
               <section className="box" aria-labelledby="try-h">
                 <h2 id="try-h" className={styles.boxTitle}>What to try</h2>
                 <ul className="checks">
@@ -57,7 +57,7 @@ export default async function MyCase({ params }: PageProps<"/my/[code]">) {
           <>
             <header className="page-head">
               <div>
-                <p className="label">Your case · {code}</p>
+                <p className="eyebrow">Your case · {code}</p>
                 <h1>We found your payment</h1>
               </div>
               <span className="badge badge-ok">Payment confirmed</span>
@@ -68,11 +68,11 @@ export default async function MyCase({ params }: PageProps<"/my/[code]">) {
           <>
             <header className="page-head">
               <div>
-                <p className="label">Your case · {code}</p>
+                <p className="eyebrow">Your case · {code}</p>
                 <h1>{s.status === "validating" ? "We are checking your picture" : "We still need a picture of your payment"}</h1>
               </div>
             </header>
-            <div className="grid g2">
+            <div className={`grid g2 ${styles.big}`}>
               <section className={`box ${styles.pending}`}>
                 {s.status === "needs_retake" && s.message && <p className={styles.error}>{s.message}</p>}
                 {s.status !== "validating" ? (

@@ -12,13 +12,13 @@ export default function ReportPage() {
       <main className="wrap">
         <header className="page-head">
           <div>
-            <p className="label">Report a scam · step 1 of 2</p>
+            <p className="eyebrow">Report a scam · step 1 of 2</p>
             <h1>Tell us what happened</h1>
             <p className="sub">A few short questions. Then a picture of your payment.</p>
           </div>
         </header>
 
-        <div className={`grid g3 ${styles.reportGrid}`}>
+        <div className={`grid g3 ${styles.reportGrid} ${styles.big}`}>
           <section className="box span2" aria-label="Your report">
             <ReportForm />
           </section>

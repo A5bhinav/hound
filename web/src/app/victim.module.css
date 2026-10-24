@@ -74,15 +74,15 @@
 }
 
 .boxTitle {
-  margin: 0 0 1.15rem;
-  font-size: 1.25rem;
+  margin: 0 0 1.25rem;
+  font-size: 1.4rem;
 }
 
 .warn {
   margin: auto 0 0;
-  padding-top: 1rem;
+  padding-top: 1.1rem;
   border-top: 1px solid #3a1518;
-  font-size: 0.85rem;
+  font-size: 1.02rem;
   color: var(--ink-2);
 }
 
@@ -97,17 +97,22 @@
 
 .side {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
+}
+
+/* Victim pages read at 17 to 18 px. */
+.side :global(.checks) {
+  font-size: 1.08rem;
 }
 
 .nextList {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.85rem;
   margin: 0;
   padding: 0;
   list-style: none;
   counter-reset: next;
-  font-size: 0.95rem;
+  font-size: 1.08rem;
 }
 
 .nextList li {
@@ -122,20 +127,20 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  font-size: 0.8rem;
-  font-weight: 700;
+  width: 1.8rem;
+  height: 1.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--white);
   background: var(--red);
-  border-radius: 5px;
+  border-radius: 50%;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.35rem;
-  font-size: 1.1rem;
+  gap: 1.5rem;
+  font-size: 1.12rem;
 }
 
 .pair {
@@ -153,8 +158,8 @@
 
 .field span {
   font-weight: 400;
-  font-size: 0.92rem;
-  color: var(--ink-3);
+  font-size: 1rem;
+  color: var(--ink-2);
 }
 
 /* Big fields for a shaky hand: 56 px tall, 18 px type. */
@@ -188,7 +193,7 @@
 .submit {
   min-height: 3.5rem;
   padding: 0.95rem 1.6rem;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
 }
 
 .submit:disabled {
@@ -221,7 +226,7 @@
   align-items: center;
   gap: 0.75rem;
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.12rem;
 }
 
 .tiles {
@@ -238,7 +243,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 1.02rem;
+  font-size: 1.12rem;
   border-top: 1px solid var(--rule);
 }
 
@@ -247,13 +252,15 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
-  padding: 0.85rem 0;
+  padding: 1rem 0;
   border-bottom: 1px solid var(--rule);
 }
 
 .found strong {
   white-space: nowrap;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--white);
   font-variant-numeric: tabular-nums;
 }
 
@@ -264,13 +271,13 @@
   padding: 0;
   list-style: none;
   counter-reset: todo;
-  font-size: 1.02rem;
+  font-size: 1.12rem;
   border-top: 1px solid var(--rule);
 }
 
 .todo li {
   position: relative;
-  padding: 0.8rem 0 0.8rem 2.4rem;
+  padding: 1rem 0 1rem 2.75rem;
   font-weight: 600;
   border-bottom: 1px solid var(--rule);
   counter-increment: todo;
@@ -280,23 +287,23 @@
   content: counter(todo);
   position: absolute;
   left: 0;
-  top: 0.8rem;
+  top: 1rem;
   display: grid;
   place-items: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  font-size: 0.8rem;
-  font-weight: 700;
+  width: 1.8rem;
+  height: 1.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
   color: var(--white);
   background: var(--red);
-  border-radius: 5px;
+  border-radius: 50%;
 }
 
 .todo li span {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
   font-weight: 400;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--ink-2);
 }
 
@@ -319,7 +326,13 @@
 
 .trail summary {
   cursor: pointer;
-  font-weight: 700;
+  font-size: 1.12rem;
+  font-weight: 600;
+}
+
+/* Victim boxes: 17 to 18 px body text. */
+.big :global(.checks) {
+  font-size: 1.12rem;
 }
 
 .trail[open] summary {

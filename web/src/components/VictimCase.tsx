@@ -72,7 +72,7 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
         </div>
       )}
 
-      <div className="grid g2">
+      <div className={`grid g2 ${styles.big}`}>
         <section className="box" aria-labelledby="found-h">
           <div className="box-h">
             <h2 id="found-h">What we found</h2>
