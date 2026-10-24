@@ -1,7 +1,7 @@
 # Q&A prep (CK) — the follow-ups PITCH.md does not cover. Every number has a source.
 
 **"Your backtest says 45 days. What does that measure?"**
-"For 192 of the 657 Ethereum USDT addresses Tether froze in 2025, the time from the first USDT arriving to the freeze: median 45 days, 10th percentile 36 hours, 90th percentile about 13 months. And by the freeze, a median 44 percent of what came in had already left. Caveat we print on screen: it only measures addresses Tether did freeze, so the true picture for everything it never froze is worse." [data/proof/backtest.json, seed 13, OFAC addresses excluded]
+"For 192 measured (of 200 sampled from the 657) Ethereum USDT addresses Tether froze in 2025, the time from the first USDT arriving to the freeze: median 45 days, 10th percentile 36 hours, 90th percentile about 13 months. And by the freeze, a median 44 percent of what came in had already left. Caveat we print on screen: it only measures addresses Tether did freeze, so the true picture for everything it never froze is worse." [data/proof/backtest.json, seed 13, OFAC addresses excluded]
 
 **"Why not just say Tether froze 54 percent?"**
 "That's BlockSec's number about burned funds, and we cite it as theirs. Ours is a different measurement we can reproduce from the chain." [BlockSec 2025 report]
@@ -39,7 +39,7 @@ Use the Coinbase booth quotes (collect Saturday, attribute by role). Fallback: "
 ## Numbers to have cold
 - $11.4B crypto losses 2025, $7.2B crypto investment fraud, $4.4B lost by 60+ to crypto [IC3 2025 PDF]
 - 12,444 people over 60 lost over $100K to scams (all kinds) [IC3 2025]
-- Operation Level Up: 3,780 notified in 2025, about $225M prevented, 78% didn't know; cumulative about $660M [FBI via press]
+- Operation Level Up: 10,406 victims notified and about $660M in losses prevented, cumulatively [FBI, as of Oct 2026; BRIEF §2, CK checked]. Don't use the older $225M figure.
 - Tether 2025: 4,163 addresses, $1.26B frozen; 3,509 Tron, 657 Ethereum [BlockSec]
 - DOJ case: 38 victims/accounts, finals frozen Jun 21 and 25 2024, seized 4,340,000 / 3,290,000 / 577,578 USDT [complaint]
 - Scoreboard: A-7 +0.9%, A-8 +1.0%, A-9 +10.8%; 8/8 intermediates, 3/3 seized, blind

@@ -3,39 +3,26 @@
 Every number below is verified (source in brackets). Don't say anything that isn't here. If a judge asks something not covered, say "I don't know, here's what we measured instead."
 
 ## 3-minute version (MAIN: Cal Hacks 13.0 is 3 min pitch + 2 min Q&A, live demo required)
-Each step carries one **why** line for the Intentionality criterion ("who it's for and why it works the way it does"). Say it; it's short on purpose.
+Merged from Jinka's winners research (DEMO_RESEARCH.md on branch jinka-demo-research) and our story order. Rules: **say at most five numbers** ($4.4B, 8 of 8, 3 of 3, 16 to 20 days, about 1% and 11%); everything else goes to Q&A. Each beat has one **why** line for the Intentionality criterion. Rehearse 3 times against a timer and write the real times here.
 
-**0:00 Open (15 s). Screen: houndhelp.vercel.app.**
-"Americans over 60 lost 4.4 billion dollars to crypto scams last year. [FBI IC3 2025] Hound follows stolen crypto and stops it moving again. This is the front door, and it's built for the victim first: call us, or report online."
-**Why:** "Most victims are older and panicking, so the first screen is two big choices and what we will never ask for. Scammers follow up with fake recovery offers, so we say that up front."
+| Time | Screen | Say |
+|---|---|---|
+| 0:00–0:12 | houndhelp.vercel.app (victim home) | "Hound is a 911 call for crypto scam victims: it follows stolen crypto to where it can still be frozen. Americans over 60 lost 4.4 billion dollars to crypto scams last year." [FBI IC3 2025] |
+| 0:12–0:40 | Report page, **recorded call clip playing** | "This is a real call to our real number." (about 20 s of audio: disclosure, first name, case code spelled twice, the website.) **Why:** "Phone first, because the people this happens to can't read a 64-character hash over the phone, and the agent never asks for money or keys." |
+| 0:40–1:30 | Follow the money (DOJ case) | "This is a real federal case: US versus 4.34 million Tether. We start from one victim, A.H., and her six real sends. Hound sees no DOJ labels and no freezes." Let the transfers unfold (**Skip to the end** if behind). "It reaches all 8 wallets the FBI named in between, and all 3 the DOJ seized." Click **Reveal what Tether did**: "Tether froze these 16 to 20 days after she reported. Hound pointed at them from her report alone." **Why:** "First in, first out, the method the DOJ used for its named victims, so a detective can check every step." |
+| 1:30–1:55 | Stop the next victim | **Try: A wallet from the DOJ case** → **Withdraw** → **Withdrawal held**; then the hot wallet → **Withdrawal sent**. **Why:** "We warn, we don't seize: the exchange's fraud team decides, with the evidence. A hold needs a verified case, and exchanges are never on the list." |
+| 1:55–2:20 | Police report | Toggle **For the victim** / **For the detective**. "One page a detective can act on, and who to contact." **Why:** "Claude writes it, but it can only cite numbers that are in the trace. A checker rejects anything else, and a fixed template takes over if Claude is down." |
+| 2:20–2:45 | Proof it works | "Scored blind against the DOJ's own numbers: two of the three seized wallets within about 1 percent, the third within 11. Every wallet here is real." |
+| 2:45–3:00 | Proof it works | "Built with Cartesia for the voice line and Claude for reading the screenshot and writing the report. Hound. The 911 call for crypto scam victims." |
 
-**0:15 Step 1, Report (35 s). Screen: phone + Report page.**
-"A victim calls this number. Our voice agent takes the story, gives them a case code and our website, and walks them through sending a screenshot of the payment." (A judge or teammate uploads the demo receipt from docs/demo-kit.) "Hound just checked that payment on the live Ethereum chain. A made-up one gets rejected."
-**Why:** "Nobody reads a 64-character hash over the phone, so we never ask them to. The story can be anything; the payment has to be real."
+**Start of Q&A:** "Want to be the victim?" Hand them the demo kit (docs/demo-kit/README.md): save houndhelp.vercel.app/demo/receipt.png, upload it, and Hound finds 101,352 USDT of it, all in wallets Tether froze.
 
-**0:50 Step 2, Follow the money (40 s). Screen: trace.**
-"This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. We start from one victim, A.H., and her six real sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it. Watch her money move: swapped to USDT, through a laundering loop, into a consolidation wallet. Hound reaches all 8 wallets the FBI named in between, and all three wallets the DOJ seized."
-**Why:** "First in, first out, the method the DOJ used for its named victims, so a detective can check every number."
-[engine test: test_reaches_doj_seized_wallets_blind]
+**Nested versions for judges walking up (MLH budgets a few minutes per visit, at least 3 visits):**
+- **10 s:** "Hound is a 911 call for crypto scam victims. It follows stolen crypto to where it can still be frozen, and warns exchanges before the next victim pays."
+- **60 s:** the 10 s line, then A.H.: "From one victim's six payments, blind, Hound found all 3 wallets the DOJ seized," then **Reveal what Tether did**.
+- **3 min:** the table above.
 
-**1:30 The reveal (15 s).** Click **Reveal what Tether did**.
-"And here's what Hound didn't know: Tether froze these wallets 16 to 20 days after A.H. reported to the FBI on June 5 [complaint ¶ 38; freezes Jun 21 and 25]. Hound points at them from her report alone."
-
-**1:45 Step 3, Stop the next victim (25 s). Screen: exchange withdrawal.**
-"Every wallet in this trail goes on a warning list. When the next person tries to withdraw to one of them, the exchange asks Hound first, and the payment is held, with the evidence. One report protects the next person."
-**Why:** "A hold needs a verified case: a phone report only counts after a person approves it, and exchanges are never on the list, so an innocent wallet never gets frozen off one phone call."
-
-**2:10 Step 4, Police report (20 s). Screen: report.**
-"The detective gets one page: every transfer, where the money sits, and who to contact, Tether, the exchange and the FBI's IC3."
-**Why:** "Claude writes it in plain English, but it can only cite numbers that are in the trace. A checker rejects anything else, including promises of recovery, and a fixed template takes over if Claude is down."
-
-**2:30 A real case from this month (15 s). Screen: live-mindchain-binance.**
-"A real pig-butchering report filed this month: 11,082 dollars of USDT, and 85 percent of it reached Binance within hours, through a wallet that sweeps into Binance's hot wallet, most likely a deposit address. Binance can freeze that account."
-
-**2:45 Proof it works (10 s). Screen: proof.**
-"Scored against the DOJ's own numbers: two of the three seized wallets within about 1 percent, the third within 11. Every victim dollar is accounted for."
-
-**2:55 Close (5 s).** "Hound. The 911 call for crypto scam victims."
+**Table:** the trace or /how on screen when a judge walks up, never a terminal. One person owns **Reset demo** (bottom of /how, click twice) between judges.
 
 ## 2-minute version (backup if time is cut; same order)
 
