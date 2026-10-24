@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTrace } from "@/lib/useTrace";
-import { usdt } from "@/lib/format";
+import { shortAddr, tok, usdt } from "@/lib/format";
 import type { Endpoint, Trace } from "@/lib/types";
 import styles from "@/app/victim.module.css";
 import TraceGraph from "./TraceGraph";
@@ -53,6 +53,8 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
   const s = stops(trace);
   const exchanges = [...s.exchanges];
   const followed = trace.endpoints.reduce((n, p) => n + (p.victim_inflow ?? 0), 0);
+  // The agent stores "unknown" when the caller didn't say, or sent the money inside the scam app itself.
+  const exchange = exchangeUsed && !/^(unknown|none|n\/?a|not sure|-)$/i.test(exchangeUsed.trim()) ? exchangeUsed : null;
   return (
     <>
       {trace.endpoints.length > 0 && (
@@ -70,6 +72,26 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
             <span className="stat-n">{code}</span>
           </div>
         </div>
+      )}
+
+      {trace.seeds.length > 0 && (
+        // Ties the result to what the victim uploaded: the exact payment Hound found on chain and followed from.
+        <section className={`box ${styles.paid}`} aria-labelledby="paid-h">
+          <h2 id="paid-h" className={styles.boxTitle}>
+            Your payment
+          </h2>
+          <ul className={styles.paidList}>
+            {trace.seeds.map((p) => (
+              <li key={p.seed_id}>
+                <strong>{tok(p.amount, p.token)}</strong>
+                <span className="mono">tx {shortAddr(p.tx_hash)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="small">
+            This is the payment from your screenshot. We found it on the blockchain and followed the money from there.
+          </p>
+        </section>
       )}
 
       <div className={`grid g2 ${styles.big}`}>
@@ -125,7 +147,7 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
               <span>Attach your Hound report. It lists every wallet and who to contact.</span>
             </li>
             <li>
-              Tell {exchangeUsed || "the exchange you sent the money from"} that it was a scam.
+              Tell {exchange || "the app or exchange you sent the money from"} that it was a scam.
               <span>Give them your case code, {code}, and the report.</span>
             </li>
             {(exchanges.length > 0 || s.freezable > 0) && (

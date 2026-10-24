@@ -338,3 +338,25 @@
 .trail[open] summary {
   margin-bottom: 1rem;
 }
+
+
+/* "Your payment": the exact transfer the screenshot matched. */
+.paid {
+  margin-bottom: 1rem;
+}
+
+.paidList {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.paidList li {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 1.1rem;
+}
