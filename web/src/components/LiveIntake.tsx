@@ -26,17 +26,45 @@ const STEPS: { status: IntakeSession["status"][]; label: string }[] = [
 export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | null }) {
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
   const replaying = useRef(false);
+  const replayTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Last case code the poll returned, and the code that was already active when the replay started.
+  // /intake/active keeps any unvalidated session for its whole TTL, so an abandoned call must not end a replay.
+  const lastLiveCode = useRef<string | null>(null);
+  const replayIgnoreCode = useRef<string | null>(null);
 
   useEffect(() => {
     let stop = false;
     let timer: ReturnType<typeof setTimeout>;
     const tick = async () => {
       if (stop) return;
-      if (!replaying.current) {
+      if (replaying.current) {
+        // A replay stays on screen until the presenter leaves it or a NEW call starts (a session whose
+        // case code differs from the one already active when the replay began).
         try {
           const res = await fetch("/api/intake/active", { cache: "no-store" });
-          if (res.status === 204) setFeed({ k: "waiting" });
-          else if (res.ok) setFeed({ k: "live", s: (await res.json()) as IntakeSession });
+          if (res.ok && res.status !== 204) {
+            const live = (await res.json()) as IntakeSession;
+            if (live.case_code !== replayIgnoreCode.current) {
+              console.info("[hound-web] new live intake", live.case_code, "started; ending the replay");
+              endReplay();
+              lastLiveCode.current = live.case_code;
+              setFeed({ k: "live", s: live });
+            }
+          }
+        } catch (err) {
+          console.error("[hound-web] intake poll failed during replay:", err);
+        }
+      } else {
+        try {
+          const res = await fetch("/api/intake/active", { cache: "no-store" });
+          if (res.status === 204) {
+            lastLiveCode.current = null;
+            setFeed({ k: "waiting" });
+          } else if (res.ok) {
+            const live = (await res.json()) as IntakeSession;
+            lastLiveCode.current = live.case_code;
+            setFeed({ k: "live", s: live });
+          }
           else {
             const body = (await res.text()).slice(0, 160);
             const why =
@@ -60,9 +88,22 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
     };
   }, []);
 
+  function endReplay() {
+    replayTimers.current.forEach(clearTimeout);
+    replayTimers.current = [];
+    replaying.current = false;
+  }
+
+  function backToLive() {
+    endReplay();
+    setFeed({ k: "waiting" }); // the next poll shows a live call if one is in progress
+  }
+
   function replay() {
     if (!replayCase) return;
+    endReplay();
     replaying.current = true;
+    replayIgnoreCode.current = lastLiveCode.current;
     const base = `${window.location.origin}/c/REPLAY`;
     const story = replayCase.story ?? {};
     const frames: IntakeSession[] = [
@@ -72,12 +113,7 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
       { case_code: "REPLAY", upload_url: base, status: "validating", story, victim: replayCase.victim },
       { case_code: "REPLAY", upload_url: base, status: "validated", story, victim: replayCase.victim, case_id: replayCase.case_id },
     ];
-    frames.forEach((s, i) =>
-      setTimeout(() => {
-        setFeed({ k: "replay", s });
-        if (i === frames.length - 1) setTimeout(() => (replaying.current = false), 15000);
-      }, i * REPLAY_STEP_MS),
-    );
+    replayTimers.current = frames.map((s, i) => setTimeout(() => setFeed({ k: "replay", s }), i * REPLAY_STEP_MS));
   }
 
   const s = feed.k === "live" || feed.k === "replay" ? feed.s : null;
@@ -88,9 +124,15 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
           <p className="eyebrow">{feed.k === "replay" ? "Replay of a recorded intake, not a live call" : "Live intake"}</p>
           <h1 className={styles.h1}>{s ? `Case ${s.case_code}` : "Waiting for a call"}</h1>
         </div>
-        <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase || feed.k === "replay"}>
-          Replay intake
-        </button>
+        {feed.k === "replay" ? (
+          <button type="button" className={styles.replay} onClick={backToLive}>
+            Back to live
+          </button>
+        ) : (
+          <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase}>
+            Replay intake
+          </button>
+        )}
       </div>
 
       {feed.k === "unavailable" && (
@@ -130,7 +172,7 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
               </Link>
             )}
           </section>
-          {s.status !== "story" && <UploadLink url={s.upload_url} code={s.case_code} />}
+          {s.status !== "story" && <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />}
         </div>
       )}
     </div>
@@ -147,7 +189,7 @@ function Fact({ k, v }: { k: string; v?: string | null }) {
   );
 }
 
-function UploadLink({ url, code }: { url: string; code: string }) {
+function UploadLink({ url, code, sample }: { url: string; code: string; sample?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -169,6 +211,7 @@ function UploadLink({ url, code }: { url: string; code: string }) {
       )}
       <p className={styles.url}>{url.replace(/^https?:\/\//, "")}</p>
       <p className={styles.codeBig}>{code}</p>
+      {sample && <p className={styles.url}>Sample link from the recorded intake. It does not take uploads.</p>}
     </section>
   );
 }

@@ -284,7 +284,7 @@ export default function TraceGraph({
         <span className={styles.progress}>
           {shownHop >= maxHop
             ? `Traced ${maxDepth} hops deep · ${trace.edges.length} money flows`
-            : `Tracing hop ${shownHop} of ${maxHop}…`}
+            : `Tracing step ${shownHop} of ${maxHop}…`}
         </span>
         <button type="button" onClick={play}>Replay trace</button>
         <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>
@@ -316,8 +316,11 @@ export default function TraceGraph({
         <li data-tone="dead">Dead end</li>
         <li data-tone="weak">Under 60% confidence</li>
       </ul>
-      <div ref={box} className={styles.canvas} />
-      {node && <NodeDetail trace={trace} node={node} freezesShown={freezesShown} onClose={() => setSelected(null)} />}
+      {/* The detail drawer lives inside the stage so it never covers the toolbar or the reveal banner (review F8). */}
+      <div className={styles.stage}>
+        <div ref={box} className={styles.canvas} />
+        {node && <NodeDetail trace={trace} node={node} freezesShown={freezesShown} onClose={() => setSelected(null)} />}
+      </div>
     </section>
   );
 }

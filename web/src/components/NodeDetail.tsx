@@ -1,6 +1,7 @@
 "use client";
 
-import type { Chain, Trace, TraceEdge, TraceNode } from "@/lib/types";
+import { useEffect } from "react";
+import type { Chain, Endpoint, Trace, TraceEdge, TraceNode } from "@/lib/types";
 import { KIND_LABEL, explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import styles from "./TraceGraph.module.css";
 
@@ -35,6 +36,17 @@ export default function NodeDetail({
   const hideFreezable = trace.method.freeze_visibility === "hidden" && !freezesShown;
   const swaps = (trace.swaps?.resolved ?? []).filter((s) => s.address === node.address);
 
+  const stop = endpointKind(endpoint, outgoing.length > 0);
+
+  // Escape closes the drawer, like the × button (review F8).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <aside className={styles.detail} aria-label="Address details">
       <button type="button" className={styles.close} onClick={onClose} aria-label="Close details">
@@ -67,7 +79,22 @@ export default function NodeDetail({
       <dl className={styles.facts}>
         <dt>Balance</dt>
         <dd>{usdt(node.balance_usdt)}</dd>
-        {endpoint && (
+        {stop === "residual" && endpoint && (
+          // The trace kept going from here; the endpoint is only what stayed behind (review F12).
+          <>
+            <dt>Left behind here</dt>
+            <dd>
+              {usdt(endpoint.victim_remaining ?? endpoint.victim_inflow)} residual ({endpoint.reason.replaceAll("_", " ")}), the rest moved on
+            </dd>
+          </>
+        )}
+        {stop === "swap" && (
+          <>
+            <dt>Trail</dt>
+            <dd>Swap not resolved here, part of the money could not be followed</dd>
+          </>
+        )}
+        {stop === "stop" && endpoint && (
           <>
             <dt>Trail stops here</dt>
             <dd>
@@ -169,4 +196,12 @@ function Flows({ title, side, edges, chain }: { title: string; side: "from" | "t
       </ul>
     </>
   );
+}
+
+/** How an endpoint node reads: a residual left behind on a trail that moved on, an unresolved swap, or a real stop. */
+function endpointKind(endpoint: Endpoint | undefined, movedOn: boolean): "residual" | "swap" | "stop" | null {
+  if (!endpoint) return null;
+  if (endpoint.reason === "swap_unresolved") return movedOn ? "swap" : "stop";
+  const residual = endpoint.reason === "dust" || endpoint.reason === "holding" || (endpoint.victim_remaining ?? 0) > 0;
+  return movedOn && residual ? "residual" : "stop";
 }
