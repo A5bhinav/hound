@@ -51,12 +51,19 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
             <div className={styles.after}>
               <Stops trace={trace} freezesShown={freezesShown} />
               <OtherPayers trace={trace} />
-              <nav className={styles.next} aria-label="Next steps">
-                <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
-                  Open the packet
-                </Link>
-                <Link href="/exchange">Check an address</Link>
-              </nav>
+              {trace.endpoints.length === 0 ? (
+                <p className={styles.noEnd} role="alert">
+                  Hound could not follow this payment anywhere, so there is no packet to write.{" "}
+                  {lastProblem(trace) ?? "Check the transaction hash and the amount, then trace again."}
+                </p>
+              ) : (
+                <nav className={styles.next} aria-label="Next steps">
+                  <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
+                    Open the packet
+                  </Link>
+                  <Link href="/exchange">Check an address</Link>
+                </nav>
+              )}
             </div>
           )}
         </>
@@ -168,4 +175,12 @@ function Progress({ log, startedAt }: { log: AuditEntry[]; startedAt: number }) 
       )}
     </div>
   );
+}
+
+/** The engine's own words for why it stopped, for a judge who typed a wrong hash (AUDIT M1). */
+function lastProblem(trace: Trace): string | null {
+  const hit = [...trace.audit_log].reverse().find((e) => /error|fail|invalid|unresolved|no (usdt|send|transfer)|not found|budget|deadline/i.test(`${e.step} ${e.detail}`));
+  if (!hit) return null;
+  const words = hit.detail.replace(/0x[0-9a-fA-F]{40,64}/g, (m) => `${m.slice(0, 6)}…${m.slice(-4)}`);
+  return words.endsWith(".") ? words : `${words}.`;
 }

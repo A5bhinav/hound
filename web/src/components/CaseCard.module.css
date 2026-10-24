@@ -52,7 +52,7 @@
 }
 
 .sends {
-  max-height: 14rem;
+  max-height: 24rem; /* six sends fit; longer lists scroll */
   overflow-y: auto;
 }
 

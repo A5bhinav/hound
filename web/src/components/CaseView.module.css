@@ -201,3 +201,33 @@
     font-size: 1.75rem;
   }
 }
+
+/* AUDIT M1: a trace that reached nothing gets an explanation instead of a packet button. */
+.noEnd {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background: #fff4e5;
+  border-left: 4px solid var(--hold);
+  color: var(--ink);
+}
+
+/* AUDIT item 5: on a short projector (1280x720) the third frozen wallet fell below the fold.
+   Trade the page's breathing room for graph height; the ribbons stay untouched. */
+@media (max-height: 780px) {
+  .page {
+    padding: 1rem 1.25rem 2rem;
+    gap: 0.75rem;
+  }
+
+  .head {
+    gap: 0.15rem;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+
+  .summary {
+    font-size: 0.92rem;
+  }
+}
