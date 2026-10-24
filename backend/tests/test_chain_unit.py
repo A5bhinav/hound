@@ -273,6 +273,22 @@ def test_tx_sends_rejects_bad_hash():
         eth.tx_sends("0x1234")
 
 
+def test_tron_address_validation():
+    from hound.chain import tron
+    usdt = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # the TRC-20 USDT contract
+    h = tron.base58_to_hex20(usdt)
+    assert tron.norm(usdt) == usdt
+    assert tron.hex_to_base58(h) == tron.hex_to_base58("0x" + h) == tron.hex_to_base58("41" + h) == usdt
+    assert tron.hex_to_base58("0" * 24 + h) == usdt  # a zero-padded 32-byte topic word
+    for bad in ("0x" + h[:-2], h + "00", "41" + h[:-1], "zz" + h[2:], "11" * 12 + h, ""):
+        with pytest.raises(ValueError):
+            tron.hex_to_base58(bad)
+    typo = usdt[:-1] + ("u" if usdt[-1] != "u" else "v")  # one wrong character: checksum fails
+    for bad in (typo, "T" + "1" * 33, "Tzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"):
+        with pytest.raises(ValueError):
+            tron.norm(bad)
+
+
 def test_tx_sends_outage_is_not_a_bad_hash(monkeypatch):
     """Every RPC down -> ChainAPIError (intake says 'try again'); every RPC null -> ValueError (bad hash)."""
     def down(*a, **k):
