@@ -79,7 +79,7 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
               <td>{usdt(a.doj_ah_para74_usdt)}</td>
               <td>{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
               <td>
-                <span className={styles.band} data-band={a.band}>{a.pct_error == null ? "—" : `${a.pct_error}%`}</span>
+                <span className={styles.band} data-band={a.band}>{signedPct(a.ours_attributed_usdt, a.doj_ah_para74_usdt)}</span>
               </td>
             </tr>
           ))}
@@ -110,7 +110,7 @@ function BacktestPanel({ bt }: { bt: Backtest }) {
   return (
     <section className={styles.panel} aria-labelledby="bt-h">
       <h2 id="bt-h" className={styles.h2}>
-        {ready ? <>Tether took a median of <em>{days(bt.detection_lag_median_h!)}</em> to freeze a scam wallet</> : "Freeze timing: not computed yet"}
+        {ready ? <>When Tether froze a scam wallet in 2025, the money had already sat there a median of <em>{days(bt.detection_lag_median_h!)}</em></> : "Freeze timing: not computed yet"}
       </h2>
       {ready && (
         <p className={styles.lede}>
@@ -176,4 +176,11 @@ function ScanPanel({ scan }: { scan: Scan }) {
 function days(h: number): string {
   const d = h / 24;
   return d >= 2 ? `${Math.round(d)} days` : `${Math.round(h)} h`;
+}
+
+/** Ours vs DOJ as a signed percentage with one decimal: +0.9%, +1.0%, +10.8%. "—" when not reached. */
+function signedPct(ours: number | null, doj: number): string {
+  if (ours == null || !doj) return "—";
+  const d = ((ours - doj) / doj) * 100;
+  return `${d > 0 ? "+" : ""}${d.toFixed(1)}%`;
 }

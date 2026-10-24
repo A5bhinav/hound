@@ -43,8 +43,9 @@ export default function ExchangeCheck() {
   const [address, setAddress] = useState("");
   const [amount, setAmount] = useState("2500");
   const [phase, setPhase] = useState<Phase>({ k: "form" });
-  const amountN = Number(amount.trim());
-  const amountOk = /^\d+(\.\d+)?$/.test(amount.trim()) && amountN > 0; // plain decimals only, no 0x10 or 1e3
+  const amountClean = amount.replace(/[,\s_]/g, "").trim(); // "1,000" and "2 500" are fine
+  const amountN = Number(amountClean);
+  const amountOk = /^\d+(\.\d+)?$/.test(amountClean) && amountN > 0; // plain decimals only, no 0x10 or 1e3
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
