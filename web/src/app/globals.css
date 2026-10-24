@@ -1,0 +1,128 @@
+:root {
+  /* Ground and ink */
+  --fog: #e8edf1;
+  --paper: #f7f9fb;
+  --ink: #15212e;
+  --ink-2: #4b5967;
+  --rule: #c8d1d9;
+
+  /* Trace kinds (BRIEF §9.4: red = exchange, gold = holding + freezable, grey = dead end) */
+  --trace: #2c5a86;
+  --exchange: #b8322a;
+  --hold: #c28e14;
+  --hold-wash: #f6e7bf;
+  --dead: #8b959f;
+  --ice: #2f7f95;
+  --ice-wash: #dcedf1;
+
+  --font-d: var(--font-display), "Arial Narrow", sans-serif;
+  --font-b: var(--font-body), system-ui, sans-serif;
+  --font-m: var(--font-mono), ui-monospace, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--fog);
+  color: var(--ink);
+  font-family: var(--font-b);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+a {
+  color: var(--trace);
+}
+
+:focus-visible {
+  outline: 2px solid var(--trace);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-m);
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
+}
+
+/* Top bar */
+.bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.wordmark {
+  font-family: var(--font-d);
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.bar-meta {
+  color: var(--ink-2);
+  font-size: 0.85rem;
+}
+
+.sample-flag {
+  margin-left: auto;
+  font-family: var(--font-m);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px dashed var(--hold);
+  color: #7a5806;
+  background: var(--hold-wash);
+}
+
+/* Shared headings */
+.eyebrow {
+  font-family: var(--font-d);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin: 0 0 0.4rem;
+}
+
+h1,
+h2 {
+  font-family: var(--font-d);
+  font-stretch: 80%;
+  font-weight: 800;
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* Error panel */
+.api-error {
+  max-width: 44rem;
+  margin: 3rem auto;
+  padding: 1.25rem 1.5rem;
+  background: var(--paper);
+  border-left: 4px solid var(--exchange);
+}
+
+.api-error p {
+  margin: 0.5rem 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
