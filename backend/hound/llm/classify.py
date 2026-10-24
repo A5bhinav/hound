@@ -77,7 +77,7 @@ def rules(f, top_label=None):
     return {"kind": "unknown", "confidence": 0.5, "reasons": ["no exchange-like pattern"]}
 
 
-def _claude(f, floor):
+def _claude(f, floor, timeout=8.0):
     import anthropic
     prompt = (
         "Classify this blockchain address from its USDT transfer behaviour. Kinds: exchange_deposit, exchange_hot, "
@@ -85,7 +85,7 @@ def _claude(f, floor):
         "reasons that cite the numbers below exactly. Reply with JSON only: {\"kind\":..,\"confidence\":0-1,\"reasons\":[..]}"
         "\n\nFEATURES:\n" + json.dumps({k: v for k, v in f.items() if k not in ("address", "top_recipient")})
     )
-    msg = anthropic.Anthropic(timeout=8, max_retries=0).messages.create(model=MODEL, max_tokens=300, messages=[{"role": "user", "content": prompt}])
+    msg = anthropic.Anthropic(timeout=timeout, max_retries=0).messages.create(model=MODEL, max_tokens=300, messages=[{"role": "user", "content": prompt}])
     text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
     out = json.loads(text[text.index("{"): text.rindex("}") + 1])
     if out.get("kind") not in KINDS:
@@ -93,23 +93,26 @@ def _claude(f, floor):
     return out
 
 
-def classify(f, top_label=None, use_llm=True):
-    """Display opinion. kind and confidence are always the rule's; Claude may only reword reasons."""
+def classify(f, top_label=None, use_llm=True, timeout=8.0):
+    """Display opinion. kind and confidence are always the rule's; Claude may only reword reasons.
+    use_llm=False always returns the rules' own wording, never a cached Claude rewording, so a
+    replay is identical whatever ran earlier in the process."""
     floor = rules(f, top_label)
+    if not use_llm or not os.environ.get("ANTHROPIC_API_KEY"):
+        return floor
     key = (f["address"], json.dumps(floor, sort_keys=True))
     if key in _cache:
         return _cache[key]
     result = floor
-    if use_llm and os.environ.get("ANTHROPIC_API_KEY"):
-        try:
-            llm = _claude(f, floor)
-            reasons = [str(r) for r in (llm.get("reasons") or [])][:3]
-            if llm["kind"] != floor["kind"]:  # its reasons argue for another kind; keep the rule's
-                log.warning("classifier: Claude said %s for %s, rules said %s; keeping the rules",
-                            llm["kind"], f["address"], floor["kind"])
-            elif reasons:
-                result = {**floor, "reasons": reasons}
-        except Exception as e:
-            log.error("classifier Claude call failed for %s, using rules: %s", f["address"], e)
+    try:
+        llm = _claude(f, floor, timeout=timeout)
+        reasons = [str(r) for r in (llm.get("reasons") or [])][:3]
+        if llm["kind"] != floor["kind"]:  # its reasons argue for another kind; keep the rule's
+            log.warning("classifier: Claude said %s for %s, rules said %s; keeping the rules",
+                        llm["kind"], f["address"], floor["kind"])
+        elif reasons:
+            result = {**floor, "reasons": reasons}
+    except Exception as e:
+        log.error("classifier Claude call failed for %s, using rules: %s", f["address"], e)
     _cache[key] = result
     return result

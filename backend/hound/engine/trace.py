@@ -6,6 +6,10 @@ nothing new, a cap, the call budget, the deadline, or `max_hops`.
 
 Every cap is visible: money that isn't followed ends at a `capped` or `dust` endpoint,
 and unexpanded frontier ends at `max_hops` / `budget` / `time_cap` with status "partial".
+Conservation: the endpoints' victim_remaining sum to the victim USDT seeded, for any case
+(money sent back to a victim ends at `returned_to_victim`). ETH that was never swapped to
+USDT ends at a `swap_unresolved` endpoint with 0 USDT. The deadline is checked before
+every adapter call, including the label / freeze / balance lookups after the run.
 
 Replay mode (case.freeze_visibility == "hidden"): freezes are NOT used as stops, because
 that would hand the engine DOJ's own action. They are attached to nodes after the run so
@@ -35,6 +39,10 @@ ENGINE_VERSION = "0.4"
 MAX_SENDS = 50  # a victim report with more sends than this is not a real intake; reject it
 DEFAULTS = {"max_hops": 8, "max_branches_per_node": 12, "min_amount": 100.0, "max_api_calls": 400, "deadline_s": 120}
 EXCHANGE_KINDS = {"exchange_hot", "exchange_deposit"}
+# Stops at shared or custodial addresses: the money there is not one wallet's balance, so the node is
+# never a "holding" and the endpoint is never freezable (a busy service's balance would always cover it).
+NOT_HOLDING_STOPS = {"exchange", "infra", "high_volume"}
+LLM_BUDGET_S = 3.0  # total wall time for the display-only Claude rewording, across all nodes
 CONSOLIDATION_SENDERS = 3
 # Edge confidence = base(method) x completeness. Path confidence = product along the path.
 CONFIDENCE_MODEL = {"base": {"direct": 1.0, "consolidation": 0.9, "swap": 0.9, "peel": 0.85, "bridge_match": 0.6},
@@ -56,6 +64,14 @@ def _now():
 class AdaptersMissing(Exception):
     """hound.chain (or one of the adapters a case needs) is not available. Callers may fall back to
     fixture data on this exception alone; every other error is a real failure and must surface."""
+
+
+def _cache_mode():
+    try:
+        from hound.chain.cache import mode
+    except ImportError:
+        return "live"
+    return mode()
 
 
 def _chain_defaults():
@@ -126,8 +142,18 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     def out_of_time():
         return time.monotonic() - started > m["deadline_s"]
 
+    def late(what, addr):
+        """The deadline is checked before every adapter call. Past it, nothing more is fetched."""
+        if not out_of_time():
+            return False
+        st["status"] = "partial"
+        audit("cap_hit", f"time_cap: {what} lookup skipped, deadline {m['deadline_s']}s passed", addr)
+        return True
+
     def safe(what, fn, addr, default):
         """Label / freeze / balance lookups: a failure is an audit error and a partial trace, never a crash."""
+        if late(what, addr):
+            return default
         try:
             return fn()
         except Exception as e:  # noqa: BLE001 - adapters raise their own types
@@ -152,25 +178,42 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     victims = {s["from"] for s in sends}
     if hidden:
         audit("freeze_check", f"replay mode: freezes hidden from the engine, cutoff block {cutoff}")
-    swaps, native = None, []
+    swaps, native, usdt_legs, pre_stopped = None, [], [], {}
     eth_sends = [dict(s, seed_id=seed_list[i]["seed_id"]) for i, s in enumerate(sends) if s["token"] == "ETH"]
     if eth_sends:
         if get_native_txs is None:
             raise AdaptersMissing("case has ETH sends but no get_native_txs adapter was provided (AUDIT issue 1)")
-        usdt_legs, swap_errors = [], []
+        swap_errors = []
+
+        def swap_cap():
+            if stats["api_calls"] >= m["max_api_calls"]:
+                return "budget"
+            return "time_cap" if out_of_time() else None
         for x in sorted({s["to"] for s in eth_sends}):
-            if stats["api_calls"] + 2 > m["max_api_calls"] or out_of_time():
-                raise RuntimeError("call budget or deadline exhausted while resolving ETH swaps")
+            got, cap = [], None
             try:
-                native += get_native_txs(chain, x, after=None, as_of=cutoff)
-                usdt_legs += get_transfers(chain, x, after=None, as_of=cutoff)
+                # the deadline and the budget are checked before EACH of the two calls
+                for fetch in (get_native_txs, get_transfers):
+                    cap = swap_cap()
+                    if cap:
+                        break
+                    stats["api_calls"] += 1
+                    got.append(fetch(chain, x, after=None, as_of=cutoff))
             except Exception as e:  # noqa: BLE001 - adapter types vary (CacheMiss, ChainAPIError...)
                 log.warning("swap fetch failed for %s: %s: %s", x, type(e).__name__, _redact(str(e)))
                 stats["fetch_errors"] = stats.get("fetch_errors", 0) + 1
                 swap_errors.append(x)
                 st["status"] = "partial"
                 audit("error", f"could not load the swap history ({type(e).__name__}); this branch is incomplete", x)
-            stats["api_calls"] += 2
+                continue
+            if cap:
+                pre_stopped[x] = cap
+                swap_errors.append(x)
+                st["status"] = "partial"
+                audit("cap_hit", f"{cap}: swap history not loaded, this branch is not followed", x)
+                continue
+            native += got[0]
+            usdt_legs += got[1]
         swaps = resolve_eth_seeds([s for s in eth_sends if s["to"] not in swap_errors], native, usdt_legs)
         seeds.update(swaps["seeds"])
         audit("hop", f"{len(swaps['swaps'])} same-tx ETH to USDT swaps resolved, {len(swaps['unresolved'])} unresolved")
@@ -185,7 +228,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     depth = {s["to"]: 1 for s in sends}
     for v in victims:
         depth.setdefault(v, 0)
-    explored, stopped, labels, classes, feats_of = set(), {}, {}, {}, {}
+    explored, stopped, labels, classes, feats_of = set(), dict(pre_stopped), {}, {}, {}
     transfers = {}   # _row_key -> [rows]: the most copies of that key any single fetch returned
     frontier = sorted({s["to"] for s in sends} | ({k[1] for k in swaps["seeds"]} if swaps else set()))
     for k in (swaps["seeds"] if swaps else {}):
@@ -194,6 +237,8 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
 
     for hop in range(1, m["max_hops"] + 1):
         for addr in frontier:
+            if addr in stopped:  # already capped in the swap pass
+                continue
             if stats["api_calls"] >= m["max_api_calls"] or out_of_time():
                 reason = "budget" if stats["api_calls"] >= m["max_api_calls"] else "time_cap"
                 stopped.setdefault(addr, reason)
@@ -214,6 +259,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             if lab and lab.get("kind") == "sanctioned":
                 audit("hop", f"OFAC sanctioned address: {lab.get('name')}; kept in the trace", addr)
             if not hidden:
+                if out_of_time():
+                    stopped.setdefault(addr, "time_cap")
+                    st["status"] = "partial"
+                    audit("cap_hit", "time_cap: not expanded", addr)
+                    continue
                 fz = safe("freeze_status", lambda: (freeze_status(chain, addr, as_of=cutoff) if cutoff is not None
                                                     else freeze_status(chain, addr)), addr, NO_FREEZE) or NO_FREEZE
                 audit("freeze_check", "frozen" if fz.get("is_frozen") else "not frozen", addr)
@@ -223,6 +273,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                     audit("stop", f"Tether froze this address at {fz.get('frozen_at')}", addr)
             # FIFO needs the FULL history up to the cutoff: money that was already sitting here
             # is older than the victim's lots and must leave first (AUDIT issue 7).
+            if out_of_time():
+                stopped.setdefault(addr, "time_cap")
+                st["status"] = "partial"
+                audit("cap_hit", "time_cap: not expanded", addr)
+                continue
             try:
                 rows = get_transfers(chain, addr, after=None, as_of=cutoff)
             except Exception as e:  # noqa: BLE001 - adapters raise their own types
@@ -275,7 +330,8 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                     transfers[k] = got
             explored.add(addr)
 
-        result = propagate([t for rows in transfers.values() for t in rows], explored, seeds)
+        result = propagate([t for rows in transfers.values() for t in rows] + _seed_rows(
+            sends, usdt_legs, swaps, explored, transfers), explored, seeds)
         # Re-check EVERY explored address, not only this hop's: the replay is global, so a node
         # explored later (a cycle, a consolidation) changes the taint on older nodes' outflows.
         next_frontier, leftovers = [], []
@@ -315,6 +371,10 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
         audit("skip_branch" if reason == "dust" else "cap_hit",
               f"{n} branches, {from_base(sum(merged.values()))} USDT not followed ({reason})", addr)
 
+    for s in sends:
+        if s["token"] != "ETH" and s["to"] not in explored:
+            audit("stop", f"{stopped.get(s['to'], 'not fetched')}: the seed recipient's history was not followed; "
+                          f"the reported send of {s['amount']} USDT ({s['tx_hash']}) is counted here", s["to"])
     seeded = result["seeded"] if result else {}
     for sl in seed_list:
         if sl["token"] != "ETH" and not seeded.get(sl["seed_id"]):
@@ -329,9 +389,15 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 audit("error", f"seed {sid}: only {from_base(seeded.get(sid, 0))} of {from_base(want)} swapped USDT "
                                "was found arriving at the swap recipients")
 
+    # Claude only rewords the display reasons. A replay or a cached run must be byte-identical across
+    # restarts, so it gets the rules' wording; a live run gets a small total budget so the trace is
+    # never held back by the rewording.
+    llm_ok = case.get("source") != "doj_replay" and _cache_mode() not in ("readonly", "prefer_cache")
+    llm_until = time.monotonic() + LLM_BUDGET_S
     for addr in sorted(feats_of):  # display opinion only, after the trace; never a stop
         f, top_lab = feats_of[addr]
-        classes[addr] = classify(f, top_lab, use_llm=not out_of_time())
+        left = min(llm_until, started + m["deadline_s"]) - time.monotonic()
+        classes[addr] = classify(f, top_lab, use_llm=llm_ok and left > 0.5, timeout=min(8.0, max(left, 0.1)))
 
     frozen = {a: safe("freeze_status", lambda: freeze_status(chain, a), a, NO_FREEZE) or NO_FREEZE
               for a in sorted(set(victims) | explored | set(stopped))}
@@ -362,6 +428,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                    classes, seed_list, leftovers, hidden, st["status"])
     if swaps is not None:
         trace["swaps"] = _swap_summary(swaps, eth_sends)
+        for u in trace["swaps"]["unresolved"]:
+            # The value is ETH, not USDT, so the USDT fields are 0; the ETH amount is in swaps.unresolved.
+            trace["endpoints"].append({"address": u["address"], "reason": "swap_unresolved", "victim_inflow": 0.0,
+                                       "victim_remaining": 0.0, "attributed_by_seed": {}, "balance_usdt": None,
+                                       "freezable": False, "exchange": None})
         legs = {}
         for s in eth_sends:  # the ETH legs from the victim side, one edge per (from, to)
             legs.setdefault((s["from"], s["to"]), []).append(s)
@@ -380,6 +451,52 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     trace["stats"] = {**stats, "elapsed_ms": int((time.monotonic() - started) * 1000)}
     trace["audit_log"] = list(audit.entries)
     return validate_trace(trace)
+
+
+def _seed_rows(sends, usdt_legs, swaps, explored, transfers):
+    """Seed transfers into a recipient that was stopped before its history was fetched (exchange,
+    infra, high volume, fetch error, budget, deadline). Nothing fetched holds them, so the victim's
+    own report of the send (or the fetched swap leg) stands in; the seed then ends at that
+    recipient's endpoint instead of vanishing. Never added when a fetched row already has the key."""
+    have = {(t["tx_hash"], t["to"]) for rows in transfers.values() for t in rows}
+    out = []
+    for s in sends:
+        if s["token"] != "ETH" and s["to"] not in explored and (s["tx_hash"], s["to"]) not in have:
+            out.append({"tx_hash": s["tx_hash"], "from": s["from"], "to": s["to"], "amount": s["amount"],
+                        "time": s["time"], "block": s.get("block"), "log_index": None})
+            have.add((s["tx_hash"], s["to"]))
+    if swaps:
+        legs = {}
+        for t in usdt_legs:
+            if t["to"] in explored or (t["tx_hash"], t["to"]) not in swaps["seeds"] or (t["tx_hash"], t["to"]) in have:
+                continue
+            k = _row_key(t)
+            if t.get("log_index") is None:
+                legs.setdefault(k, {}).setdefault(None, t)
+            else:
+                legs.setdefault(k, {}).pop(None, None)
+                legs[k][t["log_index"]] = t
+        for k in sorted(legs):
+            out += [legs[k][li] for li in sorted(legs[k], key=lambda x: -1 if x is None else x)]
+    return out
+
+
+def _merge_endpoints(endpoints):
+    """One endpoint per (address, reason): a node's own dust and its dust branches become one line."""
+    merged = {}
+    for e in endpoints:
+        k = (e["address"], e["reason"])
+        if k not in merged:
+            merged[k] = dict(e, attributed_by_seed=dict(e["attributed_by_seed"]))
+            continue
+        m = merged[k]
+        m["victim_inflow"] = round(m["victim_inflow"] + e["victim_inflow"], 6)
+        m["victim_remaining"] = round(m["victim_remaining"] + e["victim_remaining"], 6)
+        for sid, v in e["attributed_by_seed"].items():
+            m["attributed_by_seed"][sid] = round(m["attributed_by_seed"].get(sid, 0) + v, 6)
+        m["attributed_by_seed"] = dict(sorted(m["attributed_by_seed"].items()))
+        m["freezable"] = m["freezable"] and e["freezable"]
+    return list(merged.values())
 
 
 def _path_confidence(trace, victims):
@@ -464,11 +581,11 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
     # Money sent INTO a stopped address (exchange, high volume, failed fetch, budget) is not
     # replayed further, so count it from the edges; it must never silently become zero.
     edge_in = {}
+    # A source outside the trace only carries victim money as a seed lot (a swap leg), so count it too.
     for (src, dst), by in result["edge_seed"].items():
-        if src in in_trace:
-            for sid, v in by.items():
-                edge_in.setdefault(dst, {}).setdefault(sid, 0)
-                edge_in[dst][sid] += v
+        for sid, v in by.items():
+            edge_in.setdefault(dst, {}).setdefault(sid, 0)
+            edge_in[dst][sid] += v
     nodes, endpoints = [], []
     for addr in sorted(in_trace, key=lambda a: (depth.get(a, 99), a)):
         lab = labels.get(addr)
@@ -483,8 +600,8 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             kind = "victim"
         elif lab and lab.get("kind") in EXCHANGE_KINDS:
             kind = lab["kind"]
-        elif lab and lab.get("kind") in ("service", "infra"):
-            kind = "unknown"  # a router, bridge or processor: not a holder, not sanctioned
+        elif (lab and lab.get("kind") in ("service", "infra")) or stopped.get(addr) in NOT_HOLDING_STOPS:
+            kind = "unknown"  # a router, bridge, processor or busy service: not a holder, not sanctioned
         elif rem_total >= m["min_amount"] * 10 ** 6:
             kind = "holding"
         else:
@@ -498,11 +615,18 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             "frozen": {"is_frozen": bool(fz.get("is_frozen")), "frozen_at": fz.get("frozen_at"), "freeze_tx": fz.get("freeze_tx")},
             "depth": depth.get(addr, 0),
         })
-        reason = stopped.get(addr) or ("holding" if kind == "holding" else None)
+        # Every victim dollar ends at exactly one endpoint (conservation): money back at a victim is
+        # returned_to_victim, a small remainder at an explored wallet is dust, a large one is holding.
+        if addr in victims:
+            reason = "returned_to_victim" if rem_total > 0 else None
+        else:
+            reason = stopped.get(addr)
+            if not reason and rem_total > 0:
+                reason = "holding" if rem_total >= m["min_amount"] * 10 ** 6 else "dust"
         if reason:
             frozen_now = bool(fz.get("is_frozen"))
-            freezable = (not frozen_now and balance is not None and rem_total > 0
-                         and balance * 10 ** 6 >= rem_total)
+            freezable = (not frozen_now and balance is not None and rem_total > 0 and kind == "holding"
+                         and reason not in NOT_HOLDING_STOPS and balance * 10 ** 6 >= rem_total)
             endpoints.append({
                 "address": addr, "reason": reason,
                 "victim_inflow": from_base(sum(inflow_by.values())),
@@ -514,6 +638,7 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
         endpoints.append({"address": addr, "reason": reason, "victim_inflow": from_base(sum(by.values())),
                           "victim_remaining": from_base(sum(by.values())), "attributed_by_seed": _amounts(by),
                           "balance_usdt": None, "freezable": False, "exchange": None})
+    endpoints = _merge_endpoints(endpoints)
     endpoints.sort(key=lambda e: (-e["victim_remaining"], e["address"], e["reason"]))  # most victim money first
 
     params = {"accounting": "FIFO", "max_hops": m["max_hops"], "max_branches_per_node": m["max_branches_per_node"],
