@@ -1,4 +1,4 @@
-/* Victim-facing pages opened from a text message: phone first, one column, no app chrome. */
+/* Victim-facing pages opened with the case code from the call: phone first, one column, no app chrome. */
 .page {
   max-width: 40rem;
   margin: 0 auto;
