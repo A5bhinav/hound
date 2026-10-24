@@ -454,3 +454,15 @@ def test_swap_leg_from_two_sources_counts_once():
     leg = {"tx_hash": "sw", "from": "0xpool", "to": x, "amount": 3000.0, "time": "2024-01-02T00:00:00Z", "block": 2}
     r = resolve_eth_seeds(sends, native, [dict(leg, log_index=7), dict(leg, log_index=None), dict(leg)])
     assert r["swaps"][0]["usdt_in_base"] == 3000 * 10**6
+
+
+def test_infra_addresses_stop_and_keep_their_inflow():
+    A2 = "0x78366b2f6c5321ac30629c078120385ae2da1a06"
+
+    def lab(chain, address):
+        return {"name": "Uniswap router", "kind": "infra", "source": "infra_allowlist"} if address == A2 else None
+    t = run_trace(example("ohnd_replay.case"), get_transfers=fixture_chain.get_transfers, label=lab,
+                  freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance,
+                  get_native_txs=fixture_chain.get_native_txs)
+    ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
+    assert ends[(A2, "infra")]["victim_inflow"] > 0

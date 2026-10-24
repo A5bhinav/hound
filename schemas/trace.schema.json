@@ -484,7 +484,8 @@
             "budget",
             "time_cap",
             "swap_unresolved",
-            "tether_destroyed"
+            "tether_destroyed",
+            "infra"
           ]
         },
         "victim_inflow": {

@@ -269,6 +269,7 @@ _WHERE = {
     "max_hops": "went further than we followed",
     "capped": "went on past the limit we set for this trace",
     "high_volume": "reached a very busy wallet, likely a service",
+    "infra": "passed through shared infrastructure such as an exchange router, which we do not follow",
     "budget": "was not followed further because the trace hit its data budget",
     "time_cap": "was not followed further because the trace hit its time limit",
     "swap_unresolved": "was swapped into another token we could not match",

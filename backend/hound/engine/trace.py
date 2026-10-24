@@ -206,6 +206,13 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 stopped[addr] = "exchange"
                 audit("stop", f"exchange: {lab.get('name')}", addr)
                 continue
+            if lab and lab.get("kind") == "infra":
+                # USDT contract, DEX routers, bridges: shared by everyone, never expanded or held
+                stopped[addr] = "infra"
+                audit("stop", f"infrastructure: {lab.get('name')}; not followed", addr)
+                continue
+            if lab and lab.get("kind") == "sanctioned":
+                audit("hop", f"OFAC sanctioned address: {lab.get('name')}; kept in the trace", addr)
             if not hidden:
                 fz = safe("freeze_status", lambda: (freeze_status(chain, addr, as_of=cutoff) if cutoff is not None
                                                     else freeze_status(chain, addr)), addr, NO_FREEZE) or NO_FREEZE
@@ -425,7 +432,7 @@ def _label_source(lab):
         return "classifier"
     if lab.get("kind") in EXCHANGE_KINDS:
         return "exchange_list"
-    return "ofac" if lab.get("kind") == "ofac" else "service"
+    return "ofac" if lab.get("kind") in ("ofac", "sanctioned") else "service"
 
 
 def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, balance_of,
@@ -476,7 +483,7 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             kind = "victim"
         elif lab and lab.get("kind") in EXCHANGE_KINDS:
             kind = lab["kind"]
-        elif lab and lab.get("kind") == "service":
+        elif lab and lab.get("kind") in ("service", "infra"):
             kind = "unknown"  # a router, bridge or processor: not a holder, not sanctioned
         elif rem_total >= m["min_amount"] * 10 ** 6:
             kind = "holding"
