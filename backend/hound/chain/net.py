@@ -90,6 +90,15 @@ def _throttle(host: str) -> None:
         _last_call[host] = time.monotonic()
 
 
+def safe_url(url: str) -> str:
+    """scheme://host only: Alchemy and Infura put the API key in the URL path."""
+    try:
+        u = httpx.URL(url)
+        return f"{u.scheme}://{u.host}"
+    except Exception:  # noqa: BLE001 - never let redaction raise
+        return "<url>"
+
+
 def _redact(params: dict | None) -> dict | None:
     if not params:
         return params
@@ -130,12 +139,12 @@ def request_json(
                     retry_after = int(reset_ms) / 1000.0 + 0.2
                 if retry_after is not None and retry_after > MAX_WAIT_S:
                     STATS["errors"] += 1
-                    raise RateLimited(f"{host} rate limit: retry in {retry_after:.0f}s ({method} {url} "
+                    raise RateLimited(f"{host} rate limit: retry in {retry_after:.0f}s ({method} {safe_url(url)} "
                                       f"params={_redact(params)})", retry_after)
             elif r.status_code >= 400:
                 STATS["errors"] += 1
                 raise ChainAPIError(
-                    f"{method} {url} params={_redact(params)} -> HTTP {r.status_code}: {r.text[:300]}"
+                    f"{method} {safe_url(url)} params={_redact(params)} -> HTTP {r.status_code}: {r.text[:300]}"
                 )
             else:
                 try:
@@ -151,8 +160,8 @@ def request_json(
             break
         delay = retry_after if retry_after is not None else min(30.0, 2.0**attempt) + random.random() * 0.5
         STATS["retries"] += 1
-        log.warning("retry %d/%d in %.1fs: %s %s params=%s (%s)", attempt + 1, retries, delay, method, url,
+        log.warning("retry %d/%d in %.1fs: %s %s params=%s (%s)", attempt + 1, retries, delay, method, safe_url(url),
                     _redact(params), last_err)
         time.sleep(delay)
     STATS["errors"] += 1
-    raise ChainAPIError(f"{method} {url} params={_redact(params)} failed after {retries + 1} tries: {last_err}")
+    raise ChainAPIError(f"{method} {safe_url(url)} params={_redact(params)} failed after {retries + 1} tries: {last_err}")
