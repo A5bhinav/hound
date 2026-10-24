@@ -1,19 +1,19 @@
 {
   "trace_id": "ohnd-replay-001-fixture",
   "case_id": "ohnd-replay-001",
-  "created_at": "2026-10-24T05:00:00Z",
+  "created_at": "2026-10-24T04:37:59Z",
   "replay": true,
   "method": {
     "accounting": "FIFO",
     "max_hops": 8,
     "max_branches_per_node": 12,
-    "min_amount": 100
+    "min_amount": 100.0
   },
   "nodes": [
     {
-      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "address": "0x3275ffa5d1baf825a7facda4c82d6a89982d4b4f",
       "chain": "ethereum",
-      "kind": "intermediate",
+      "kind": "victim",
       "label": null,
       "label_source": null,
       "classifier": null,
@@ -26,7 +26,82 @@
       "depth": 0
     },
     {
-      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "address": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "chain": "ethereum",
+      "kind": "victim",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 0
+    },
+    {
+      "address": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "chain": "ethereum",
+      "kind": "victim",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 0
+    },
+    {
+      "address": "0x8d90113a1e286a5ab3e496fbd1853f265e5913c6",
+      "chain": "ethereum",
+      "kind": "victim",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 0
+    },
+    {
+      "address": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "chain": "ethereum",
+      "kind": "victim",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 0
+    },
+    {
+      "address": "0x923187ae5c59f972dd821bc584da2743da1e80a6",
+      "chain": "ethereum",
+      "kind": "victim",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 0
+    },
+    {
+      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "chain": "ethereum",
       "kind": "intermediate",
       "label": null,
@@ -41,49 +116,79 @@
       "depth": 1
     },
     {
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "chain": "ethereum",
+      "kind": "holding",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": 0.0,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 2
+    },
+    {
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
       "chain": "ethereum",
-      "kind": "intermediate",
+      "kind": "holding",
       "label": null,
       "label_source": null,
       "classifier": null,
-      "balance_usdt": null,
-      "frozen": {
-        "is_frozen": false,
-        "frozen_at": null,
-        "freeze_tx": null
-      },
-      "depth": 2
-    },
-    {
-      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
-      "chain": "ethereum",
-      "kind": "intermediate",
-      "label": null,
-      "label_source": null,
-      "classifier": null,
-      "balance_usdt": null,
-      "frozen": {
-        "is_frozen": false,
-        "frozen_at": null,
-        "freeze_tx": null
-      },
-      "depth": 2
-    },
-    {
-      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
-      "chain": "ethereum",
-      "kind": "intermediate",
-      "label": null,
-      "label_source": null,
-      "classifier": null,
-      "balance_usdt": null,
+      "balance_usdt": 0.0,
       "frozen": {
         "is_frozen": false,
         "frozen_at": null,
         "freeze_tx": null
       },
       "depth": 3
+    },
+    {
+      "address": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "chain": "ethereum",
+      "kind": "holding",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": 0.0,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 3
+    },
+    {
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "chain": "ethereum",
+      "kind": "holding",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": 0.0,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 3
+    },
+    {
+      "address": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "chain": "ethereum",
+      "kind": "intermediate",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 4
     },
     {
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
@@ -98,7 +203,22 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 3
+      "depth": 4
+    },
+    {
+      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "chain": "ethereum",
+      "kind": "intermediate",
+      "label": null,
+      "label_source": null,
+      "classifier": null,
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": false,
+        "frozen_at": null,
+        "freeze_tx": null
+      },
+      "depth": 4
     },
     {
       "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
@@ -113,7 +233,7 @@
         "frozen_at": "2024-06-25T17:07:23Z",
         "freeze_tx": "0xa76529e1aa4576206a8c4c5fab2b136d94f24768b957dd7809de41bf9f55f4a5"
       },
-      "depth": 4
+      "depth": 5
     },
     {
       "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
@@ -128,31 +248,143 @@
         "frozen_at": "2024-06-21T14:53:11Z",
         "freeze_tx": "0x5b124d778136157b2f9e27e5fc6179780598288a9f36be7bd558301068f48b7a"
       },
-      "depth": 4
-    },
-    {
-      "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
-      "chain": "ethereum",
-      "kind": "holding",
-      "label": null,
-      "label_source": null,
-      "classifier": null,
-      "balance_usdt": 0.0,
-      "frozen": {
-        "is_frozen": true,
-        "frozen_at": "2024-06-21T14:51:11Z",
-        "freeze_tx": "0x547c5335f4887c8b06ef4f1eec7726404ad6c23ce8a9f794cd14d3e4d21da776"
-      },
-      "depth": 4
+      "depth": 5
     }
   ],
   "edges": [
+    {
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 409757.845387,
+      "attributed_amount": 409757.845387,
+      "tx_hashes": [
+        "0x038a4a2506815cf4de8cb0a74a48fe759acc5215237229f208f2f2c0c4afe11f",
+        "0x831e92ba5d0130e9338d094fe0117813606ac4f7c76db452cb145ecd3f0da43e",
+        "0x00e8102ad8c67db293b9025e419128e269c2b32100f78c769109557bb2fe07cf",
+        "0x21d250c54b950862f2ee1fb93bcdea6faa445f277d40321ebc9d471ae8574032",
+        "0xd14fe0a57c0d5c8f1641fc474d2460bf381810ae7f8d73adb3ef7d52650b2413",
+        "0x71e9965b057fa1a3eb2f732bf48551d7cdf0988912122d1867a2fb642f97fb5d",
+        "0xc9c4c9e499fd05df12b9498d8e37dc47c2ef31ef4cbea0870e7c1fc767d5ce60"
+      ],
+      "first_time": "2024-05-18T15:19:11Z",
+      "last_time": "2024-06-08T14:54:47Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 276061.440114,
+      "attributed_amount": 276061.440114,
+      "tx_hashes": [
+        "0xc36ac0e14af4a2e07929aa01c046848424cef534a435cc76b624c66f7eaa8eeb",
+        "0x40eac76d70e28009d7f7a7dce7c7b59c5ecc1c54260decef6f9ef943fd1b5f82",
+        "0x1d011478324d4b6bf583dadd66e2c4bd49b1c4443d96b074d51152e03a03a1cb",
+        "0x064b32f9fbb4da0347e0a8a7793d0e3b4848e28eafdf29dc8502bf28150b261c",
+        "0x68be3cb0c689b285e325c87f0051e5c190900ef9dfbd9773e71ee039d99d8df8",
+        "0x070f64018f8eed7ac116b6e83ba949ab658710270f641ed7262e750027501fb7"
+      ],
+      "first_time": "2024-05-17T14:40:47Z",
+      "last_time": "2024-06-23T14:59:11Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 540004.0,
+      "attributed_amount": 264373.794579,
+      "tx_hashes": [
+        "0x08b64e913ded2575707c40cc408d3c50e18fa36be5ab5781fed492753ae4e941",
+        "0x91854d43f0a8a54f96161761ed2f676e11afc073e3267e80ccb9eab695d1fda3",
+        "0x618d08bb3f3379c60f63bec0feb7b548540cf5af2e934150d91fdf22b70abc12",
+        "0x170cd335e7892038095cc32e6427d4d4003e4fce91f88d751b1b5b2d5669f8e4",
+        "0x62448ba170ea06bb560a45abfb7cff59e35f3631560ab2aeb61b8f295048661c",
+        "0xf146cd0e329630b40a4ce5deac40398865c824921ba0b82c8d90df69c6a0701f",
+        "0x1d971b3442d54039b311d5fa85257ac26eee9036da04b725fff8efef79131f66",
+        "0x649d14d92bc0fc9ef6666a1f122b85e01f1bd7f26b3bddc1d12474dc623d6134",
+        "0xe214e4cf495a8112f5f126d9f61377e5a1d6efdef6405c90c93c7097d802545d"
+      ],
+      "first_time": "2024-05-19T00:35:47Z",
+      "last_time": "2024-06-25T05:58:35Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x8d90113a1e286a5ab3e496fbd1853f265e5913c6",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 151486.630813,
+      "attributed_amount": 151486.630813,
+      "tx_hashes": [
+        "0x7268269f9b95788f6898c47c4f4c0e34d9ab7826ef5a91cab07c07421f10a9f9"
+      ],
+      "first_time": "2024-05-21T15:19:59Z",
+      "last_time": "2024-05-21T15:19:59Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 77989.92,
+      "attributed_amount": 77989.92,
+      "tx_hashes": [
+        "0xe49db7eb0e1316a9320413541374c5d4323ba5720b891384433a1886cedb34bb",
+        "0x44de255b168a6930af19f6f4c310ca0f2fbeed121736b8377e1ff05db6720bbb",
+        "0x21be34089a7da7e4425c164de22f2817ade111e8a96f622f424b4bf6e939283f",
+        "0x8fa1c25f366482407149ef6d851ddbc2392c00f21df0472198b18d42dfff8406"
+      ],
+      "first_time": "2024-05-31T15:29:11Z",
+      "last_time": "2024-06-23T04:55:23Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x923187ae5c59f972dd821bc584da2743da1e80a6",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 12.0,
+      "attributed_amount": 12.0,
+      "tx_hashes": [
+        "0x00fe28a2b4c9cba1c2c8ae00546607508391899bee38fd8d29991e8d79ebeea0"
+      ],
+      "first_time": "2024-06-19T19:08:35Z",
+      "last_time": "2024-06-19T19:08:35Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x3275ffa5d1baf825a7facda4c82d6a89982d4b4f",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 10.0,
+      "attributed_amount": 10.0,
+      "tx_hashes": [
+        "0xc876042a60a8a8c426dfaf698cebbae337f21fb812a1211bf249176b7863ce3d"
+      ],
+      "first_time": "2024-05-29T14:10:23Z",
+      "last_time": "2024-05-29T14:10:23Z",
+      "hop": 1,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
     {
       "from": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
       "token": "USDT",
       "amount": 1455322.836314,
-      "attributed_amount": 1455322.836314,
+      "attributed_amount": 1179691.630893,
       "tx_hashes": [
         "0xc381be1b1d10f94765b649302d41e5da5aba0809da9555908d312749085d36fa",
         "0xb641e4b23f990074246214cca6e0f52b078b7353a91f612f04c5ee5325b49965",
@@ -179,300 +411,17 @@
       ],
       "first_time": "2024-05-17T14:42:23Z",
       "last_time": "2024-06-25T06:02:11Z",
-      "hop": 1,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
-      "to": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
-      "token": "USDT",
-      "amount": 4165000.0,
-      "attributed_amount": 4165000.0,
-      "tx_hashes": [
-        "0x286e45c4a7835270c37e0447ac144226efce5d7f1794cfaa204af2307ebdc42c",
-        "0x892132a90431b6f4be338319a40abdc810b3d96cba9cab7a413d506469449576",
-        "0x18e8fdf0aeb1f88ccdd8926decd2a232134061c8b43ecf6d85caa23d94680b0f",
-        "0x20232a497fa35bb29f10d93e5b24991df346b14dfe9ccc80a94aa8272e96b795",
-        "0xbe6be1304032250690f8c5c3b692fb66ce39bfc7affc062a4fbcb880bc364459",
-        "0x49e95d0e5c83fb93f8dbccf22638bdf05f09fdebeae265fae29f72383bf39eb9",
-        "0x92fb23881ee6c75a805e15148ca2f76feb5b8f327a32498f1d6b38845c6bd6ec",
-        "0x9dc751b7bc96146235504ecbf2e339e1d34d6d2edbce5884fecfbb04e3fbc1f0",
-        "0x2b1772b7e32a90e640f13819a539963d3e1584c249271f1954a13d107f958644",
-        "0xbb05520adf67ce18aed3d784748d2fda287c5bb0202373d0426a340f46bb1c74",
-        "0x1c00f16fb34b33ae356ab39bec136c84ef4acb35a2aa3ee38d49a892f83c63fa",
-        "0x0e113357cac7debb82a9db42a1e92fe897c47586c8be0c0bb4573e63ae664915",
-        "0xa6be3dfaa10b2d4a096471c3abaabb2249bd07fb07817afbc1e3c69abbbdbc32",
-        "0x2390f121cba453602194f152e15375ce36aea138bea1fce174d9ea6850cdf517",
-        "0xf29e7717c6dac1b0f2a08a724a81235a5e3632d5a0f8b0ebaf1ce0e9de1f4561",
-        "0x94014e20a44f5c364ea6004eb90b084e796657028dbf8e7160b8e021ad65675f",
-        "0xe19eb76b46d147af3487508a4643c4569c5e3764cf38bf3cbd2754c2c354d517",
-        "0xe3af2dabb1166958eb344eb6c3fc05240eef94da6a7ec23ccaf898d14ebe0384",
-        "0x62bdc710ce3c3ac3bb572a6147108635f093ced1bba17c81062df97a07d71704",
-        "0x2c59ef8982b849bde21c7f880a596e9195deb51209f7419c49c2c41c4711924a",
-        "0xa0382147fe7be42173d95c171211a34f6fc9c7f9670fe80a5093b158f57edfba",
-        "0x3d15d3e39fef0523e5defc7391b607abaebd7518f4e004be01c8c108a0c3bd4e",
-        "0xe81fe86e939d15735a2d06ce901c8b916dbe6b5e1222960d9109295102ec3f37",
-        "0x5aa03d05852e13005f364027b628d61684d603f649ca8f4d5b005de93f7ad4d9",
-        "0xe51c0edc1fac80009793b1a62a940444887671a728470039f170067553c5726c",
-        "0xe1d9bc0fd344e009b705e7ab8d0d303b96dcebdcab9fde6992b3634acaf87d9f",
-        "0x39317fc301a53dc4c3b647a18585cdd3eac69d939a74167171a24d51b6f83829",
-        "0x387011da13ab58d796bf80795d3c79fc98f92de86a1939698b9915dd41a8ff5f",
-        "0x734aa5ff75e1b61e8a89b6dc63d82fb936202d5799931fc82de1f74cef071030",
-        "0xaaf758f1b39db8477a380d21b726009122bf05cf57fc6e95de1c263ca387a878",
-        "0xdfb689c8aeeb09e558c804baaed45a4e092d18a6b1c020d07b0609466fe96544",
-        "0xb0bfd9cffbefd0058498f206ad83bcb8684d551e2798cdf2daeb21261c5e9f83",
-        "0x6203461f066eb9f00e7b2fa3a33d2b48595d06c376d709c29700c17edc842d32",
-        "0xbf7acd3aef26bfbb5be62318378308fe98f8d36d4e34f1434d4e78d61838454c",
-        "0xda0129135a66be025900bb00f178338d16da39e439dd4766972da02e66341542",
-        "0xb323a765669702599b2ca49298a808e8f827608929ddee9a906fa3d2173b323d"
-      ],
-      "first_time": "2024-05-14T11:14:35Z",
-      "last_time": "2024-06-25T15:54:11Z",
       "hop": 2,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
-      "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
-      "token": "USDT",
-      "amount": 1553830.0,
-      "attributed_amount": 1553830.0,
-      "tx_hashes": [
-        "0xbd7158643f76f7c87e799dc0bc2093727f8a131fe6d0f1223009eb327fca7971",
-        "0xb401209bb0220f899d08003f3766f8a7f154c123ae694dc5d3f993b00fd1304b",
-        "0xfbdc6fd2b995404ed922c807ff3d112daeaf60177640b4b66d4f624e78ccef3b",
-        "0x388f3a7d8d4658e064bd7033576fa67eb3d34a2cb9d27d55214009cc68659ce6",
-        "0xd7e5a8921e7b8063ffddb1ee49874c86ad9924061c6c5b972cf57180dbea853d",
-        "0x5ab88beafde61929c6cd23a3ab900a7320c97177beb7a0433c42149dace1b25b",
-        "0xd14eb74c5a8ad11307275ff5e8a619a47a1e100ec81a7c851e66dac1c2ec4f8b",
-        "0xa60c241d08118da4c34120678b26e9879b0fda6f94ddc3afe653ffbad05a6435",
-        "0x6deb05445598403a4596d045b3bf7dd313bf5322ac754a7753ede771e7e3a5c8",
-        "0xe30903a874e9dda516f3503285c2f388b21e020739fe90fa54d39d95865df6dd",
-        "0xc72bfd6811f6c25c4f823eaea725245990a92c13e79f659c3fa96a6b4f019121",
-        "0xbcfb270ac006a639393f7675fe4f91923fd8272c23b4ca053682a77341d0706e",
-        "0xfba2af55e61d16960a9f4fc7e1892b407abd3f32fc5b8353368becd2d92873a6",
-        "0x93d17ea7d915546738dd14fdabc70b209d1a12292227b2fdb1907cc218ab0589",
-        "0x153c7e3fee14fe7a379e2585ff1b72d3b087515f5a3eb6f7c53e4a7ed7f31cb0",
-        "0xa3fe903a38e3fa02b4858396314b88d13d59370408c6c315d7ecde3c2c47c480",
-        "0x9c5a90e9f5bea80fcb0388771bd376c58d05540b552f39af0953fd6318a1fa14",
-        "0x58c2453d758c8967949aafb3c68f5e1c5089f0ab04b11d490cbe5b1096b1713b",
-        "0x6d1f52bbf27f63a4aa261d99721186dd4aa599d6b5306d0c720a5a95844ca495",
-        "0x4e0f908b27f4db22cdf79bd432e09c3034a47832720e98a55652df253451c7d2",
-        "0x9a53a0d6b82a7eb816a91881940fa0cdfb4c54822d9dcd163ac6ebe950a6c6cd",
-        "0x01612c861d18f2cd45252d539a15bd7333759d4b543eeb2ed337dc17a282aa73",
-        "0x79ef11219ac7f50ec75a1fa08dc56621b28e9b4ebde6dbe126aecfc4fe9b350a"
-      ],
-      "first_time": "2024-05-16T02:32:47Z",
-      "last_time": "2024-06-25T07:38:59Z",
-      "hop": 2,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
-      "to": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "token": "USDT",
-      "amount": 2490000.0,
-      "attributed_amount": 2490000.0,
-      "tx_hashes": [
-        "0x49373f224a1e8412278b9ada22b734c945cc26c595bb7e5587e53174c733ac22",
-        "0x409badf1f81dc11c652108608df92f1e655740314108762ac190a99962585b7f",
-        "0x2afe7774471c44120c45c5e26d005efa623108ad402341e54afb2968918da36b",
-        "0x1a2df443ec224eca6d7fbfb80d7bbcdd60be05b32bce50ba7bb35eb83364f568",
-        "0xbe4442ccfa260bc0cf488783bb5e346bc9854e2f56f9ce468817b5f41d2441fd",
-        "0xa3a0537eb3dedeb4ef491b3be8cd7548c10efc26b0f2e46c49e169c099b64d2f",
-        "0x54401a1abcccd98aede610809a6e65b6e30b0fdc47331eb9e68f9b066b9312b4",
-        "0x00b2fe36cd03657a90dbdcc7db86d8091304ec171311614d389c2547c720f211",
-        "0x0496c818f6975bbe2d1ba9f51d4806aeb6c435b38b0ff52d882ddbe1059ee20c",
-        "0x06329eb6d45a2605c862e1923f3f879bff1e10f0385dcf6fffcb267a491a3a21",
-        "0x0bf626f960c3371256e23c22238dae1e259193a749574d06dadc76c48289980d",
-        "0x139ab00dfe4e9f86da4def153474eda5b1e142e1a8bf46f13707a8c096104cc9",
-        "0x93502d0701133b07e98a09722c90d86ff2034564c73f5a8e02b3825257784361",
-        "0xc4861bcc1d6be39a4cbc05914b6210d3fa39b56ed3609d669e1ee0c478dcccc2"
-      ],
-      "first_time": "2024-05-14T15:54:47Z",
-      "last_time": "2024-06-24T15:59:59Z",
-      "hop": 3,
-      "confidence": 1.0,
+      "confidence": 0.8,
       "method": "consolidation"
-    },
-    {
-      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
-      "to": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
-      "token": "USDT",
-      "amount": 1654617.0,
-      "attributed_amount": 1654617.0,
-      "tx_hashes": [
-        "0xb6c9b8bf7bcabcb36d02ee57c02caafc1b1d678763d2aef6a346f8a12d0ec23c",
-        "0x59ced4c90afb20c0785e17d6909e410d55eb63abc50dcc10614e2a6b453b3ef8",
-        "0x28b546dc6f8ce9eb82f66bc06b500bd5f75e3ce938c048d822231c3d21633f6e",
-        "0xef8e67d17220291f4e070fe7afec0db3b42148c296c1b138916fef9c8c8a197d",
-        "0x96e5f18af6114c0fbe397fcd779518c36c6a0aca1ea2c2fcea5f63dc2b15e51f",
-        "0x347f159eef868979568e740a84c25b36adb097d06ef6c45bef06260825182d92",
-        "0x19ca3f925523c62cfea07c690c3d336cc9b141bf28aa8836014d758f782606ef",
-        "0x4f766d1a68a056cecae3c126786d1dc5b7d35d4a4cfcf4c76ff6957e014a87ca",
-        "0xc9e95992f46369c419598d31605ed20deb5384c975ac5d1a929a9b42e545a2c7",
-        "0x2c9f0232d01ea87d997fac807a55aafd7ebe787b51159b201848b86515135d14",
-        "0xa6b82d953996df0aee1543f696164a3b41b5523f1c57bdf609bb81c4e0b22a0c",
-        "0x5e8a9f75ac67d5d30e8a74a567ae32476edaaf64864971f6b1728012a0909608",
-        "0x2f39bd6c948d587bea7e3f40a74174e55d78a9b4aff5543d24047be8472d19fc",
-        "0xf7e9e921b53be4b5478e1bb2db1fb985484d8230b972463bd8883de715463bd6",
-        "0xbc5be8916a912d916019dc95f37862e2b1ed7faf4a1a52aeb41eb00ed41792ea",
-        "0x9b1defc978499f43dee1d9725e755158a03942ce2dbf5544c7b4a64d57f5decb",
-        "0x9e8b650be0a788eaa765d8eee8761c5643d336a234497aa4721602a0b6cc1f4d",
-        "0x846aebdd7b4c16c28c445f8a559de0944d1cbf372cfbfb2c022d1637754f4f84",
-        "0x7051463d782388c807fdb20c6dce1d852002192e22e1e41c044ec4f6130ba45a",
-        "0xe797e092ed199f7899c7722c0bfe246f7d6c5a28e88ef32088898b8412174f8b",
-        "0x79acc56bd1b0415ac8166f38291a586e02de03de37f2457aed281d1e9bf8002d",
-        "0xd06ffab5bbd02c408ea1c0b0ac4cbaa95f5a4462ef3f9767582f648559e9b6d2",
-        "0x3066a6a01c554f2ae1a87076698e5531abfe8055687161676e353f09adac5563",
-        "0xee63649debf3f312ad951728affc5dd743e77f313e61c91db66829198a61ecc9",
-        "0xfd10df3a2b50c3a005a58f9fb58cc07276effe7f1a6ee566db26975752544c05",
-        "0xacd8eaf44ecd0f41d731c99e3e846ae66eada192fcc6261447991fe50b4cefe8",
-        "0xe3f8a1143e16ac7226a40ded3805ec98c9e34950d04dfbfa87b64acde9a10415",
-        "0x30b1c1f1cd405a95eb8b8d5b62f00ff27f2f3aa09e0194b2a8141f9534bf0577",
-        "0xb1e592ca009d846a3e12a5584099c02e68e3504c57f873fdbc2f2e8577667360"
-      ],
-      "first_time": "2024-05-16T05:03:35Z",
-      "last_time": "2024-06-25T01:29:59Z",
-      "hop": 3,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
-      "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
-      "token": "USDT",
-      "amount": 655000.0,
-      "attributed_amount": 655000.0,
-      "tx_hashes": [
-        "0x7bcdaa3bce9d98ec26497417919e8fe439f93a737b288b0d4879fe785620bc01",
-        "0x3e56bc58629bedbf1685a17e343e77bff791a61ea44d6bb2053a1a1a22957009",
-        "0x4cc2e40ee97d1aa81bd85117916fec8911621c9c68db461d0494f999e8f67694",
-        "0x3d33b5244ea1b18e606d80896f8c7a0bcde0ddfe637512aabf5837264ade0789",
-        "0xc96171dd0f8c3b854c1b27aadc550f34ba550d9d789d0dec883dabb4600ddada",
-        "0x6617e83a16554e2b77da6321ffe084e4a07ae913821a3303d22b74ae114843e8",
-        "0xcf2eae215a8ad791fba318ad316728cbec3c15b485cbba07afbd72e3a3c9ff64",
-        "0xa80483d4e1dd0eccc982b288ebf67d4b18d5e5b4dbea14016901133b03c4af56",
-        "0x20ba6350a15d81fbe5b5c71db508d013c4578528ccdcd2cfab7bcb07c965ccfd"
-      ],
-      "first_time": "2024-05-18T20:55:23Z",
-      "last_time": "2024-06-22T05:49:35Z",
-      "hop": 3,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
-      "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
-      "token": "USDT",
-      "amount": 580000.0,
-      "attributed_amount": 580000.0,
-      "tx_hashes": [
-        "0xab19e1eda1979e81dfc7bf3f267320a15916bd728d4eb49ff9dc8493ec98d8d1",
-        "0xdc331c5e15a4a07fff6a66be30e11d3f77046bea31dbb0cca0f6e14388a31ed1",
-        "0x2fc296b37b08b184a64dcb318de9bc7f3db90ab86977a249b5ec907f137cc851",
-        "0x6854630795e81fb98919c4a64bbcbb283e60be26e4a5584f92b0d1caad262530",
-        "0x91557b4d48b08c8d01d523be33e151886cbeaee39cefaafa9f0c84dc616c9457",
-        "0xd0d41c9a274d7ac92b23082eeb55e8ef552e3146664e0e6d7f9578ef6ecf45a4",
-        "0x6ba32fb6d83a2dfffc8eca6fcd72607f40c11b8499660e9fd2d4099e5a8657e7",
-        "0xae03be8651f0b7c2ea38d420c0559ab2ba5756b067bef2adf183bcadfba29726",
-        "0xd3188f13009ff718202b5203a4fae006d0dbbe237ca23c2553bf136a0efce2e2"
-      ],
-      "first_time": "2024-05-15T10:23:35Z",
-      "last_time": "2024-06-25T05:51:35Z",
-      "hop": 3,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
-      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-      "token": "USDT",
-      "amount": 540005.0,
-      "attributed_amount": 540005.0,
-      "tx_hashes": [
-        "0xb3aedf8c67236d516ea9e2b6e2ec02dca19be226dcb1c057da93e0beed58015b",
-        "0x08b64e913ded2575707c40cc408d3c50e18fa36be5ab5781fed492753ae4e941",
-        "0x91854d43f0a8a54f96161761ed2f676e11afc073e3267e80ccb9eab695d1fda3",
-        "0x618d08bb3f3379c60f63bec0feb7b548540cf5af2e934150d91fdf22b70abc12",
-        "0x170cd335e7892038095cc32e6427d4d4003e4fce91f88d751b1b5b2d5669f8e4",
-        "0x62448ba170ea06bb560a45abfb7cff59e35f3631560ab2aeb61b8f295048661c",
-        "0xf146cd0e329630b40a4ce5deac40398865c824921ba0b82c8d90df69c6a0701f",
-        "0x1d971b3442d54039b311d5fa85257ac26eee9036da04b725fff8efef79131f66",
-        "0x649d14d92bc0fc9ef6666a1f122b85e01f1bd7f26b3bddc1d12474dc623d6134",
-        "0xe214e4cf495a8112f5f126d9f61377e5a1d6efdef6405c90c93c7097d802545d"
-      ],
-      "first_time": "2024-05-16T02:33:59Z",
-      "last_time": "2024-06-25T05:58:35Z",
-      "hop": 3,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
-      "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
-      "token": "USDT",
-      "amount": 100000.0,
-      "attributed_amount": 100000.0,
-      "tx_hashes": [
-        "0x368c5d4a91e9f932faa6a26b45412d40af4df5282c974fc2ebe31c0520f2e41c"
-      ],
-      "first_time": "2024-05-31T03:19:23Z",
-      "last_time": "2024-05-31T03:19:23Z",
-      "hop": 3,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "to": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
-      "token": "USDT",
-      "amount": 3820000.0,
-      "attributed_amount": 3820000.0,
-      "tx_hashes": [
-        "0xc0afa9763ef36dc128aa3e769b80ac3f380c55157bb6922b5b3e92a73f817b9a",
-        "0xdc4c6937247d2c84d30ebf5301158d87809637f8afcdf4e1250e6e7746c1d08f",
-        "0xc3d83400d95344482a78f3312e0dd8e248a25bc6993ebb0bdef81c903db47f0e",
-        "0xcc0ec4ab6ae45380139656034166d9956c8e7b2669963cbfd7abb2fa4564b8a8",
-        "0x0ae2e398669e2e7f7119299429d9819024998a65063642bb23b79285280a8b39",
-        "0xdc931c8ed12bae2c490ac5c1ed45f0eebc57497d031328aa44c63a86bd9c383d",
-        "0x74219ccf927b7af350301ba4e12248eaeb6c7a2cdfcf3405d6922efdbd8f4f10",
-        "0x8ff6010b203230f6dc80a72ad0d27fa1d57eb6743bf2adc9046b9921d890fcb7",
-        "0xf669deee29cf186b52105c64bd83eba2bb9735b5b5a29b474fde664784639783",
-        "0xd41bf40cada39e16abc2ab94e9ff1530a1fee8cf02b0224826d46380feb3ac5d",
-        "0xb663bfa776ebfdc7d2d2c677e5da222c77fb4890e7b537901b6ab68bcb457fad",
-        "0xb0c75de45efe402ab56105189ef58a229fa85f262f0ffa044911d839a3e15f78",
-        "0x1ecab114318d9d3520cccc7bda6181ca6afe1a58af9043177bd9146f68248aff",
-        "0xe2b1f35770dc28ba1669cad16f33f9478402bd4fecb0380357ac3c3a280e0589",
-        "0x0549e106b6f1eb762a07d99f9c833113bf79b7a60a43df7d3c5a4bced7f1025b",
-        "0x8399803961f9f1d2e1ed779df917f40e819caa8d306cc906dd1de7947e515aa1",
-        "0x0f5c23d6c1b8a607037ab6f3abbcc3657fc938434cf539f5daa665ba4a6737cd",
-        "0x80695c84b66a5bef9dc535a2313e326b327dbb8502c08bfb35c4b49810afc52d",
-        "0x2fbbee78cf402aa3581a352b1fb6a1afe92acf7b1a7572c4d4974d61dc541a08",
-        "0xfc2ec57ac36d31b94cfd68dd14fc74222f62604a360692f9578ba07be150843d",
-        "0xccbbc6bea1e65c5c71ce85383cf9e31bdb8630ec8d9ac9a7802855f5fb34179b",
-        "0xf2cad1ebd58342016c2a1605781b9ebeb1bc77435e23d6cce6c9ece035bf5c38",
-        "0xb3b998ceb4f235cfa1f6ce414f8cd95c85c2f06fd25e72bd7374f1c0b9a08edf"
-      ],
-      "first_time": "2024-03-19T16:57:11Z",
-      "last_time": "2024-05-28T15:57:35Z",
-      "hop": 4,
-      "confidence": 1.0,
-      "method": "direct"
     },
     {
       "from": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
       "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
       "token": "USDT",
-      "amount": 3152938.911887,
-      "attributed_amount": 3152938.911887,
+      "amount": 3104195.204685,
+      "attributed_amount": 628231.925313,
       "tx_hashes": [
-        "0x0b6a66840fd80ae6e6c41f5a98ed5e433eb92dcb179a60fdff2eeb5aabe98190",
-        "0xd627004630fd1cb53538c12ca0fa2d539bcc4ea7376e6452ef8f796aef8c02da",
-        "0x1f07c3b5641296dc9a709622d674dc3508a33345d773c8b745fcee42bb2c89af",
         "0xceab85f8fd8c486cabc9af5e3e778cc69de8d992d0cf60d02c13635466e3ed93",
         "0xd5223b3a24a863c233a6dc76082b081856ad39be39656d94c5d7cd4910984597",
         "0x5b9014c3019e92d1b402788d7b917a19809388914a3abf95c8d1fd4fd2d882b6",
@@ -525,10 +474,317 @@
         "0xa23b3c2f5cccb23c4c214e45bb1b44550005b06b6b4bb685efc2c905af115700",
         "0x32d5886cb7cdc223fe78e6cc8554fc198ae49f48211087b638851d384304cd40"
       ],
-      "first_time": "2024-05-14T13:27:11Z",
+      "first_time": "2024-05-17T14:43:47Z",
       "last_time": "2024-06-25T15:14:35Z",
+      "hop": 2,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "token": "USDT",
+      "amount": 510000.0,
+      "attributed_amount": 164924.1256,
+      "tx_hashes": [
+        "0xdc331c5e15a4a07fff6a66be30e11d3f77046bea31dbb0cca0f6e14388a31ed1",
+        "0x2fc296b37b08b184a64dcb318de9bc7f3db90ab86977a249b5ec907f137cc851",
+        "0x6854630795e81fb98919c4a64bbcbb283e60be26e4a5584f92b0d1caad262530",
+        "0x91557b4d48b08c8d01d523be33e151886cbeaee39cefaafa9f0c84dc616c9457",
+        "0xd0d41c9a274d7ac92b23082eeb55e8ef552e3146664e0e6d7f9578ef6ecf45a4",
+        "0x6ba32fb6d83a2dfffc8eca6fcd72607f40c11b8499660e9fd2d4099e5a8657e7",
+        "0xae03be8651f0b7c2ea38d420c0559ab2ba5756b067bef2adf183bcadfba29726",
+        "0xd3188f13009ff718202b5203a4fae006d0dbbe237ca23c2553bf136a0efce2e2"
+      ],
+      "first_time": "2024-05-26T00:22:59Z",
+      "last_time": "2024-06-25T05:51:35Z",
+      "hop": 2,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "token": "USDT",
+      "amount": 100000.0,
+      "attributed_amount": 61626.123756,
+      "tx_hashes": [
+        "0x368c5d4a91e9f932faa6a26b45412d40af4df5282c974fc2ebe31c0520f2e41c"
+      ],
+      "first_time": "2024-05-31T03:19:23Z",
+      "last_time": "2024-05-31T03:19:23Z",
+      "hop": 2,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "token": "USDT",
+      "amount": 100290.320896,
+      "attributed_amount": 731.57996,
+      "tx_hashes": [
+        "0x4cc5302fc773c77e1a71d7b77288123665ac572ca80f0e470024ede395c5ab31",
+        "0x1ef660619703eb5ae58b17214daeeecabc173285b6bb2aa72a30be21368b20df",
+        "0x31113c3da4a890c347aa037db86a71a93a5ca05f713a25d40465b9b71925c8c4",
+        "0xe3739e2f6e434f93947f639f15768bc7e6a30991428e1a021943ce47bdb6c419",
+        "0x8ffa00fbe57790be135dc93d2bff72fdea98693a9d0741903be1e9c756068d9e",
+        "0x01f22dd4741569762ea35daaa644a4450b36767450e34c0f9621023de559c032",
+        "0x9b18b26ea67a01898808e76158cb871e2b1474de4cee71aab5ad2e17362a643e",
+        "0x85da8c920bbd81fefe3b0a14c4f5bfd32a65320ac404a987861d30b0b8fcf065",
+        "0xf35c16de26da375eb27b468d0927ec0405f0b99df36e4b789115f2bc001802c9",
+        "0xc5ec499737e33143a5a531d3a6a513a12df1ff3276008cfe3de597a6942c371b",
+        "0xc767aa126b141e58bda3942942958587b0f3cae2031f4945f76cc2e0a36ca8b1",
+        "0xfa5bca136aafa5fc5b952b77720b5a073bb360831eafa95b9f48db8ec8a7ba33",
+        "0xa04ef331d45888213f582ddf375832462db5e3d91045e7d8e2113cc4814b2fdf",
+        "0x7b5c65c55e36ce482377f1d27f2a49d9decf15f4e627cecef26f66732f4a7e98",
+        "0x644d3fd234acbe2beaac0057ccaf5f084b5dea2c84e679450177b986235cb337"
+      ],
+      "first_time": "2024-05-18T15:13:47Z",
+      "last_time": "2024-06-25T15:14:23Z",
+      "hop": 2,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "to": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "token": "USDT",
+      "amount": 3655000.0,
+      "attributed_amount": 1408840.090199,
+      "tx_hashes": [
+        "0x20232a497fa35bb29f10d93e5b24991df346b14dfe9ccc80a94aa8272e96b795",
+        "0xbe6be1304032250690f8c5c3b692fb66ce39bfc7affc062a4fbcb880bc364459",
+        "0x49e95d0e5c83fb93f8dbccf22638bdf05f09fdebeae265fae29f72383bf39eb9",
+        "0x92fb23881ee6c75a805e15148ca2f76feb5b8f327a32498f1d6b38845c6bd6ec",
+        "0x9dc751b7bc96146235504ecbf2e339e1d34d6d2edbce5884fecfbb04e3fbc1f0",
+        "0x2b1772b7e32a90e640f13819a539963d3e1584c249271f1954a13d107f958644",
+        "0xbb05520adf67ce18aed3d784748d2fda287c5bb0202373d0426a340f46bb1c74",
+        "0x1c00f16fb34b33ae356ab39bec136c84ef4acb35a2aa3ee38d49a892f83c63fa",
+        "0x0e113357cac7debb82a9db42a1e92fe897c47586c8be0c0bb4573e63ae664915",
+        "0xa6be3dfaa10b2d4a096471c3abaabb2249bd07fb07817afbc1e3c69abbbdbc32",
+        "0x2390f121cba453602194f152e15375ce36aea138bea1fce174d9ea6850cdf517",
+        "0xf29e7717c6dac1b0f2a08a724a81235a5e3632d5a0f8b0ebaf1ce0e9de1f4561",
+        "0x94014e20a44f5c364ea6004eb90b084e796657028dbf8e7160b8e021ad65675f",
+        "0xe19eb76b46d147af3487508a4643c4569c5e3764cf38bf3cbd2754c2c354d517",
+        "0xe3af2dabb1166958eb344eb6c3fc05240eef94da6a7ec23ccaf898d14ebe0384",
+        "0x62bdc710ce3c3ac3bb572a6147108635f093ced1bba17c81062df97a07d71704",
+        "0x2c59ef8982b849bde21c7f880a596e9195deb51209f7419c49c2c41c4711924a",
+        "0xa0382147fe7be42173d95c171211a34f6fc9c7f9670fe80a5093b158f57edfba",
+        "0x3d15d3e39fef0523e5defc7391b607abaebd7518f4e004be01c8c108a0c3bd4e",
+        "0xe81fe86e939d15735a2d06ce901c8b916dbe6b5e1222960d9109295102ec3f37",
+        "0x5aa03d05852e13005f364027b628d61684d603f649ca8f4d5b005de93f7ad4d9",
+        "0xe51c0edc1fac80009793b1a62a940444887671a728470039f170067553c5726c",
+        "0xe1d9bc0fd344e009b705e7ab8d0d303b96dcebdcab9fde6992b3634acaf87d9f",
+        "0x39317fc301a53dc4c3b647a18585cdd3eac69d939a74167171a24d51b6f83829",
+        "0x387011da13ab58d796bf80795d3c79fc98f92de86a1939698b9915dd41a8ff5f",
+        "0x734aa5ff75e1b61e8a89b6dc63d82fb936202d5799931fc82de1f74cef071030",
+        "0xaaf758f1b39db8477a380d21b726009122bf05cf57fc6e95de1c263ca387a878",
+        "0xdfb689c8aeeb09e558c804baaed45a4e092d18a6b1c020d07b0609466fe96544",
+        "0xb0bfd9cffbefd0058498f206ad83bcb8684d551e2798cdf2daeb21261c5e9f83",
+        "0x6203461f066eb9f00e7b2fa3a33d2b48595d06c376d709c29700c17edc842d32",
+        "0xbf7acd3aef26bfbb5be62318378308fe98f8d36d4e34f1434d4e78d61838454c",
+        "0xda0129135a66be025900bb00f178338d16da39e439dd4766972da02e66341542",
+        "0xb323a765669702599b2ca49298a808e8f827608929ddee9a906fa3d2173b323d"
+      ],
+      "first_time": "2024-05-17T15:50:11Z",
+      "last_time": "2024-06-25T15:54:11Z",
+      "hop": 3,
+      "confidence": 0.95,
+      "method": "direct"
+    },
+    {
+      "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "token": "USDT",
+      "amount": 1538820.0,
+      "attributed_amount": 604762.980822,
+      "tx_hashes": [
+        "0xfbdc6fd2b995404ed922c807ff3d112daeaf60177640b4b66d4f624e78ccef3b",
+        "0x388f3a7d8d4658e064bd7033576fa67eb3d34a2cb9d27d55214009cc68659ce6",
+        "0xd7e5a8921e7b8063ffddb1ee49874c86ad9924061c6c5b972cf57180dbea853d",
+        "0x5ab88beafde61929c6cd23a3ab900a7320c97177beb7a0433c42149dace1b25b",
+        "0xd14eb74c5a8ad11307275ff5e8a619a47a1e100ec81a7c851e66dac1c2ec4f8b",
+        "0xa60c241d08118da4c34120678b26e9879b0fda6f94ddc3afe653ffbad05a6435",
+        "0x6deb05445598403a4596d045b3bf7dd313bf5322ac754a7753ede771e7e3a5c8",
+        "0xe30903a874e9dda516f3503285c2f388b21e020739fe90fa54d39d95865df6dd",
+        "0xc72bfd6811f6c25c4f823eaea725245990a92c13e79f659c3fa96a6b4f019121",
+        "0xbcfb270ac006a639393f7675fe4f91923fd8272c23b4ca053682a77341d0706e",
+        "0xfba2af55e61d16960a9f4fc7e1892b407abd3f32fc5b8353368becd2d92873a6",
+        "0x93d17ea7d915546738dd14fdabc70b209d1a12292227b2fdb1907cc218ab0589",
+        "0x153c7e3fee14fe7a379e2585ff1b72d3b087515f5a3eb6f7c53e4a7ed7f31cb0",
+        "0xa3fe903a38e3fa02b4858396314b88d13d59370408c6c315d7ecde3c2c47c480",
+        "0x9c5a90e9f5bea80fcb0388771bd376c58d05540b552f39af0953fd6318a1fa14",
+        "0x58c2453d758c8967949aafb3c68f5e1c5089f0ab04b11d490cbe5b1096b1713b",
+        "0x6d1f52bbf27f63a4aa261d99721186dd4aa599d6b5306d0c720a5a95844ca495",
+        "0x4e0f908b27f4db22cdf79bd432e09c3034a47832720e98a55652df253451c7d2",
+        "0x9a53a0d6b82a7eb816a91881940fa0cdfb4c54822d9dcd163ac6ebe950a6c6cd",
+        "0x01612c861d18f2cd45252d539a15bd7333759d4b543eeb2ed337dc17a282aa73",
+        "0x79ef11219ac7f50ec75a1fa08dc56621b28e9b4ebde6dbe126aecfc4fe9b350a"
+      ],
+      "first_time": "2024-05-19T01:22:35Z",
+      "last_time": "2024-06-25T07:38:59Z",
+      "hop": 3,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "token": "USDT",
+      "amount": 655000.0,
+      "attributed_amount": 288692.271908,
+      "tx_hashes": [
+        "0x7bcdaa3bce9d98ec26497417919e8fe439f93a737b288b0d4879fe785620bc01",
+        "0x3e56bc58629bedbf1685a17e343e77bff791a61ea44d6bb2053a1a1a22957009",
+        "0x4cc2e40ee97d1aa81bd85117916fec8911621c9c68db461d0494f999e8f67694",
+        "0x3d33b5244ea1b18e606d80896f8c7a0bcde0ddfe637512aabf5837264ade0789",
+        "0xc96171dd0f8c3b854c1b27aadc550f34ba550d9d789d0dec883dabb4600ddada",
+        "0x6617e83a16554e2b77da6321ffe084e4a07ae913821a3303d22b74ae114843e8",
+        "0xcf2eae215a8ad791fba318ad316728cbec3c15b485cbba07afbd72e3a3c9ff64",
+        "0xa80483d4e1dd0eccc982b288ebf67d4b18d5e5b4dbea14016901133b03c4af56",
+        "0x20ba6350a15d81fbe5b5c71db508d013c4578528ccdcd2cfab7bcb07c965ccfd"
+      ],
+      "first_time": "2024-05-18T20:55:23Z",
+      "last_time": "2024-06-22T05:49:35Z",
+      "hop": 3,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "to": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "token": "USDT",
+      "amount": 100000.0,
+      "attributed_amount": 62236.162366,
+      "tx_hashes": [
+        "0xf2877f3b5a3d1a603abf24d5a3acde2b54a30b7a9646653b91121b929dd48eed"
+      ],
+      "first_time": "2024-05-31T03:10:35Z",
+      "last_time": "2024-05-31T03:10:35Z",
+      "hop": 3,
+      "confidence": 0.95,
+      "method": "direct"
+    },
+    {
+      "from": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "token": "USDT",
+      "amount": 100501.0,
+      "attributed_amount": 61937.920835,
+      "tx_hashes": [
+        "0xd595aea729f4310e7a7fad1da8918ad56354c7ab83fa56669770ed1f2f4cde71",
+        "0xd8592d468801f85b5a37999b93eed49933732a0ba2d7959665dccb1e2fb21a90",
+        "0x42a119fceab3c75102afed3e9f283a84402244dbd3a2d3bf186ebeff5bf45b11"
+      ],
+      "first_time": "2024-05-31T03:04:59Z",
+      "last_time": "2024-06-15T02:30:23Z",
+      "hop": 3,
+      "confidence": 0.8,
+      "method": "consolidation"
+    },
+    {
+      "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "to": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "token": "USDT",
+      "amount": 92000.0,
+      "attributed_amount": 21173.869512,
+      "tx_hashes": [
+        "0x9fe0bcb69751bfb334835ae8005555de51e76ebc171db002e390ea9fd9227c57",
+        "0x0da9d5e27105be36a0a50ce30813dbc26c44ff5d6e049ef26b6c1e9a17999e30",
+        "0x15c65ae334c78a15d5b5cc328c6500c09469cf794c9ef46d357650667023b43b",
+        "0x06d2a810a105ebea3208bfdedf213de62e83e35b5c978345a40ee0d2407b3e43",
+        "0xba18eda1f6dfba1018cd98fec3ba0e147f1db16971ed8cc39ede7bb626cafaad",
+        "0xdfdebc4a69a4c7a58b5730cdd0a24efc88a8b0a512ac0caa413afbd3f8d8b064"
+      ],
+      "first_time": "2024-05-27T02:22:35Z",
+      "last_time": "2024-06-18T04:20:35Z",
+      "hop": 3,
+      "confidence": 0.95,
+      "method": "direct"
+    },
+    {
+      "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "to": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "token": "USDT",
+      "amount": 2300000.0,
+      "attributed_amount": 835862.892646,
+      "tx_hashes": [
+        "0x2afe7774471c44120c45c5e26d005efa623108ad402341e54afb2968918da36b",
+        "0x1a2df443ec224eca6d7fbfb80d7bbcdd60be05b32bce50ba7bb35eb83364f568",
+        "0xbe4442ccfa260bc0cf488783bb5e346bc9854e2f56f9ce468817b5f41d2441fd",
+        "0xa3a0537eb3dedeb4ef491b3be8cd7548c10efc26b0f2e46c49e169c099b64d2f",
+        "0x54401a1abcccd98aede610809a6e65b6e30b0fdc47331eb9e68f9b066b9312b4",
+        "0x00b2fe36cd03657a90dbdcc7db86d8091304ec171311614d389c2547c720f211",
+        "0x0496c818f6975bbe2d1ba9f51d4806aeb6c435b38b0ff52d882ddbe1059ee20c",
+        "0x06329eb6d45a2605c862e1923f3f879bff1e10f0385dcf6fffcb267a491a3a21",
+        "0x0bf626f960c3371256e23c22238dae1e259193a749574d06dadc76c48289980d",
+        "0x139ab00dfe4e9f86da4def153474eda5b1e142e1a8bf46f13707a8c096104cc9",
+        "0x93502d0701133b07e98a09722c90d86ff2034564c73f5a8e02b3825257784361",
+        "0xc4861bcc1d6be39a4cbc05914b6210d3fa39b56ed3609d669e1ee0c478dcccc2"
+      ],
+      "first_time": "2024-05-17T15:52:11Z",
+      "last_time": "2024-06-24T15:59:59Z",
       "hop": 4,
-      "confidence": 1.0,
+      "confidence": 0.95,
+      "method": "direct"
+    },
+    {
+      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "to": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "token": "USDT",
+      "amount": 1639617.0,
+      "attributed_amount": 628231.925313,
+      "tx_hashes": [
+        "0x59ced4c90afb20c0785e17d6909e410d55eb63abc50dcc10614e2a6b453b3ef8",
+        "0x28b546dc6f8ce9eb82f66bc06b500bd5f75e3ce938c048d822231c3d21633f6e",
+        "0xef8e67d17220291f4e070fe7afec0db3b42148c296c1b138916fef9c8c8a197d",
+        "0x96e5f18af6114c0fbe397fcd779518c36c6a0aca1ea2c2fcea5f63dc2b15e51f",
+        "0x347f159eef868979568e740a84c25b36adb097d06ef6c45bef06260825182d92",
+        "0x19ca3f925523c62cfea07c690c3d336cc9b141bf28aa8836014d758f782606ef",
+        "0x4f766d1a68a056cecae3c126786d1dc5b7d35d4a4cfcf4c76ff6957e014a87ca",
+        "0xc9e95992f46369c419598d31605ed20deb5384c975ac5d1a929a9b42e545a2c7",
+        "0x2c9f0232d01ea87d997fac807a55aafd7ebe787b51159b201848b86515135d14",
+        "0xa6b82d953996df0aee1543f696164a3b41b5523f1c57bdf609bb81c4e0b22a0c",
+        "0x5e8a9f75ac67d5d30e8a74a567ae32476edaaf64864971f6b1728012a0909608",
+        "0x2f39bd6c948d587bea7e3f40a74174e55d78a9b4aff5543d24047be8472d19fc",
+        "0xf7e9e921b53be4b5478e1bb2db1fb985484d8230b972463bd8883de715463bd6",
+        "0xbc5be8916a912d916019dc95f37862e2b1ed7faf4a1a52aeb41eb00ed41792ea",
+        "0x9b1defc978499f43dee1d9725e755158a03942ce2dbf5544c7b4a64d57f5decb",
+        "0x9e8b650be0a788eaa765d8eee8761c5643d336a234497aa4721602a0b6cc1f4d",
+        "0x846aebdd7b4c16c28c445f8a559de0944d1cbf372cfbfb2c022d1637754f4f84",
+        "0x7051463d782388c807fdb20c6dce1d852002192e22e1e41c044ec4f6130ba45a",
+        "0xe797e092ed199f7899c7722c0bfe246f7d6c5a28e88ef32088898b8412174f8b",
+        "0x79acc56bd1b0415ac8166f38291a586e02de03de37f2457aed281d1e9bf8002d",
+        "0xd06ffab5bbd02c408ea1c0b0ac4cbaa95f5a4462ef3f9767582f648559e9b6d2",
+        "0x3066a6a01c554f2ae1a87076698e5531abfe8055687161676e353f09adac5563",
+        "0xee63649debf3f312ad951728affc5dd743e77f313e61c91db66829198a61ecc9",
+        "0xfd10df3a2b50c3a005a58f9fb58cc07276effe7f1a6ee566db26975752544c05",
+        "0xacd8eaf44ecd0f41d731c99e3e846ae66eada192fcc6261447991fe50b4cefe8",
+        "0xe3f8a1143e16ac7226a40ded3805ec98c9e34950d04dfbfa87b64acde9a10415",
+        "0x30b1c1f1cd405a95eb8b8d5b62f00ff27f2f3aa09e0194b2a8141f9534bf0577",
+        "0xb1e592ca009d846a3e12a5584099c02e68e3504c57f873fdbc2f2e8577667360"
+      ],
+      "first_time": "2024-05-18T20:56:35Z",
+      "last_time": "2024-06-25T01:29:59Z",
+      "hop": 4,
+      "confidence": 0.95,
+      "method": "direct"
+    },
+    {
+      "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "to": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "token": "USDT",
+      "amount": 13000.0,
+      "attributed_amount": 731.57996,
+      "tx_hashes": [
+        "0x50a0d4ed5bdef19a8eb4a948d10df374407a50bfd4e0da63cccf279848d87a84",
+        "0x85bc1377894b189a0163ffd33a1a422884eda1d6cc026f86dccbb0239b9d068c"
+      ],
+      "first_time": "2024-06-04T04:36:59Z",
+      "last_time": "2024-06-25T07:39:47Z",
+      "hop": 4,
+      "confidence": 0.95,
       "method": "direct"
     },
     {
@@ -536,7 +792,7 @@
       "to": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
       "token": "USDT",
       "amount": 1349999.0,
-      "attributed_amount": 1349999.0,
+      "attributed_amount": 446320.548852,
       "tx_hashes": [
         "0x8f58e22a7d2befa66e96484e39014ab49eb745ea3508c0bc2a094e7f76033da8",
         "0x822ade1d93c1d9a47b717f271e7e0b5d93f66e6d05e2e39439aa6040e6d0025a",
@@ -548,109 +804,60 @@
       ],
       "first_time": "2024-05-30T16:34:47Z",
       "last_time": "2024-06-24T16:09:59Z",
-      "hop": 4,
-      "confidence": 1.0,
+      "hop": 5,
+      "confidence": 0.95,
       "method": "direct"
     },
     {
       "from": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "to": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
-      "token": "USDT",
-      "amount": 1127741.0,
-      "attributed_amount": 1127741.0,
-      "tx_hashes": [
-        "0x581a146a5c55dbbe4e16f2a1a84b0582a5ef913e7bd3c676092bb7e72c162e28",
-        "0xf3c6448a897464e444fc40d5dc8d61662b8e4ea64d041c482b9af528c28ecb19",
-        "0xb737cf7eff4268ec53dd4a4fb72a84aa8ff37556a606da3f18b4365749e7e6cd",
-        "0xa10fc8399232917178fdc3f174a0badc8e0a179e7b1185a6586ef4abe2b068ea",
-        "0x694900a900fdc5d137ec4180f79b4ebc585a45d55c7f51e77f0a62f98c3118c6",
-        "0x08bf5ab22c4b6bb4654d5035f989b754141eb58a544aa1621bca10be3e35db70",
-        "0x1c4ce6babcc07ace9da4a45f443064266d43876d4231ea39002c3e63a40ab872",
-        "0xe0b28541f638473784f9d5053e84f62b72f3efd7082856332551807d78b4f660",
-        "0x6913322940d96dce53cb833969ae4e1be91a65870e369e89e321c294fcd656fe"
-      ],
-      "first_time": "2024-03-02T16:05:59Z",
-      "last_time": "2024-05-14T16:03:23Z",
-      "hop": 4,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
-      "to": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "token": "USDT",
-      "amount": 3000000.0,
-      "attributed_amount": 3000000.0,
-      "tx_hashes": [
-        "0xa75703cfe07a2db98fbf650f3eeb538111a0d20404f79446dd769f9c3f42e96e"
-      ],
-      "first_time": "2024-03-17T07:57:35Z",
-      "last_time": "2024-03-17T07:57:35Z",
-      "hop": 5,
-      "confidence": 1.0,
-      "method": "consolidation"
-    },
-    {
-      "from": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
-      "to": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "token": "USDT",
-      "amount": 2000000.0,
-      "attributed_amount": 2000000.0,
-      "tx_hashes": [
-        "0x1d9afb6b61b697c27474608a067f29793864d1587acbc23d22435ea4acf723f7"
-      ],
-      "first_time": "2024-05-14T11:50:47Z",
-      "last_time": "2024-05-14T11:50:47Z",
-      "hop": 5,
-      "confidence": 1.0,
-      "method": "consolidation"
-    },
-    {
-      "from": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
-      "to": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
-      "token": "USDT",
-      "amount": 1040001.0,
-      "attributed_amount": 1040001.0,
-      "tx_hashes": [
-        "0xdbb86511618bfab8ed950600abe1db0e466161a63293b18a57f72ce3c38c29d1",
-        "0x2c335384c1f7f8c365dc1b8a8e6eaacf45ddf0bced352bd83f229f27ca473196",
-        "0x8fbdc30beb0c22c29232202ad1daefe49daaadf1cde482d12e311768f3e7e8bb"
-      ],
-      "first_time": "2024-03-01T06:35:47Z",
-      "last_time": "2024-03-17T07:49:11Z",
-      "hop": 5,
-      "confidence": 1.0,
-      "method": "consolidation"
-    },
-    {
-      "from": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
       "to": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
       "token": "USDT",
-      "amount": 129999.0,
-      "attributed_amount": 129999.0,
+      "amount": 950000.0,
+      "attributed_amount": 389542.012934,
       "tx_hashes": [
-        "0xe5555cc1c11ed351b17b98b2baf9be198b822c1e3250aa8fbb53e6dc7e8fd0b7"
+        "0x80695c84b66a5bef9dc535a2313e326b327dbb8502c08bfb35c4b49810afc52d",
+        "0x2fbbee78cf402aa3581a352b1fb6a1afe92acf7b1a7572c4d4974d61dc541a08",
+        "0xfc2ec57ac36d31b94cfd68dd14fc74222f62604a360692f9578ba07be150843d",
+        "0xccbbc6bea1e65c5c71ce85383cf9e31bdb8630ec8d9ac9a7802855f5fb34179b",
+        "0xf2cad1ebd58342016c2a1605781b9ebeb1bc77435e23d6cce6c9ece035bf5c38",
+        "0xb3b998ceb4f235cfa1f6ce414f8cd95c85c2f06fd25e72bd7374f1c0b9a08edf"
       ],
-      "first_time": "2024-05-15T16:50:23Z",
-      "last_time": "2024-05-15T16:50:23Z",
+      "first_time": "2024-05-17T16:51:11Z",
+      "last_time": "2024-05-28T15:57:35Z",
       "hop": 5,
-      "confidence": 1.0,
+      "confidence": 0.95,
       "method": "direct"
     }
   ],
   "endpoints": [
     {
-      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
-      "reason": "frozen",
-      "victim_inflow": 3949999.0,
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "reason": "holding",
+      "victim_inflow": 2035205.385521,
       "balance_usdt": 0.0,
       "freezable": false,
       "exchange": null
     },
     {
-      "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
-      "reason": "frozen",
-      "victim_inflow": 1127741.0,
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "reason": "holding",
+      "victim_inflow": 955393.173565,
+      "balance_usdt": 0.0,
+      "freezable": false,
+      "exchange": null
+    },
+    {
+      "address": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "reason": "holding",
+      "victim_inflow": 83410.031878,
+      "balance_usdt": 0.0,
+      "freezable": false,
+      "exchange": null
+    },
+    {
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "reason": "holding",
+      "victim_inflow": 1408840.090199,
       "balance_usdt": 0.0,
       "freezable": false,
       "exchange": null
@@ -658,7 +865,15 @@
     {
       "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
       "reason": "frozen",
-      "victim_inflow": 1349999.0,
+      "victim_inflow": 446320.548852,
+      "balance_usdt": 0.0,
+      "freezable": false,
+      "exchange": null
+    },
+    {
+      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "reason": "frozen",
+      "victim_inflow": 389542.012934,
       "balance_usdt": 0.0,
       "freezable": false,
       "exchange": null
@@ -666,17 +881,257 @@
   ],
   "other_payers": [],
   "stats": {
-    "api_calls": 0,
+    "api_calls": 10,
     "cache_hits": 0,
     "empty_results": 0,
-    "elapsed_ms": 0
+    "elapsed_ms": 1
   },
   "audit_log": [
     {
-      "t": "2026-10-24T05:00:00Z",
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "detail": "52 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "detail": "915317.84 tainted USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "162 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "skip_branch",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "dust: 0.00 tainted to 0x00000047bb99ea4d791bb749d970de71ee0b1a34 below min_amount 100.0"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "873958.71 tainted USDT to 0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "27359.25 tainted USDT to 0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "13999.88 tainted USDT to 0x8009a080442c001250b49fac4ff483522bba7207"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "76 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "detail": "10 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "65 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "356361.23 tainted USDT to 0xdf6fa72c71577c3a3209db202d4815021f0ed53f"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "61613.81 tainted USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "18313.18 tainted USDT to 0xcf9bbfa762ef5a84ba3d25350de941a6db485027"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "512.57 tainted USDT to 0x04ba625f67fafdef14712d43bdbd5a63d001c950"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x8009a080442c001250b49fac4ff483522bba7207",
+      "detail": "61925.60 tainted USDT to 0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "496034.77 tainted USDT to 0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "252900.55 tainted USDT to 0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "95122.73 tainted USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "62236.16 tainted USDT to 0x8009a080442c001250b49fac4ff483522bba7207"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "detail": "17 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "detail": "25 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "detail": "not frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "detail": "135 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x04ba625f67fafdef14712d43bdbd5a63d001c950",
+      "detail": "731.58 tainted USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "detail": "446320.55 tainted USDT to 0x4e5cda8f0d772ac57e947545192a0657ad47abb5"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "detail": "389542.01 tainted USDT to 0xa1770ead287dc8e91631a7a323390d5b744f0021"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "hop",
+      "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+      "detail": "628231.93 tainted USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "detail": "frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "detail": "7 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "stop",
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "detail": "Tether froze this address at 2024-06-25T17:07:23Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "freeze_check",
+      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "detail": "frozen"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "fetch",
+      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "detail": "6 transfers since 2024-05-17T14:40:47Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
+      "step": "stop",
+      "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+      "detail": "Tether froze this address at 2024-06-21T14:53:11Z"
+    },
+    {
+      "t": "2026-10-24T04:37:59Z",
       "step": "stop",
       "address": null,
-      "detail": "fixture built from BigQuery transfers among the 9 known path wallets; not engine output"
+      "detail": "no new tainted addresses after hop 5"
     }
   ]
 }

@@ -149,7 +149,7 @@ No phone numbers or real names in committed files.
 ```python
 # backend/hound/chain/  (Jinka)
 get_transfers(chain, address, token=None, before=None, after=None) -> list[Transfer]
-    # Transfer = {"chain","tx_hash","from","to","token","amount","time","block"}; both directions; paginated; cached
+    # Transfer = {"chain","tx_hash","log_index","from","to","token","amount","time","block"}; both directions; paginated; cached. log_index orders transfers inside one tx (FIFO needs it)
 get_balance(chain, address, token="USDT") -> float
 freeze_status(chain, address) -> {"is_frozen": bool, "frozen_at": str|None, "freeze_tx": str|None}
 freeze_events(chain, after, before) -> list[{"address","frozen_at","freeze_tx","block"}]

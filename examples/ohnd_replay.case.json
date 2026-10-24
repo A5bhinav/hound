@@ -11,18 +11,9 @@
     "scam_app": null,
     "platform": null,
     "first_contact": null,
-    "summary": "Replay of a public DOJ forfeiture case. Sends are real USDT transfers into the first USDT-holding wallet after the victims' swaps. Historical: funds were frozen by Tether in June 2024."
+    "summary": "Replay of a public DOJ forfeiture case. Sends are all 20 real USDT transfers into A-1, the first USDT-holding wallet after the victims' swaps. Historical: Tether froze the final wallets in June 2024."
   },
   "sends": [
-    {
-      "chain": "ethereum",
-      "tx_hash": "0x7268269f9b95788f6898c47c4f4c0e34d9ab7826ef5a91cab07c07421f10a9f9",
-      "from": "0x8d90113a1e286a5ab3e496fbd1853f265e5913c6",
-      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-      "token": "USDT",
-      "amount": 151486.630813,
-      "time": "2024-05-21T15:19:59Z"
-    },
     {
       "chain": "ethereum",
       "tx_hash": "0xc36ac0e14af4a2e07929aa01c046848424cef534a435cc76b624c66f7eaa8eeb",
@@ -34,12 +25,174 @@
     },
     {
       "chain": "ethereum",
+      "tx_hash": "0x038a4a2506815cf4de8cb0a74a48fe759acc5215237229f208f2f2c0c4afe11f",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 67585.034172,
+      "time": "2024-05-18T15:19:11Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x7268269f9b95788f6898c47c4f4c0e34d9ab7826ef5a91cab07c07421f10a9f9",
+      "from": "0x8d90113a1e286a5ab3e496fbd1853f265e5913c6",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 151486.630813,
+      "time": "2024-05-21T15:19:59Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x831e92ba5d0130e9338d094fe0117813606ac4f7c76db452cb145ecd3f0da43e",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 49105.324161,
+      "time": "2024-05-23T14:26:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x40eac76d70e28009d7f7a7dce7c7b59c5ecc1c54260decef6f9ef943fd1b5f82",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 21505.388711,
+      "time": "2024-05-25T14:33:11Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0xc876042a60a8a8c426dfaf698cebbae337f21fb812a1211bf249176b7863ce3d",
+      "from": "0x3275ffa5d1baf825a7facda4c82d6a89982d4b4f",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 10.0,
+      "time": "2024-05-29T14:10:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x00e8102ad8c67db293b9025e419128e269c2b32100f78c769109557bb2fe07cf",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 38386.213601,
+      "time": "2024-05-29T14:26:47Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x21d250c54b950862f2ee1fb93bcdea6faa445f277d40321ebc9d471ae8574032",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 92750.465813,
+      "time": "2024-05-30T14:37:59Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0xd14fe0a57c0d5c8f1641fc474d2460bf381810ae7f8d73adb3ef7d52650b2413",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 58537.736274,
+      "time": "2024-05-31T14:25:35Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0xe49db7eb0e1316a9320413541374c5d4323ba5720b891384433a1886cedb34bb",
+      "from": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 19038.02,
+      "time": "2024-05-31T15:29:11Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x71e9965b057fa1a3eb2f732bf48551d7cdf0988912122d1867a2fb642f97fb5d",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 32198.843218,
+      "time": "2024-06-06T14:43:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x44de255b168a6930af19f6f4c310ca0f2fbeed121736b8377e1ff05db6720bbb",
+      "from": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 19526.63,
+      "time": "2024-06-08T01:39:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0xc9c4c9e499fd05df12b9498d8e37dc47c2ef31ef4cbea0870e7c1fc767d5ce60",
+      "from": "0x4a14347083b80e5216ca31350a2d21702ac3650d",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 71194.228148,
+      "time": "2024-06-08T14:54:47Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x1d011478324d4b6bf583dadd66e2c4bd49b1c4443d96b074d51152e03a03a1cb",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 10906.585715,
+      "time": "2024-06-11T14:30:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x064b32f9fbb4da0347e0a8a7793d0e3b4848e28eafdf29dc8502bf28150b261c",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 20217.191575,
+      "time": "2024-06-12T14:52:35Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x21be34089a7da7e4425c164de22f2817ade111e8a96f622f424b4bf6e939283f",
+      "from": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 19528.97,
+      "time": "2024-06-15T01:56:59Z"
+    },
+    {
+      "chain": "ethereum",
       "tx_hash": "0x68be3cb0c689b285e325c87f0051e5c190900ef9dfbd9773e71ee039d99d8df8",
       "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
       "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "token": "USDT",
       "amount": 93480.534389,
       "time": "2024-06-19T14:36:47Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x00fe28a2b4c9cba1c2c8ae00546607508391899bee38fd8d29991e8d79ebeea0",
+      "from": "0x923187ae5c59f972dd821bc584da2743da1e80a6",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 12.0,
+      "time": "2024-06-19T19:08:35Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x8fa1c25f366482407149ef6d851ddbc2392c00f21df0472198b18d42dfff8406",
+      "from": "0x83c877f684fd6ca616907538bba12c85c1d26a34",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 19896.3,
+      "time": "2024-06-23T04:55:23Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x070f64018f8eed7ac116b6e83ba949ab658710270f641ed7262e750027501fb7",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 28599.308366,
+      "time": "2024-06-23T14:59:11Z"
     }
   ],
   "status": "traced"
