@@ -22,7 +22,6 @@ from hound.llm.facts import WriterInputError
 from hound.llm.writer import write_case
 from hound.proof.backtest import serve as backtest_serve
 from hound.proof.doj_ohnd import doj_scoreboard
-from hound.proof.scan import weekend_scan
 from hound.watch.check import check
 from hound.watch.other_payers import other_payers
 from hound.watch import watchlist
@@ -408,7 +407,8 @@ def backtest():  # serves the batch result written by `python -m hound.proof.bac
 
 @app.get("/scan/latest")
 def scan():
-    return weekend_scan()
+    from hound.proof.scan import serve as scan_serve
+    return scan_serve()
 
 
 @app.get("/health")

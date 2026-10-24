@@ -425,3 +425,11 @@ def test_scoreboard_scores_latest_replay_trace():
     board = client.get("/proof/scoreboard").json()
     assert board["summary"]["status"] != "no_trace" and board["trace_source"] == trace["source"]
     assert board["summary"]["intermediates_reached"] > 0
+
+
+def test_scan_route_never_scans_live(monkeypatch, tmp_path):
+    from hound.proof import scan
+    monkeypatch.setattr(scan, "OUT", tmp_path / "scan_missing.json")
+    monkeypatch.setattr(scan, "weekend_scan", lambda **k: (_ for _ in ()).throw(AssertionError("live scan")))
+    r = client.get("/scan/latest")
+    assert r.status_code == 200 and r.json()["status"] == "not_computed"
