@@ -127,6 +127,9 @@ def reset() -> None:
 
 # ---------- persistence: a backend restart (tunnel watchdog, crash) must not lose a victim's case ----------
 
+_SAVE_LOCK = threading.Lock()
+
+
 def _state_file():
     from pathlib import Path
     from hound.chain.cache import cache_dir
@@ -138,11 +141,19 @@ def save_state() -> None:
     Atomic: a temp file in the same folder, then os.replace. Never raises: the request already succeeded."""
     import tempfile
     from hound import api as hound_api
-    with _LOCK:
-        sessions = {c: dict(s) for c, s in SESSIONS.items()}
-        active = list(_ACTIVE)
-    cases = {s["case_id"]: hound_api.CASES[s["case_id"]] for s in sessions.values()
-             if s.get("case_id") and s["case_id"] in hound_api.CASES}
+    # Snapshot and write under one lock, so saves land in the order they were taken: an older snapshot
+    # can never overwrite a newer one (e.g. bring back sessions a /demo/reset just cleared).
+    with _SAVE_LOCK:
+        with _LOCK:
+            sessions = {c: dict(s) for c, s in SESSIONS.items()}
+            active = list(_ACTIVE)
+        cases = {s["case_id"]: hound_api.CASES[s["case_id"]] for s in sessions.values()
+                 if s.get("case_id") and s["case_id"] in hound_api.CASES}
+        _write_state(sessions, active, cases)
+
+
+def _write_state(sessions, active, cases) -> None:
+    import tempfile
     path = _state_file()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)

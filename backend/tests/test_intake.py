@@ -599,3 +599,29 @@ def test_sessions_and_their_cases_survive_a_restart(monkeypatch, tmp_path):
     assert "intake-restart1" not in api.TRUSTED  # never approved, so never trusted after a restart
     api.CASES.pop("intake-restart1", None)
     api.LIVE_CASES.discard("intake-restart1")
+
+
+def test_saves_land_in_order_so_a_reset_is_never_undone(monkeypatch, tmp_path):
+    import json as _json
+    import threading as _th
+    monkeypatch.setenv("HOUND_STATE_FILE", str(tmp_path / "state.json"))
+    client.post("/intake/start", json={})
+    started, release = _th.Event(), _th.Event()
+    real_write = intake._write_state
+
+    def slow_write(*a):  # the first save stalls mid-write, holding its (pre-reset) snapshot
+        started.set()
+        release.wait(5)
+        real_write(*a)
+
+    monkeypatch.setattr(intake, "_write_state", slow_write)
+    old = _th.Thread(target=intake.save_state)
+    old.start()
+    started.wait(5)
+    monkeypatch.setattr(intake, "_write_state", real_write)
+    resetter = _th.Thread(target=intake.reset)  # must wait for the stalled save, then write the empty state
+    resetter.start()
+    release.set()
+    old.join(5)
+    resetter.join(5)
+    assert _json.loads((tmp_path / "state.json").read_text())["sessions"] == {}
