@@ -5,8 +5,8 @@ label(chain, address) -> {"name", "kind", "source", ...extras} | None
   extras: "exchange" (venue name, for exchange kinds), "category" (mixer | bridge | swap_service |
           otc | fiat_gateway, for service)
 
-Data files are built by `python -m hound.chain.build_labels` into data/labels/.
-Loading fails loudly (HoldoutViolation) if any DOJ holdout address is in them.
+Data files are built by `python backend/tools/build_labels.py` into data/labels/.
+The build and the tests fail if any DOJ holdout address is in them (never checked at runtime).
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import logging
 from functools import lru_cache
 from pathlib import Path
 
-from . import holdout
 from .cache import REPO_ROOT
 
 log = logging.getLogger("hound.chain.labels")
@@ -37,7 +36,7 @@ def _load() -> dict[str, dict[str, dict]]:
     if eth_file.exists():
         db["ethereum"].update(json.loads(eth_file.read_text())["labels"])
     else:
-        log.error("missing %s: run `python -m hound.chain.build_labels`; no exchange labels loaded", eth_file)
+        log.error("missing %s: run `python backend/tools/build_labels.py`; no exchange labels loaded", eth_file)
     tron_file = LABEL_DIR / "tron.json"
     if tron_file.exists():
         db["tron"].update(json.loads(tron_file.read_text())["labels"])
@@ -55,10 +54,8 @@ def _load() -> dict[str, dict[str, dict]]:
     for chain, extra in MANUAL.items():
         db[chain].update(extra)
 
-    bad = [f"{a} ({holdout.matches(a)})" for a in db["ethereum"] if holdout.matches(a)]
-    if bad:
-        raise holdout.HoldoutViolation(
-            f"label DB contains DOJ holdout addresses, the DOJ match would not be blind: {bad[:10]}")
+    # The DOJ holdout is enforced at build time (backend/tools/build_labels.py) and by
+    # tests/test_chain_unit.py, never at runtime: engine-side code must not read the DOJ files.
     return db
 
 
@@ -81,4 +78,3 @@ def all_labels(chain: str) -> dict[str, dict]:
 
 def reload() -> None:
     _load.cache_clear()
-    holdout.load.cache_clear()

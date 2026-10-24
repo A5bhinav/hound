@@ -65,3 +65,31 @@ def test_stats_counted():
     chain.get_transfers("ethereum", A7, token="USDT")
     s = chain.stats()
     assert s["api_calls"] + s["cache_hits"] > 0
+
+
+D95 = "0xd95da710ca21c985799a168109db702044be2cd4"
+A1 = "0xcf9bbfa762ef5a84ba3d25350de941a6db485027"
+CUTOFF = 20170085
+
+
+def test_freeze_dump_and_as_of():
+    s = chain.freeze_status("ethereum", A7)
+    assert s["status"] == "destroyed" and s["frozen_block"] == 20140818
+    assert s["destroyed_amount"] == 4340000.0 and s["destroyed_block"] == 21196374
+    assert chain.freeze_status("ethereum", A7, as_of=20140817)["status"] == "none"
+    assert chain.freeze_status("ethereum", A7, as_of=CUTOFF)["status"] == "frozen"
+
+
+def test_balance_at_replay_cutoff():
+    # today's balance is 0 (destroyed); at the cutoff A-7 held more than A.H.'s 314,657 (¶ 74)
+    assert chain.get_balance("ethereum", A7, block=CUTOFF) >= 314657
+    assert chain.get_balance("ethereum", A7) == 0.0
+
+
+def test_native_txs_include_ah_sends_into_a1():
+    txs = chain.get_native_txs("ethereum", D95, as_of=CUTOFF)
+    sends = [t for t in txs if t["from"] == D95 and int(t["amount_wei"]) > 0]
+    assert sends and all(set(t) >= {"tx_hash", "tx_index", "from", "to", "amount_wei", "gas_wei", "block", "time"}
+                         for t in txs)
+    assert all(t["block"] <= CUTOFF for t in txs)
+    assert any(t["to"] == A1 for t in sends)

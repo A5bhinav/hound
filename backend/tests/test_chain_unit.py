@@ -6,7 +6,12 @@ import time
 import httpx
 import pytest
 
-from hound.chain import cache, eth, holdout, labels, net
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import holdout_guard as holdout  # noqa: E402
+from hound.chain import cache, eth, labels, net  # noqa: E402
 
 
 # ------------------------------------------------------------------ cache
@@ -152,18 +157,9 @@ def test_label_db_has_no_holdout_addresses():
     """The DOJ match must stay blind: no complaint address may be in the label DB."""
     labels.reload()
     db = labels.all_labels("ethereum")
-    assert db, "label DB is empty: run python -m hound.chain.build_labels"
+    assert db, "label DB is empty: run python backend/tools/build_labels.py"
     leaks = [a for a in db if holdout.matches(a)]
     assert leaks == []
-
-
-def test_label_db_refuses_to_load_with_a_holdout_address(monkeypatch):
-    labels.reload()
-    monkeypatch.setitem(labels.MANUAL, "ethereum", {A7: {"name": "leak", "kind": "service", "source": "test"}})
-    with pytest.raises(holdout.HoldoutViolation):
-        labels.label("ethereum", A7)
-    monkeypatch.setitem(labels.MANUAL, "ethereum", {})
-    labels.reload()
 
 
 def test_known_labels():
@@ -172,3 +168,66 @@ def test_known_labels():
     torn = labels.label("ethereum", "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf")
     assert torn["kind"] in ("ofac", "service")
     assert labels.label("ethereum", A7) is None
+
+
+# ------------------------------------------------------------------ cache modes + snapshot
+
+def test_readonly_mode_never_fetches(monkeypatch):
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    with pytest.raises(cache.CacheMiss):
+        cache.cached("t", {"r": 1}, lambda: pytest.fail("network in readonly"), ttl=None)
+
+
+def test_prefer_cache_serves_stale_and_fetches_misses(monkeypatch):
+    cache.cached("t", {"p": 1}, lambda: "old", ttl=1)
+    p = cache._path("t", {"p": 1})
+    data = json.loads(p.read_text()); data["saved_at"] -= 999; p.write_text(json.dumps(data))
+    monkeypatch.setenv("HOUND_CACHE_MODE", "prefer_cache")
+    assert cache.cached("t", {"p": 1}, lambda: "new", ttl=1) == "old"
+    assert cache.cached("t", {"p": 2}, lambda: "fetched", ttl=1) == "fetched"
+
+
+def test_bad_mode_is_loud(monkeypatch):
+    monkeypatch.setenv("HOUND_CACHE_MODE", "sometimes")
+    with pytest.raises(ValueError):
+        cache.mode()
+
+
+def test_api_keys_never_reach_cache_keys_or_files(monkeypatch):
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "SUPERSECRETKEY123")
+    a = {"module": "account", "address": "0x1", "apikey": "SUPERSECRETKEY123"}
+    b = {"module": "account", "address": "0x1"}
+    assert cache.key(a) == cache.key(b)
+    cache.cached("t", a, lambda: {"ok": 1}, ttl=None)
+    assert "SUPERSECRETKEY123" not in cache._path("t", a).read_text()
+
+
+def test_snapshot_pack_and_read(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    cache.cached("eth_rpc", {"method": "x"}, lambda: "0x1", ttl=None)
+    out = tmp_path / "snap"
+    assert snapshot.pack(out_dir=out) == {"eth_rpc": 1}
+    monkeypatch.setattr(cache, "SNAPSHOT_DIR", out)
+    cache.reload_snapshot()
+    monkeypatch.setenv("HOUND_CACHE_DIR", str(tmp_path / "empty"))
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    assert cache.cached("eth_rpc", {"method": "x"}, lambda: pytest.fail("network"), ttl=None) == "0x1"
+    cache.reload_snapshot()
+
+
+def test_snapshot_refuses_secrets(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    cache.cached("eth_rpc", {"method": "y"}, lambda: "leaked-SECRETVALUE99", ttl=None)
+    monkeypatch.setenv("SOME_API_KEY", "leaked-SECRETVALUE99")
+    with pytest.raises(RuntimeError, match="secret"):
+        snapshot.pack(out_dir=tmp_path / "snap")
+
+
+def test_rate_limit_body_with_http_200_raises_and_caches_nothing(monkeypatch):
+    """The A-8 silent zero: a 200 'Max rate limit' body must never become a cached empty result."""
+    body = {"status": "0", "message": "NOTOK", "result": "Max rate limit reached"}
+    _mock_client(monkeypatch, lambda req: httpx.Response(200, json=body))
+    params = {"module": "account", "action": "tokentx", "address": A7}
+    with pytest.raises(net.ChainAPIError):
+        eth.explorer(params, sources=["blockscout"])
+    assert cache.read("eth_v1", {"source": "blockscout", **params}) is None

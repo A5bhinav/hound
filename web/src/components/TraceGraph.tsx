@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Core, ElementDefinition } from "cytoscape";
 import type { Trace, TraceNode } from "@/lib/types";
-import { KIND_LABEL, pct, shortAddr, tone, usdt } from "@/lib/format";
+import { KIND_LABEL, daysBetween, pct, shortAddr, tone, usdt0 } from "@/lib/format";
 import NodeDetail from "./NodeDetail";
 import styles from "./TraceGraph.module.css";
 
 const COL_W = 340;
 const ROW_H = 104;
 const STEP_MS = 900;
+const FREEZE_REVEAL_MS = 1200;
 
 const TONE_COLOR = {
   trace: "#2c5a86",
@@ -26,15 +27,22 @@ const TONE_FILL = {
   dead: "#eef1f4",
 } as const;
 
-function nodeText(n: TraceNode) {
+/** Label and colours for a node; frozen styling waits until freezes are revealed. */
+function nodeLook(n: TraceNode, freezesShown: boolean) {
   const full = n.label ?? shortAddr(n.address);
   const name = full.length > 22 ? `${full.slice(0, 21)}…` : full;
-  const sub = n.frozen?.is_frozen ? "TETHER FROZE THIS" : KIND_LABEL[n.kind].toUpperCase();
-  return `${name}\n${sub}`;
+  const frozen = freezesShown && n.frozen?.is_frozen;
+  const t = tone(n, freezesShown);
+  return {
+    text: `${name}\n${frozen ? "TETHER FROZE THIS" : KIND_LABEL[n.kind].toUpperCase()}`,
+    color: TONE_COLOR[t],
+    fill: TONE_FILL[t],
+    dead: t === "dead",
+  };
 }
 
 /** Deterministic column layout: x = depth, rows sorted by inflow (largest on top). */
-function buildElements(trace: Trace): ElementDefinition[] {
+function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[] {
   const inflow = new Map<string, number>();
   for (const e of trace.edges) inflow.set(e.to, (inflow.get(e.to) ?? 0) + e.attributed_amount);
 
@@ -48,19 +56,19 @@ function buildElements(trace: Trace): ElementDefinition[] {
     const top = ((maxRows - col.length) * ROW_H) / 2;
     els.push({
       group: "nodes",
-      data: { id: `hdr-${depth}`, text: depth === 0 ? "VICTIM" : `HOP ${depth}`, depth },
+      data: { id: `hdr-${depth}`, text: depth === 0 ? (col.length > 1 ? "VICTIMS" : "VICTIM") : `HOP ${depth}`, depth },
       position: { x: depth * COL_W, y: -ROW_H * 0.85 },
       classes: "hdr",
       selectable: false,
       grabbable: false,
     });
     col.forEach((n, i) => {
-      const t = tone(n);
+      const { dead, ...look } = nodeLook(n, freezesShown);
       els.push({
         group: "nodes",
-        data: { id: n.address, text: nodeText(n), depth, color: TONE_COLOR[t], fill: TONE_FILL[t] },
+        data: { id: n.address, depth, ...look },
         position: { x: depth * COL_W, y: top + i * ROW_H },
-        classes: t === "dead" ? "dead" : "",
+        classes: dead ? "dead" : "",
       });
     });
   }
@@ -72,7 +80,7 @@ function buildElements(trace: Trace): ElementDefinition[] {
         source: e.from,
         target: e.to,
         hop: e.hop,
-        text: `${usdt(e.attributed_amount)}\n${pct(e.confidence)} · ${e.method}`,
+        text: `${usdt0(e.attributed_amount)}\n${pct(e.confidence)} · ${e.method}`,
         width: 1.5 + Math.log10(Math.max(e.attributed_amount, 10)) * 0.9,
       },
       classes: e.confidence < 0.6 ? "weak" : "",
@@ -81,13 +89,35 @@ function buildElements(trace: Trace): ElementDefinition[] {
   return els;
 }
 
-export default function TraceGraph({ trace }: { trace: Trace }) {
+/** asOf: the case's story date (replay: the victim's report), used to say how long after it Tether froze. */
+export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: string | null }) {
   const box = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [shownHop, setShownHop] = useState(0);
   const maxHop = useMemo(() => Math.max(0, ...trace.edges.map((e) => e.hop)), [trace]);
+  const hideFreezes = trace.method.freeze_visibility === "hidden";
+  const [freezesShown, setFreezesShown] = useState(!hideFreezes);
+  const frozen = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen && n.frozen.frozen_at), [trace]);
+
+  // Replay: freezes appear only after the last hop has unfolded (§0, AUDIT N1).
+  useEffect(() => {
+    if (!hideFreezes || shownHop < maxHop) return;
+    const t = setTimeout(() => setFreezesShown(true), FREEZE_REVEAL_MS);
+    return () => clearTimeout(t);
+  }, [hideFreezes, shownHop, maxHop]);
+
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    cy.batch(() => {
+      for (const n of trace.nodes) {
+        const { dead, ...look } = nodeLook(n, freezesShown);
+        cy.getElementById(n.address).data(look).toggleClass("dead", dead);
+      }
+    });
+  }, [trace, freezesShown]);
 
   const reveal = useCallback((hop: number) => {
     const cy = cyRef.current;
@@ -102,6 +132,7 @@ export default function TraceGraph({ trace }: { trace: Trace }) {
 
   const play = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
+    if (hideFreezes) setFreezesShown(false);
     reveal(0);
     let hop = 0;
     timer.current = setInterval(() => {
@@ -109,6 +140,13 @@ export default function TraceGraph({ trace }: { trace: Trace }) {
       reveal(hop);
       if (hop >= maxHop && timer.current) clearInterval(timer.current);
     }, STEP_MS);
+  }, [maxHop, reveal, hideFreezes]);
+
+  const showAll = useCallback(() => {
+    // Stop a running replay first, or its next tick would hide later hops again.
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    reveal(maxHop);
   }, [maxHop, reveal]);
 
   useEffect(() => {
@@ -122,7 +160,7 @@ export default function TraceGraph({ trace }: { trace: Trace }) {
 
       const cy = cytoscape({
         container: box.current,
-        elements: buildElements(trace),
+        elements: buildElements(trace, !hideFreezes),
         layout: { name: "preset", padding: 40 },
         minZoom: 0.3,
         maxZoom: 2,
@@ -212,7 +250,7 @@ export default function TraceGraph({ trace }: { trace: Trace }) {
       cyRef.current?.destroy();
       cyRef.current = null;
     };
-  }, [trace, maxHop, play, reveal]);
+  }, [trace, maxHop, play, reveal, hideFreezes]);
 
   const node = selected ? trace.nodes.find((n) => n.address === selected) ?? null : null;
 
@@ -223,21 +261,36 @@ export default function TraceGraph({ trace }: { trace: Trace }) {
           {shownHop >= maxHop ? `${maxHop} hops traced` : `Tracing hop ${shownHop} of ${maxHop}…`}
         </span>
         <button type="button" onClick={play}>Replay trace</button>
-        <button type="button" onClick={() => reveal(maxHop)} disabled={shownHop >= maxHop}>
+        <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>
           Show all hops
         </button>
         <button type="button" onClick={() => cyRef.current?.fit(undefined, 40)}>Fit to screen</button>
       </div>
+      {hideFreezes && freezesShown && frozen.length > 0 && (
+        <p className={styles.freezeReveal} role="status">
+          {freezeRevealText(frozen, asOf)}
+        </p>
+      )}
       <ul className={styles.legend} aria-label="Legend">
         <li data-tone="trace">Victim / intermediate</li>
         <li data-tone="exchange">Exchange</li>
-        <li data-tone="hold">Holding, freezable</li>
+        <li data-tone="hold">Holding</li>
         <li data-tone="frozen">Tether froze this</li>
         <li data-tone="dead">Dead end</li>
         <li data-tone="weak">Under 60% confidence</li>
       </ul>
       <div ref={box} className={styles.canvas} />
-      {node && <NodeDetail trace={trace} node={node} onClose={() => setSelected(null)} />}
+      {node && <NodeDetail trace={trace} node={node} freezesShown={freezesShown} onClose={() => setSelected(null)} />}
     </section>
   );
+}
+
+function freezeRevealText(frozen: TraceNode[], asOf?: string | null) {
+  const who = frozen.length === 1 ? "one of these wallets" : `${frozen.length} of these wallets`;
+  if (!asOf) return `The engine never saw it: Tether later froze ${who}.`;
+  const days = frozen.map((n) => daysBetween(asOf, n.frozen!.frozen_at!));
+  const lo = Math.min(...days);
+  const hi = Math.max(...days);
+  const span = lo === hi ? `${lo} days` : `${lo} to ${hi} days`;
+  return `The engine never saw it: Tether froze ${who} ${span} after the victim's report (${asOf.slice(0, 10)}).`;
 }
