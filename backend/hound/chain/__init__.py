@@ -30,7 +30,17 @@ def _load_dotenv() -> None:
             _os.environ[k] = v
 
 
+def _drop_empty_settings() -> None:
+    """An empty setting means 'use the default': python-dotenv (api.py) keeps `HOUND_MAX_TRANSFERS=`
+    from a copied .env.example as "", which crashed int() at import and emptied source lists. Remove
+    empty chain/watch settings so every os.environ.get(name, default) sees them as unset."""
+    for k in [k for k, v in _os.environ.items() if v.strip() == ""]:
+        if k.startswith(("HOUND_", "ETH_", "ETHERSCAN_", "BLOCKSCOUT_", "TRONGRID_")):
+            del _os.environ[k]
+
+
 _load_dotenv()
+_drop_empty_settings()
 
 from . import freezes as _freezes  # noqa: E402  (after .env so adapters see the keys)
 from . import labels as _labels  # noqa: E402
