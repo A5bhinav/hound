@@ -11,7 +11,7 @@ Every number below is verified (source in brackets). Don't say anything that isn
 "This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. The DOJ printed the wallets truncated, like 0xa17-dot-dot-dot. We recovered every full address from public chain data.
 We start from one victim, A.H., and her six real ETH sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it.
 Watch it work: her ETH is swapped to USDT in the same transaction at three wallets, then it moves through a laundering loop, then a consolidation wallet.
-Hound reaches all 11 intermediate wallets the FBI named, and all three wallets the DOJ seized."
+Hound reaches all 8 intermediate wallets the FBI named that it wasn't given, and all three wallets the DOJ seized."
 [engine test: test_reaches_doj_seized_wallets_blind]
 
 **1:00 The reveal (15 s).** Click reveal.

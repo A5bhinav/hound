@@ -205,3 +205,54 @@ def test_contracts_are_never_entry_addresses(monkeypatch):
     monkeypatch.setattr(chain, "get_transfers", fake_transfers)
     monkeypatch.setattr(chain, "is_contract", lambda c, a: a == rfq)
     assert all(r["entry_address"] != rfq for r in op_mod.payments(FIXTURE, window_days=7))
+
+
+# ------------------------------------------------------------------ REVIEW_TEAM security-public-4 / -5
+
+@pytest.mark.parametrize("exc", [chain.ChainAPIError("https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123 down"),
+                                 chain.CacheMiss("offline")])
+def test_unknown_freeze_state_warns_never_allows(wl, monkeypatch, exc):
+    def boom(c, a, **k):
+        raise exc
+    monkeypatch.setattr(chain, "freeze_status", boom)
+    r = check_mod.check("ethereum", "0x2222222222222222222222222222222222222222", watch=wl)
+    assert r["decision"] == "warn" and r["evidence"]["rule_fired"] == "freeze_unknown"
+    assert "SECRETKEY123" not in json.dumps(r)
+
+
+def test_check_route_status_codes_and_no_leaks(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from hound.watch import routes
+    app = FastAPI()
+    app.include_router(routes.router)
+    c = TestClient(app)
+    assert c.get("/check?chain=ethereum&address=not-an-address").status_code == 400
+
+    def offline(*a, **k):
+        raise chain.CacheMiss("offline")
+    monkeypatch.setattr(routes, "check", offline)
+    assert c.get(f"/check?chain=ethereum&address={A1}").status_code == 503
+
+    def leaky(*a, **k):
+        raise chain.ChainAPIError("https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123 timeout")
+    monkeypatch.setattr(routes, "check", leaky)
+    r = c.get(f"/check?chain=ethereum&address={A1}")
+    assert r.status_code == 502 and "SECRETKEY123" not in r.text
+
+
+def test_busy_endpoints_and_contracts_are_never_listed(monkeypatch, not_frozen):
+    t = json.loads(json.dumps(FIXTURE))
+    busy = "0x07964f135f276412b3182a3b2407b8dd45000000"  # real >5k-transfer contract from a live trace
+    t["nodes"].append({"address": busy, "chain": "ethereum", "kind": "holding", "depth": 4})
+    t["edges"].append({"from": HOP3, "to": busy, "token": "USDT", "amount": 500, "attributed_amount": 500,
+                       "tx_hashes": ["0xb"], "first_time": "2024-05-04T00:00:00Z",
+                       "last_time": "2024-05-04T00:00:00Z", "hop": 4, "confidence": 0.95, "method": "direct"})
+    t["endpoints"] = [{"address": busy, "reason": "high_volume"}]
+    w = Watchlist()
+    w.add_trace(t)
+    assert w.lookup("ethereum", busy) is None
+    monkeypatch.setattr(chain, "is_contract", lambda c, a: a == A1)
+    w2 = Watchlist()
+    w2.add_trace(FIXTURE)
+    assert w2.lookup("ethereum", A1) is None and w2.lookup("ethereum", HOP2) is not None

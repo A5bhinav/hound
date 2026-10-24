@@ -16,7 +16,7 @@
 .sent {
   font-family: var(--font-m);
   font-size: 1.05rem;
-  margin: 0.2rem 0 1rem;
+  margin: 0.2rem 0 0.5rem;
 }
 
 .facts {
@@ -36,7 +36,7 @@
 }
 
 .replay {
-  margin: -0.5rem 0 1rem;
+  margin: 0.25rem 0 1rem;
   font-size: 0.82rem;
   color: var(--ink-2);
 }

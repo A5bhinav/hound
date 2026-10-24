@@ -58,11 +58,9 @@ export async function getCase(id: string): Promise<CaseSummary | Case> {
   return found;
 }
 
-export async function traceCase(id: string): Promise<Trace> {
-  if (usingFixtures) {
-    const trace = await example<Trace>("ohnd_replay.trace.json");
-    if (trace.case_id !== id) throw new HoundApiError(`Fixture mode only has case "${trace.case_id}".`);
-    return trace;
-  }
-  return call<Trace>("POST", `/cases/${encodeURIComponent(id)}/trace`);
+/** Fixture mode only. Live traces are started and polled from the browser (useTrace) via the /api proxy. */
+export async function fixtureTrace(id: string): Promise<Trace> {
+  const trace = await example<Trace>("ohnd_replay.trace.json");
+  if (trace.case_id !== id) throw new HoundApiError(`Fixture mode only has case "${trace.case_id}".`);
+  return trace;
 }
