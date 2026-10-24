@@ -102,6 +102,8 @@ def _now_iso():
 TRUSTED = set()
 LIVE_CASES = set()  # cases from data/cases_live: real, unfrozen addresses; redacted beyond localhost
 PACKETS = {}  # (trace_id, audience) -> Claude-written packet, so repeat hits never re-call Claude
+FALLBACK_PACKETS = {}  # (trace_id, audience) -> (template packet, monotonic expiry) when Claude failed
+FALLBACK_TTL_S = 60.0  # with a key set but Claude failing, retry Claude at most once a minute per key
 _PACKET_LOCKS = {}
 
 
@@ -476,7 +478,7 @@ def _job_view(job_id):
 
 
 @app.post("/cases/{case_id}/trace")
-def trace_case(case_id: str):
+def trace_case(case_id: str, request: Request):
     case = _case(case_id)
     job_id = uuid.uuid4().hex
     with _LOCK:
@@ -485,7 +487,7 @@ def trace_case(case_id: str):
         if prev and prev["status"] == "running":
             age = time.monotonic() - prev["started_mono"]
             if age <= JOB_STALE_S:
-                return _job_view(prev_id)  # one trace per case at a time
+                return _public(case_id, _job_view(prev_id), request)  # one trace per case at a time
             log.error("trace job %s for case %s hung for %.0fs; superseded by %s", prev_id, case_id, age, job_id)
             prev.update(status="error", error=f"TimeoutError: trace ran over {JOB_STALE_S}s and was superseded by job {job_id}")
             case["status"] = prev["prev_status"]
@@ -498,7 +500,7 @@ def trace_case(case_id: str):
         progress = JOBS[job_id]["progress"]
     threading.Thread(target=_run_job, args=(job_id, case, generation, progress), daemon=True,
                      name=f"trace-{job_id[:8]}").start()
-    return view
+    return _public(case_id, view, request)
 
 
 @app.get("/cases/{case_id}/trace")
@@ -535,14 +537,27 @@ def packet(case_id: str, request: Request, audience: str = "detective"):
         raise HTTPException(409, f"case {case_id!r} has no finished trace yet; POST /cases/{case_id}/trace and poll it first")
     with lock:  # concurrent hits for one key wait for the first Claude call instead of making their own
         written = PACKETS.get(key)
+        cached = FALLBACK_PACKETS.get(key)
+        if written is None and cached and time.monotonic() < cached[1]:
+            written = cached[0]
         if written is None:
             try:
                 written = write_case(trace, case, audience)
             except WriterInputError as e:
                 log.warning("packet %s: writer refused input: %s", case_id, e)
                 raise HTTPException(422, str(e))
-            if written.get("source") == "claude":  # a template is cheap; a failed Claude call may recover
+            if written.get("source") == "claude":
                 PACKETS[key] = written
+            elif os.environ.get("ANTHROPIC_API_KEY"):
+                # Claude failed (rate limit, credits) and the writer fell back: hold the template briefly
+                # so a caller looping /packet cannot turn every hit into another Claude call.
+                log.warning("packet %s/%s: Claude fell back to the template; caching it for %.0fs",
+                            case_id, audience, FALLBACK_TTL_S)
+                FALLBACK_PACKETS[key] = (written, time.monotonic() + FALLBACK_TTL_S)
+    if case_id in LIVE_CASES and not _is_local(request):
+        # The prose is written from the victim's story (scam app, platform, first contact); beyond
+        # localhost a live case returns only the structured fields, never the paragraphs.
+        written = {**{k: v for k, v in written.items() if k != "text"}, "text": None, "redacted": True}
     return _public(case_id, {"packet": written, "trace": trace}, request)
 
 
@@ -569,6 +584,7 @@ def demo_reset(request: Request):
         TRUSTED.clear()
         LIVE_CASES.clear()
         PACKETS.clear()
+        FALLBACK_PACKETS.clear()
         _PACKET_LOCKS.clear()
         _load_curated()
         watchlist.reset()  # drop wallets registered from the traces just cleared

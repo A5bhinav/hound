@@ -622,6 +622,7 @@ def test_packet_cached_per_trace_and_audience(monkeypatch):
 
 
 def test_template_packet_not_cached(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     _trace_done()
     calls = []
     monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "template"})
@@ -669,3 +670,53 @@ def test_make_demo_fails_loudly_without_anthropic_key():
     from hound.contracts import ROOT
     demo = (ROOT / "Makefile").read_text().split("\ndemo:")[1].split("\n\n")[0]
     assert "ANTHROPIC_API_KEY unset" in demo and "exit 1" in demo
+
+
+def test_repeat_post_on_running_live_job_is_redacted(monkeypatch):
+    cid, _ = _live_case_with_trace()
+    api.CASES[cid]["status"] = "traced"
+    release = threading.Event()
+
+    def slow(job_id, case, progress):
+        progress.append({"step": "hop", "detail": f"hop to {LIVE_ADDR} via tx {'a' * 64}"})
+        release.wait(5)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(api, "_trace_with_fallback", slow)
+    try:
+        first = remote.post(f"/cases/{cid}/trace")
+        assert first.status_code == 200 and LIVE_ADDR not in first.text
+        for _ in range(100):
+            if api.JOBS[api.LATEST[cid]]["progress"]:
+                break
+            time.sleep(0.01)
+        again = remote.post(f"/cases/{cid}/trace")
+        assert again.json()["status"] == "running" and again.json()["audit_log_so_far"]
+        assert LIVE_ADDR not in again.text and "a" * 64 not in again.text
+        assert LIVE_ADDR in client.post(f"/cases/{cid}/trace").text  # localhost sees full values
+    finally:
+        release.set()
+
+
+def test_live_packet_prose_withheld_beyond_localhost(monkeypatch):
+    cid, _ = _live_case_with_trace()
+    api.LAST_DONE[cid] = "t-live-x"
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: {"text": "met on WhatsApp", "cited": ["x"],
+                                                          "source": "template", "citations_verified": {}})
+    pk = remote.get(f"/cases/{cid}/packet").json()["packet"]
+    assert pk["text"] is None and pk["redacted"] is True and pk["cited"] == ["x"]
+    assert client.get(f"/cases/{cid}/packet").json()["packet"]["text"] == "met on WhatsApp"
+
+
+def test_claude_fallback_packet_negative_cached(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    _trace_done()
+    calls = []
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "template"})
+    for _ in range(3):
+        assert client.get(f"/cases/{CASE}/packet").status_code == 200
+    assert len(calls) == 1  # Claude failing: no retry inside the TTL
+    key = next(iter(api.FALLBACK_PACKETS))
+    api.FALLBACK_PACKETS[key] = (api.FALLBACK_PACKETS[key][0], time.monotonic() - 1)
+    client.get(f"/cases/{CASE}/packet")
+    assert len(calls) == 2  # expired: Claude gets another try
