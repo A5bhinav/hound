@@ -38,13 +38,15 @@
 
 /* The one primary action on the page. */
 .controls button.reveal {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--red);
+  background: var(--red);
+  color: var(--white);
+  box-shadow: 0 8px 24px -10px rgba(224, 70, 76, 0.75);
 }
 
 .controls button.reveal:hover:not(:disabled) {
-  background: #2a313b;
+  border-color: #b81d26;
+  background: #b81d26;
 }
 
 .progress {

@@ -31,7 +31,7 @@
   padding: 1rem 1.25rem;
   font: 600 1.45rem var(--font-b);
   color: var(--on-trace);
-  background: var(--trace);
+  background: var(--red);
   border: 0;
   border-radius: 12px;
   cursor: pointer;

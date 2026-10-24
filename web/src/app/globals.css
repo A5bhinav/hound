@@ -1,37 +1,53 @@
+/* Hound: black, white, one dark red. Red marks action and the money we follow; every other colour carries a meaning. */
 :root {
-  /* Hound: light, evidence-first. Colour comes from the assets themselves and only marks meaning. */
-  --fog: #f4f4f1;        /* page: tinted off-white, never pure white */
-  --paper: #fbfbf9;      /* the one raised surface: the trace canvas, inputs */
-  --paper-2: #ecede8;    /* hover, drawers */
-  --ink: #161b22;        /* text, primary actions (15.7:1 on page) */
-  --ink-2: #474f5c;      /* secondary text (7.5:1) */
-  --ink-3: #5f6774;      /* quiet labels (5.2:1) */
-  --rule: #dcddd6;
-  --rule-2: #c6c8c0;
+  --fog: #0b0b0c;        /* page: near-black, never pure black */
+  --paper: #141416;      /* raised surfaces: cards, the trace canvas, inputs */
+  --paper-2: #1e1e21;    /* hover, drawers, the active step */
+  --ink: #f4f1ec;        /* text: warm white (17:1 on page) */
+  --ink-2: #b7b2ab;      /* secondary text (9:1) */
+  --ink-3: #8a857f;      /* quiet labels (5.3:1) */
+  --rule: #26262a;
+  --rule-2: #3a3a3f;
 
-  --trace: #13795b;      /* USDT, the money we follow: Tether's green, darkened to 4.9:1 */
-  --eth: #5263b8;        /* the victim's ETH, before the swap */
-  --exchange: #a8481a;   /* reached an exchange: request ready */
-  --hold: #8a6100;       /* holding, freezable */
-  --hold-wash: #f3ead2;
-  --dead: #8b929c;
-  --ice: #2b5b84;        /* Tether froze it (drawn with a seal hatch in the trace) */
-  --ice-wash: #e2eaf1;
+  --red: #a3171f;        /* Hound red: buttons, the brand mark */
+  --red-hi: #e0464c;     /* red text and lines on black (5.3:1) */
+  --trace: #e0464c;      /* USDT, the money we follow, and every link */
+  --eth: #8d95a8;        /* the victim's ETH, before the swap: steel */
+  --exchange: #f0e6d6;   /* reached an exchange: request ready (bone white) */
+  --hold: #e2a83c;       /* holding, freezable */
+  --hold-wash: #2a2112;
+  --dead: #5d5a57;
+  --ice: #7db4e6;        /* Tether froze it (drawn with a seal hatch in the trace) */
+  --ice-wash: #13202c;
   --ice-deep: #2b5b84;
-  --ice-ink: #1f4566;
-  --on-ice: #ffffff;
+  --ice-ink: #a9cdef;
+  --on-ice: #0b0b0c;
   --on-trace: #ffffff;
-  --ok: #1e6e45;
-  --ok-wash: #e1efe6;
-  --bad: #a3271b;
-  --bad-wash: #f6e3e0;
-  --white: #fbfbf9;
+  --ok: #5fbf8a;
+  --ok-wash: #11241a;
+  --bad: #ff6b6b;
+  --bad-wash: #2c1213;
+  --white: #ffffff;
 
-  --font-d: var(--font-display), system-ui, sans-serif;
+  --font-d: var(--font-display), Georgia, serif;
   --font-b: var(--font-body), system-ui, sans-serif;
   --font-m: var(--font-mono), ui-monospace, Consolas, monospace;
-  --radius: 6px;
-  color-scheme: light;
+  --radius: 10px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
+}
+
+/* Paper for the printer: the police report prints black on white. */
+@media print {
+  :root {
+    --fog: #ffffff; --paper: #ffffff; --paper-2: #f2f2f2;
+    --ink: #111111; --ink-2: #333333; --ink-3: #555555;
+    --rule: #d6d6d6; --rule-2: #bbbbbb;
+    --trace: #8f141b; --red-hi: #8f141b; --exchange: #6b4a1a; --hold: #7a5600; --hold-wash: #f6edd5;
+    --ice: #2b5b84; --ice-wash: #e2eaf1; --ice-ink: #1f4566; --ok: #1e6e45; --ok-wash: #e1efe6;
+    --bad: #a3271b; --bad-wash: #f6e3e0; --eth: #4a5578; --dead: #777777;
+    color-scheme: light;
+  }
 }
 
 * {
@@ -53,16 +69,64 @@ body {
   color: var(--ink);
   font-family: var(--font-b);
   font-size: 17px;
-  line-height: 1.5;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* One faint red glow behind the top of every page, so the black has depth without decoration. */
+body {
+  background:
+    radial-gradient(60rem 28rem at 50% -12rem, rgba(163, 23, 31, 0.16), transparent 70%),
+    var(--fog);
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--red);
+  color: var(--white);
 }
 
 a {
   color: var(--trace);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+a:hover {
+  color: var(--ink);
 }
 
 :focus-visible {
   outline: 2px solid var(--trace);
-  outline-offset: 2px;
+  outline-offset: 3px;
+}
+
+/* Every native control on black: dark field, light text, red when focused. */
+input,
+select,
+textarea {
+  background-color: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule-2);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-3);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--trace);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(224, 70, 76, 0.22);
+}
+
+button {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .mono {
@@ -73,22 +137,46 @@ a {
 
 /* Top bar */
 .bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   flex-wrap: wrap;
-  padding: 1rem 1.5rem;
+  padding: 0.85rem 1.75rem;
   border-bottom: 1px solid var(--rule);
-  background: var(--fog);
+  background: rgba(11, 11, 12, 0.82);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
+/* The wordmark: a red seal, then the name. */
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--font-d);
-  font-weight: 800;
-  font-size: 1.45rem;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-size: 1.7rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
   color: var(--ink);
   text-decoration: none;
+}
+
+.wordmark::before {
+  content: "";
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 2px;
+  background: var(--red);
+  box-shadow: 0 0 0 3px rgba(163, 23, 31, 0.28), 0 0 18px rgba(224, 70, 76, 0.55);
+  transform: rotate(45deg);
+}
+
+.wordmark:hover {
+  color: var(--ink);
 }
 
 .bar-meta {
@@ -99,33 +187,41 @@ a {
 .bar-nav {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.75rem;
   margin-left: auto;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .steps {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.2rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
+.steps li {
+  display: flex;
+  align-items: center;
+}
+
 .steps li + li::before {
-  content: "→";
-  margin-right: 0.35rem;
-  color: var(--ink-3);
+  content: "";
+  width: 0.9rem;
+  height: 1px;
+  margin-right: 0.2rem;
+  background: var(--rule-2);
 }
 
 .bar-nav a {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.3rem 0.55rem;
+  gap: 0.45rem;
+  padding: 0.4rem 0.7rem;
   color: var(--ink-2);
   text-decoration: none;
-  border-radius: var(--radius);
+  border-radius: 999px;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .bar-nav a:hover {
@@ -135,35 +231,40 @@ a {
 
 .bar-nav a[aria-current] {
   color: var(--ink);
-  font-weight: 700;
+  font-weight: 600;
   background: var(--paper-2);
+  box-shadow: inset 0 0 0 1px var(--rule-2);
 }
 
 .step-n {
   display: inline-grid;
   place-items: center;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.3rem;
+  height: 1.3rem;
   border-radius: 50%;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--ink-2);
-  border: 1.5px solid var(--ink-3);
+  color: var(--ink-3);
+  border: 1px solid var(--rule-2);
 }
 
 .bar-nav a[aria-current] .step-n {
-  color: var(--paper);
-  background: var(--trace);
-  border-color: var(--trace);
+  color: var(--white);
+  background: var(--red);
+  border-color: var(--red);
 }
 
 .proof-link {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-2);
 }
 
 @media (max-width: 900px) {
   .steps li + li::before {
     display: none;
+  }
+
+  .bar {
+    position: static;
   }
 
   .bar-nav {
@@ -174,24 +275,34 @@ a {
 
 /* "Next: …" at the bottom of each step */
 .next-step {
-  margin: 2.5rem 0 1rem;
-  padding-top: 1.25rem;
+  margin: 3rem 0 1rem;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--rule);
 }
 
 .next-step-link {
-  display: inline-block;
-  padding: 0.8rem 1.2rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.4rem;
+  font-weight: 600;
   font-size: 1.05rem;
-  color: var(--paper);
-  background: var(--trace);
-  border-radius: var(--radius);
+  color: var(--white);
+  background: var(--red);
+  border-radius: 999px;
   text-decoration: none;
+  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.next-step-link:hover {
+  color: var(--white);
+  background: #b81d26;
+  transform: translateY(-1px);
 }
 
 .next-step-why {
-  margin: 0.6rem 0 0;
+  margin: 0.75rem 0 0;
   color: var(--ink-2);
   max-width: 60ch;
 }
@@ -209,19 +320,24 @@ a {
 .eyebrow {
   font-family: var(--font-b);
   font-weight: 600;
-  font-size: 0.88rem;
-  letter-spacing: 0;
-  color: var(--ink-2);
-  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--trace);
+  margin: 0 0 0.6rem;
 }
 
 h1,
 h2 {
   font-family: var(--font-d);
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.04;
   margin: 0;
+}
+
+h3 {
+  letter-spacing: -0.005em;
 }
 
 /* Error panel */
@@ -243,6 +359,11 @@ h2 {
   body {
     background: #ffffff;
   }
+
+  .bar {
+    position: static;
+    backdrop-filter: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -256,12 +377,12 @@ h2 {
 .page-intro {
   max-width: 64rem;
   margin: 0 auto;
-  padding: 2.25rem 1.5rem 0.5rem;
+  padding: 3.25rem 1.5rem 0.75rem;
 }
 
 .page-intro h1 {
-  max-width: 30ch;
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  max-width: 24ch;
+  font-size: clamp(2.3rem, 4.4vw, 3.4rem);
 }
 
 .page-intro p:not(.eyebrow) {

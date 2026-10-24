@@ -1,18 +1,39 @@
 /* Victim-facing pages: large type, one action at a time, nothing internal on screen. */
 .main {
-  max-width: 46rem;
+  max-width: 48rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem 3rem;
+  padding: 4.5rem 1.5rem 3.5rem;
   font-size: 1.12rem;
 }
 
 .h1 {
-  font-size: clamp(2rem, 4.4vw, 3rem);
-  max-width: 22ch;
+  font-size: clamp(2.6rem, 6vw, 4.3rem);
+  line-height: 0.98;
+  max-width: 19ch;
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* The promise in Hound red, set in italic so it reads as the answer to the question. */
+.h1 em {
+  display: block;
+  font-style: italic;
+  color: var(--trace);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .lede {
-  margin: 1rem 0 2rem;
+  margin: 1.5rem 0 2.5rem;
+  animation: rise 0.7s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   color: var(--ink-2);
   max-width: 54ch;
 }
@@ -21,6 +42,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 1rem;
+  animation: rise 0.7s 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .way {
@@ -30,24 +52,37 @@
   padding: 1.35rem;
   color: var(--ink);
   text-decoration: none;
-  background: var(--paper);
-  border: 2px solid var(--rule);
-  border-radius: var(--radius);
+  background: linear-gradient(180deg, #18181b, var(--paper));
+  border: 1px solid var(--rule-2);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s ease, transform 0.18s ease;
 }
 
 .way:hover,
 .way:focus-visible {
   border-color: var(--trace);
+  transform: translateY(-2px);
+}
+
+/* Calling is the easiest way in, so it is the card that glows. */
+.way:first-child {
+  background: radial-gradient(120% 140% at 0% 0%, rgba(163, 23, 31, 0.28), transparent 60%), var(--paper);
+  border-color: rgba(224, 70, 76, 0.45);
 }
 
 .wayTitle {
-  font-weight: 800;
-  font-size: 1.3rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--ink-2);
 }
 
 .phone {
-  font-weight: 700;
-  font-size: 1.6rem;
+  font-family: var(--font-d);
+  font-weight: 400;
+  font-size: 2.3rem;
+  line-height: 1.1;
   color: var(--trace);
   white-space: nowrap;
 }
@@ -67,15 +102,21 @@
 }
 
 .safe {
-  padding: 1.25rem 1.4rem;
+  padding: 1.5rem 1.6rem;
   background: var(--paper);
-  border-left: 4px solid var(--hold);
-  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--red);
+  border-radius: 14px;
 }
 
 .safe h2 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
+  margin: 0 0 0.6rem;
+  font-family: var(--font-b);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--trace);
 }
 
 .safe ul {
@@ -120,7 +161,7 @@
   font: inherit;
   font-weight: 400;
   padding: 0.75rem 0.85rem;
-  border: 1.5px solid var(--rule);
+  border: 1px solid var(--rule-2);
   border-radius: var(--radius);
   background: var(--paper);
   color: var(--ink);
@@ -135,10 +176,11 @@
   padding: 0.95rem 1.5rem;
   font: inherit;
   font-weight: 700;
-  color: var(--paper);
-  background: var(--trace);
+  color: var(--white);
+  background: var(--red);
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
   cursor: pointer;
 }
 
@@ -182,8 +224,8 @@
 }
 
 .h2 {
-  margin: 2.5rem 0 0.75rem;
-  font-size: 1.4rem;
+  margin: 2.75rem 0 0.85rem;
+  font-size: 2rem;
 }
 
 .todo {
@@ -205,9 +247,10 @@
   margin-top: 0.5rem;
   padding: 0.9rem 1.4rem;
   font-weight: 700;
-  color: var(--paper);
-  background: var(--trace);
-  border-radius: var(--radius);
+  color: var(--white);
+  background: var(--red);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
   text-decoration: none;
 }
 

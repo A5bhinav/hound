@@ -3,7 +3,6 @@
   margin: 0 auto;
   padding: 1.25rem 1.25rem 3rem;
   min-height: 100vh;
-  background: var(--paper);
 }
 
 .head {
@@ -16,10 +15,23 @@
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-d);
-  font-weight: 800;
-  font-size: 1.5rem;
-  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.brand::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
+  background: var(--red);
+  box-shadow: 0 0 14px rgba(224, 70, 76, 0.6);
+  transform: rotate(45deg);
 }
 
 .code {
@@ -28,10 +40,9 @@
 }
 
 .h1 {
-  font-family: var(--font-b);
-  font-stretch: normal;
-  font-weight: 600;
-  font-size: 2rem;
-  line-height: 1.2;
+  font-family: var(--font-d);
+  font-weight: 400;
+  font-size: 2.6rem;
+  line-height: 1.05;
   margin: 0 0 1.25rem;
 }

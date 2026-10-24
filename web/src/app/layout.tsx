@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
+import { Hanken_Grotesk, IBM_Plex_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-// Public Sans: the U.S. Web Design System typeface. Hound's output is evidence for law enforcement and exchanges, so it
-// speaks in the register those readers already trust. Plex Mono only for addresses and hashes (real code-like data).
-const display = Public_Sans({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700", "800"] });
-const body = Public_Sans({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// Instrument Serif for headlines: a sharp editorial serif that reads like a case file, not a crypto app.
+// Hanken Grotesk for everything else: plain and very legible for a scared victim. Plex Mono only for addresses and hashes.
+const display = Instrument_Serif({ variable: "--font-display", subsets: ["latin"], weight: "400", style: ["normal", "italic"] });
+const body = Hanken_Grotesk({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const mono = IBM_Plex_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {

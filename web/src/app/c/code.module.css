@@ -15,9 +15,9 @@
   letter-spacing: 0.25em;
   text-transform: uppercase;
   padding: 0.7rem 0.9rem;
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  background: #ffffff;
+  border: 1px solid var(--rule-2);
+  border-radius: 12px;
+  background: var(--paper);
   color: var(--ink);
 }
 
@@ -41,11 +41,12 @@
   margin-top: 0.5rem;
   padding: 1rem;
   font: 600 1.25rem var(--font-b);
-  color: #ffffff;
-  background: var(--trace);
+  color: var(--white);
+  background: var(--red);
   border: 0;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
+  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
 }
 
 .go:disabled {

@@ -89,9 +89,19 @@
   color: var(--ink);
 }
 
+/* A done step gets a green check, so progress never reads as an error. */
 .steps li[data-done]::before {
-  border-color: var(--trace);
-  background: var(--trace);
+  content: "✓";
+  display: grid;
+  place-items: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  top: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--fog);
+  border-color: var(--ok);
+  background: var(--ok);
 }
 
 .facts {
@@ -128,11 +138,12 @@
 .go {
   display: inline-block;
   margin-top: 0.5rem;
-  padding: 0.6rem 1.1rem;
+  padding: 0.65rem 1.2rem;
   background: var(--ink);
-  color: var(--paper);
+  color: var(--fog);
   text-decoration: none;
   font-weight: 600;
+  border-radius: 999px;
 }
 
 .qr {

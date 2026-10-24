@@ -5,8 +5,9 @@
 }
 
 .h1 {
-  max-width: 20ch;
-  font-size: clamp(2.1rem, 4.4vw, 3.2rem);
+  max-width: 17ch;
+  font-size: clamp(2.8rem, 6vw, 4.4rem);
+  line-height: 0.98;
 }
 
 .sub {
@@ -97,15 +98,23 @@
   padding: 0.9rem 1.4rem;
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--paper);
-  background: var(--trace);
-  border-radius: var(--radius);
+  color: var(--white);
+  background: var(--red);
+  border-radius: 999px;
   text-decoration: none;
+  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.start:hover {
+  color: var(--white);
+  background: #b81d26;
+  transform: translateY(-1px);
 }
 
 .h2 {
-  margin: 0 0 1rem;
-  font-size: 1.35rem;
+  margin: 0 0 1.1rem;
+  font-size: 2rem;
 }
 
 .how {
@@ -122,28 +131,27 @@
   flex-direction: column;
   gap: 0.45rem;
   height: 100%;
-  padding: 1.1rem;
+  padding: 1.25rem;
   color: var(--ink);
   text-decoration: none;
-  background: var(--paper);
+  background: linear-gradient(180deg, #18181b, var(--paper));
   border: 1px solid var(--rule);
-  border-radius: var(--radius);
+  border-radius: 14px;
+  transition: border-color 0.18s ease, transform 0.18s ease;
 }
 
 .howCard:hover,
 .howCard:focus-visible {
   border-color: var(--trace);
+  transform: translateY(-2px);
 }
 
+/* Big serif step numbers in red: the four steps read as a sequence at a glance. */
 .howN {
-  display: inline-grid;
-  place-items: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 50%;
-  font-weight: 700;
-  color: var(--paper);
-  background: var(--trace);
+  font-family: var(--font-d);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--trace);
 }
 
 .howTitle {

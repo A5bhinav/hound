@@ -137,7 +137,7 @@
 }
 
 .next .primary:hover {
-  background: #2a313b;
+  background: #d9d4cc;
 }
 
 .more {
@@ -206,7 +206,7 @@
 .noEnd {
   margin: 0;
   padding: 0.9rem 1.1rem;
-  background: #fff4e5;
+  background: var(--hold-wash);
   border-left: 4px solid var(--hold);
   color: var(--ink);
 }

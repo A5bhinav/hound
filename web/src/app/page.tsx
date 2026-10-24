@@ -18,7 +18,9 @@ export default async function Home() {
     <>
       <Bar offline={usingFixtures} />
       <main className={styles.main}>
-        <h1 className={styles.h1}>Lost money to a crypto scam? We can help you follow it.</h1>
+        <h1 className={styles.h1}>
+          Lost money to a crypto scam? <em>We can help you follow it.</em>
+        </h1>
         <p className={styles.lede}>
           Hound is free. Tell us what happened and send a picture of your payment. We trace where your money went, tell you
           who can freeze it, and give you a report to send to the police.
