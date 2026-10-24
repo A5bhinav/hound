@@ -209,10 +209,11 @@ def test_input_limits_cannot_bypass_the_call_budget():
         run_trace(big, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs)
     with pytest.raises(ValueError, match="unknown method"):
         run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_hopz=99)
-    with pytest.raises(RuntimeError, match="budget") as e:
-        run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_api_calls=3)
-    from hound.engine.trace import AdaptersMissing
-    assert not isinstance(e.value, AdaptersMissing), "a budget error must never trigger the fixture fallback"
+    # A budget too small for the swap pass is a partial trace with visible caps, never a crash.
+    t = run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs,
+                  max_api_calls=3)
+    assert t["status"] == "partial" and t["stats"]["api_calls"] <= 3
+    assert "budget" in {e["reason"] for e in t["endpoints"]}
 
 
 def test_adapter_errors_never_leak_into_the_trace():
@@ -627,3 +628,115 @@ def test_live_claude_rewording_has_a_total_budget(monkeypatch):
     run_trace(_case([{"tx_hash": "t0", "from": V, "to": "0xa0", "amount": 10000}]), get_transfers=_chain(rows))
     assert _time.monotonic() - t0 < 1.5
     assert 1 <= len(got) <= 2 and all(x <= 0.9 for x in got), got
+
+
+class TooManyTransfers(Exception):
+    pass
+
+
+def _stopped_seed_case(how):
+    """V pays X 777 directly, and X is stopped before its history is fetched."""
+    rows = [_t("t0", V, X, 777, 1), _t("a", X, Y, 700, 2)]
+    base = _chain(rows)
+    kw = {}
+
+    def get(chain, address, after=None, as_of=None):
+        if address == X and how == "high_volume":
+            raise TooManyTransfers("too many")
+        if address == X and how == "dead_end":
+            raise ConnectionError("down")
+        return base(chain, address)
+    if how == "exchange":
+        kw["label"] = lambda c, a: {"name": "Binance 14", "kind": "exchange_hot"} if a == X else None
+    if how == "infra":
+        kw["label"] = lambda c, a: {"name": "Router", "kind": "infra"} if a == X else None
+    if how == "time_cap":
+        kw["deadline_s"] = -1
+    if how == "budget":
+        kw["max_api_calls"] = 1
+        kw["label"] = lambda c, a: None
+        rows.insert(0, _t("z", V, "0xa", 500, 0))  # 0xa (first in order) uses the one call; X never gets one
+        kw["_extra"] = {"tx_hash": "z", "from": V, "to": "0xa", "amount": 500}
+    sends = [{"tx_hash": "t0", "from": V, "to": X, "amount": 777}] + ([kw.pop("_extra")] if "_extra" in kw else [])
+    return run_trace(_case(sends), get_transfers=get, **kw)
+
+
+def test_seed_recipient_stopped_before_fetch_still_conserves():
+    # R2 re-review: a victim paying straight into an exchange, a busy address, or a recipient the
+    # deadline or budget never reached keeps the full seed at that recipient's endpoint.
+    for how in ("exchange", "infra", "high_volume", "dead_end", "time_cap", "budget"):
+        t = _stopped_seed_case(how)
+        ends = [e for e in t["endpoints"] if (e["victim_remaining"] or e["victim_inflow"]) and e["address"] == X]
+        assert [(e["address"], e["reason"], e["victim_inflow"], e["victim_remaining"]) for e in ends] == \
+            [(X, how, 777.0, 777.0)], (how, t["endpoints"])
+        assert ends[0]["attributed_by_seed"] == {"s1": 777.0}
+        assert not any("not found on chain" in a["detail"] for a in t["audit_log"]), how
+        assert any(e["from"] == V and e["to"] == X and e["attributed_amount"] == 777.0 for e in t["edges"]), how
+        if how in ("exchange", "infra", "high_volume"):
+            kinds = {n["address"]: n["kind"] for n in t["nodes"]}
+            assert kinds[X] != "holding" and not ends[0]["freezable"], how
+
+
+def test_conservation_fuzz_with_stops_at_any_address():
+    # Seeds may land on labelled, busy, failing or unreached addresses; money may go back to a victim.
+    import random
+    import types
+    import hound.engine.trace as tr
+    W = "0xw"
+    for seed in range(150):
+        rng = random.Random(1000 + seed)
+        addrs = [V, W] + [f"0x{i:02d}" for i in range(10)]
+        roles = {a: rng.choice(["plain"] * 5 + ["exchange", "infra", "hv", "err"]) for a in addrs[2:]}
+        rows, block, sends = [], 1, []
+        for i in range(rng.randint(1, 3)):
+            v, to = rng.choice([V, W]), rng.choice(addrs[2:6])
+            amt = rng.randint(200, 5000)
+            rows.append(_t(f"s{i}", v, to, amt, block)); block += 1
+            sends.append({"tx_hash": f"s{i}", "from": v, "to": to, "amount": amt})
+        for j in range(rng.randint(5, 40)):
+            a, b = rng.sample(addrs, 2)
+            rows.append(_t(f"r{j}", a, b, rng.randint(1, 3000), block)); block += 1
+        base = _chain(rows)
+
+        def get(chain, address, after=None, as_of=None, roles=roles, base=base):
+            if roles.get(address) == "hv":
+                raise TooManyTransfers("x")
+            if roles.get(address) == "err":
+                raise ConnectionError("x")
+            return base(chain, address)
+
+        def label(c, a, roles=roles):
+            return {"exchange": {"name": "Ex", "kind": "exchange_hot"}, "infra": {"name": "R", "kind": "infra"}}.get(
+                roles.get(a))
+        clock, step = [0.0], rng.choice([0.0, 0.0, 1.0])
+        real = tr.time
+
+        def mono(clock=clock, step=step):
+            clock[0] += step
+            return clock[0]
+        tr.time = types.SimpleNamespace(monotonic=mono)
+        try:
+            method = {"min_amount": rng.choice([1.0, 100.0, 500.0]), "max_branches_per_node": rng.choice([1, 2, 12]),
+                      "max_hops": rng.choice([1, 2, 8]), "max_api_calls": rng.choice([1, 3, 400]),
+                      "deadline_s": rng.choice([5, 40, 120])}
+            t = run_trace(_case(sends), get_transfers=get, label=label, **method)
+        finally:
+            tr.time = real
+        seeded = sum(s["amount"] for s in sends)
+        assert abs(_total_remaining(t) - seeded) < 1e-6, (seed, method, roles, t["endpoints"])
+        assert len({(e["address"], e["reason"]) for e in t["endpoints"]}) == len(t["endpoints"]), seed
+
+
+def test_eth_swap_pass_past_the_deadline_is_partial_not_a_crash():
+    calls = []
+
+    def native(chain, address, after=None, as_of=None):
+        calls.append(address)
+        return []
+    case = {"case_id": "t", "source": "victim_report", "sends": [
+        {"chain": "ethereum", "token": "ETH", "tx_hash": "e1", "from": V, "to": X, "amount": 1.0,
+         "time": "2024-01-01T00:00:00Z"}]}
+    t = run_trace(case, get_transfers=lambda *a, **k: calls.append("t") or [], get_native_txs=native, deadline_s=-1)
+    assert calls == [] and t["status"] == "partial"
+    assert any(e["address"] == X and e["reason"] == "time_cap" for e in t["endpoints"])
+    assert any(a["step"] == "cap_hit" and a["address"] == X for a in t["audit_log"])
