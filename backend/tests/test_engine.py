@@ -167,3 +167,18 @@ def test_progress_list_fills_while_tracing():
                   freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance,
                   get_native_txs=fixture_chain.get_native_txs, progress=live)
     assert live and live == t["audit_log"]
+
+
+def test_swap_fetch_failure_is_partial_not_a_crash():
+    class CacheMiss(Exception):
+        pass
+    C1 = "0xa327e6cfdd29022a530950079877861636f4dbb8"
+
+    def native(chain, address, after=None, as_of=None):
+        if address == C1:
+            raise CacheMiss("readonly cache, nothing cached for ?apikey=SECRET")
+        return fixture_chain.get_native_txs(chain, address, after=after, as_of=as_of)
+    t = run_trace(example("ohnd_replay.case"), get_transfers=fixture_chain.get_transfers, label=fixture_chain.label,
+                  freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance, get_native_txs=native)
+    assert t["status"] == "partial" and t["stats"]["fetch_errors"] >= 1
+    assert "SECRET" not in str(t)

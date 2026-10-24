@@ -117,14 +117,20 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     if eth_sends:
         if get_native_txs is None:
             raise RuntimeError("case has ETH sends but no get_native_txs adapter was provided (AUDIT issue 1)")
-        native, usdt_legs = [], []
+        native, usdt_legs, swap_errors = [], [], []
         for x in sorted({s["to"] for s in eth_sends}):
             if stats["api_calls"] + 2 > m["max_api_calls"] or time.monotonic() - started > m["deadline_s"]:
                 raise RuntimeError("call budget or deadline exhausted while resolving ETH swaps")
-            native += get_native_txs(chain, x, after=None, as_of=cutoff)
-            usdt_legs += get_transfers(chain, x, after=None, as_of=cutoff)
+            try:
+                native += get_native_txs(chain, x, after=None, as_of=cutoff)
+                usdt_legs += get_transfers(chain, x, after=None, as_of=cutoff)
+            except Exception as e:  # noqa: BLE001 - adapter types vary (CacheMiss, ChainAPIError...)
+                log.warning("swap fetch failed for %s: %s: %s", x, type(e).__name__, _redact(str(e)))
+                stats["fetch_errors"] = stats.get("fetch_errors", 0) + 1
+                swap_errors.append(x)
+                audit("error", f"could not load the swap history ({type(e).__name__}); this branch is incomplete", x)
             stats["api_calls"] += 2
-        swaps = resolve_eth_seeds(eth_sends, native, usdt_legs)
+        swaps = resolve_eth_seeds([s for s in eth_sends if s["to"] not in swap_errors], native, usdt_legs)
         seeds.update(swaps["seeds"])
         audit("hop", f"{len(swaps['swaps'])} same-tx ETH to USDT swaps resolved, {len(swaps['unresolved'])} unresolved")
         for u in swaps["unresolved"]:
@@ -138,7 +144,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     frontier = sorted({s["to"] for s in sends} | ({k[1] for k in swaps["seeds"]} if swaps else set()))
     for k in (swaps["seeds"] if swaps else {}):
         depth.setdefault(k[1], 1)
-    result, status = None, "done"
+    result, status = None, ("partial" if swaps and swap_errors else "done")
 
     for hop in range(1, m["max_hops"] + 1):
         new = []
