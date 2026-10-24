@@ -1,0 +1,65 @@
+.main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+}
+
+.cases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 1rem;
+}
+
+.case {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--trace);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.case:hover {
+  border-color: var(--ink);
+  border-top-color: var(--trace);
+}
+
+.source {
+  font-family: var(--font-d);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.alias {
+  font-family: var(--font-d);
+  font-stretch: 80%;
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+.amount {
+  font-family: var(--font-m);
+}
+
+.story {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.go {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  font-weight: 600;
+  color: var(--trace);
+}
