@@ -37,6 +37,8 @@ _LOCK = threading.Lock()
 TTL_S = 2 * 60 * 60
 VISION_MODEL = os.environ.get("HOUND_VISION_MODEL", "claude-sonnet-5-5")
 VISION_TIMEOUT_S = 15
+VISION_MAX_TOKENS = 800
+VISION_MIMES = ("image/png", "image/jpeg", "image/webp", "image/gif")
 AMOUNT_TOL = 0.005  # ±0.5% (AUDIT N7)
 TIME_WINDOW = timedelta(hours=2)
 
@@ -241,7 +243,7 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
             data = await file.read()
             if len(data) > 8 * 1024 * 1024:
                 return _retake(s, "That image is too large. Please send a smaller screenshot, or type the details.")
-            extracted = extract_from_image(data, file.content_type or "image/png")
+            extracted = extract_from_image(data, _image_mime(data, file.content_type))
             extracted["source"] = "screenshot"
         case = validate_and_build_case(s, extracted)
     except NeedsRetake as e:
@@ -308,8 +310,25 @@ def extract_from_text(text: str) -> dict[str, Any]:
     return out
 
 
+def _image_mime(data: bytes, declared: str | None) -> str:
+    """The real image type from its magic bytes (phones mislabel HEIC and friends); else the declared one."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    d = (declared or "").lower().strip()
+    return "image/jpeg" if d == "image/jpg" else d or "application/octet-stream"
+
+
 def extract_from_image(data: bytes, mime: str) -> dict[str, Any]:
     """Claude vision reads an exchange withdrawal or wallet send screen. 15 s cap, else retake (N11)."""
+    if mime not in VISION_MIMES:
+        log.info("intake image rejected: unsupported type %r", mime)
+        raise NeedsRetake("Please send a PNG or JPEG screenshot, or type the transaction hash or the address you sent to.")
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise NeedsRetake("Image reading is unavailable right now. Please type the transaction hash or the address you sent to.")
     try:
@@ -319,10 +338,16 @@ def extract_from_image(data: bytes, mime: str) -> dict[str, Any]:
                   "Extract ONLY what is visible. Reply with JSON and nothing else: "
                   '{"tx_hash": "0x... or null", "to": "destination address, full if visible, else the visible prefix and suffix like 0x2f1c…8fa4, or null", '
                   '"amount": number or null, "token": "USDT|ETH|other|null", "time": "ISO 8601 or the visible date text, or null", "chain": "ethereum|tron|null"}')
-        msg = client.messages.create(model=VISION_MODEL, max_tokens=300, messages=[{"role": "user", "content": [
-            {"type": "image", "source": {"type": "base64", "media_type": mime if mime in ("image/png", "image/jpeg", "image/webp", "image/gif") else "image/png", "data": base64.b64encode(data).decode()}},
+        # thinking "between_tools": no up-front thinking pass, so the budget goes to the JSON. With the
+        # default, thinking ate all 300 tokens and every real screenshot came back empty ("retake").
+        # ("disabled" is a 400 on this model.)
+        msg = client.messages.create(model=VISION_MODEL, max_tokens=VISION_MAX_TOKENS, thinking={"type": "between_tools"},
+                                     messages=[{"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": mime, "data": base64.b64encode(data).decode()}},
             {"type": "text", "text": prompt}]}])
-        text = "".join(getattr(b, "text", "") for b in msg.content)
+        text = "".join(getattr(b, "text", "") or "" for b in msg.content if getattr(b, "type", "text") == "text")
+        if not text.strip():
+            log.warning("vision returned no text (stop_reason=%s, max_tokens=%d)", getattr(msg, "stop_reason", None), VISION_MAX_TOKENS)
     except NeedsRetake:
         raise
     except Exception as e:  # noqa: BLE001

@@ -201,3 +201,58 @@ def test_intake_case_is_redacted_for_remote_viewers(monkeypatch):
     assert far["sends"][0]["tx_hash"] != TX and "story" not in far
     api.CASES.pop(cid, None)
     api.LIVE_CASES.discard(cid)
+
+
+class _FakeMessages:
+    def __init__(self, text, stop_reason="end_turn"):
+        self.calls, self.text, self.stop_reason = [], text, stop_reason
+
+    def create(self, **kw):
+        from types import SimpleNamespace
+        self.calls.append(kw)
+        blocks = [SimpleNamespace(type="thinking", thinking="hmm")]
+        if self.text:
+            blocks.append(SimpleNamespace(type="text", text=self.text))
+        return SimpleNamespace(content=blocks, stop_reason=self.stop_reason)
+
+
+def _fake_anthropic(monkeypatch, text, stop_reason="end_turn"):
+    import anthropic
+    msgs = _FakeMessages(text, stop_reason)
+    monkeypatch.setattr(anthropic, "Anthropic", lambda **kw: type("C", (), {"messages": msgs})())
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    return msgs
+
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 32
+
+
+def test_vision_call_skips_upfront_thinking_and_reads_the_json(monkeypatch):
+    msgs = _fake_anthropic(monkeypatch, '{"tx_hash": "' + TX + '", "amount": 11082.48, "token": "usdt", "to": null}')
+    ex = intake.extract_from_image(PNG, "image/png")
+    kw = msgs.calls[0]
+    assert kw["thinking"] == {"type": "between_tools"} and kw["max_tokens"] >= 600
+    assert ex["tx_hash"] == TX and ex["amount"] == 11082.48 and ex["token"] == "USDT"
+
+
+def test_vision_empty_text_at_max_tokens_is_logged(monkeypatch, caplog):
+    _fake_anthropic(monkeypatch, "", stop_reason="max_tokens")
+    with caplog.at_level("WARNING", logger="hound.intake"):
+        ex = intake.extract_from_image(PNG, "image/png")
+    assert "tx_hash" not in ex and any("max_tokens" in r.getMessage() for r in caplog.records)
+
+
+def test_heic_upload_asks_for_png_or_jpeg(monkeypatch):
+    msgs = _fake_anthropic(monkeypatch, "{}")
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    heic = b"\0\0\0\x18ftypheic" + b"\0" * 32
+    r = client.post(f"/intake/{code}/screenshot", files={"file": ("IMG_1.HEIC", io.BytesIO(heic), "image/heic")})
+    assert r.json()["status"] == "needs_retake" and "PNG or JPEG" in r.json()["message"]
+    assert msgs.calls == []  # never sent to Claude mislabeled as a PNG
+
+
+def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
+    msgs = _fake_anthropic(monkeypatch, "{}")
+    jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16
+    intake.extract_from_image(jpg, intake._image_mime(jpg, "application/octet-stream"))
+    assert msgs.calls[0]["messages"][0]["content"][0]["source"]["media_type"] == "image/jpeg"
