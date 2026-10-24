@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import { Archivo, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 
-const display = Archivo({ variable: "--font-display", subsets: ["latin"], axes: ["wdth"] });
-const body = IBM_Plex_Sans({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600"] });
+// Public Sans: the U.S. Web Design System typeface. Hound's output is evidence for law enforcement and exchanges, so it
+// speaks in the register those readers already trust. Plex Mono only for addresses and hashes (real code-like data).
+const display = Public_Sans({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700", "800"] });
+const body = Public_Sans({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const mono = IBM_Plex_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
