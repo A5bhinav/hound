@@ -379,3 +379,19 @@ def test_public_exchange_wallets_never_block_a_pack(tmp_path):
     cache.cached("eth_rpc", {"method": "cb"}, lambda: {"to": coinbase10}, ttl=None)
     (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([coinbase10]))
     assert snapshot.pack(out_dir=tmp_path / "snap") == {"eth_rpc": 1}
+
+
+def test_tron_freeze_lookup_never_pages_trongrid_in_a_request(tmp_path, monkeypatch):
+    """The keyless TronGrid event log is ~58 pages at 1 req/s: /check must read the dump instead."""
+    from hound.chain import freezes, tron
+    monkeypatch.setattr(tron, "blacklist_history", lambda: pytest.fail("paged TronGrid inside a request"))
+    freezes._MEMO.clear()
+    monkeypatch.setattr(freezes, "TRON_DUMP_FILE", tmp_path / "missing.json")
+    assert freezes._history("tron") == {}
+    dump = tmp_path / "freezes_tron.json"
+    ev = {"type": "added", "block": 1, "time": "2020-11-24T07:18:24Z", "tx": "ab", "log_index": 0}
+    dump.write_text(json.dumps({"_meta": {}, "events": {"TMzn3oX7caFKbJK8UmAaxdG9jV1yRtVzGd": [ev]}}))
+    monkeypatch.setattr(freezes, "TRON_DUMP_FILE", dump)
+    freezes._MEMO.clear()
+    assert freezes._history("tron")["TMzn3oX7caFKbJK8UmAaxdG9jV1yRtVzGd"][0]["type"] == "added"
+    freezes._MEMO.clear()
