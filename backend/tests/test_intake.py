@@ -268,6 +268,23 @@ def test_upload_and_approve_run_blocking_work_off_the_event_loop(monkeypatch):
     api.LIVE_CASES.discard(cid)
 
 
+def test_older_open_session_never_hides_a_newer_validated_one(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    client.post("/intake/start", json={})  # older call, never finished
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    cid = client.post(f"/intake/{code}/screenshot", data={"typed": f"11,082.48 USDT {TX}"}).json()["case_id"]
+    a = client.get("/intake/active").json()
+    assert a["case_code"] == code and a["status"] == "validated" and a["approved"] is False
+    client.post(f"/intake/{code}/approve", json={"case_id": cid})
+    assert client.get("/intake/active").json()["approved"] is True
+    intake.SESSIONS[code]["_validated_at"] -= 121  # reveal window over: the older open call shows again
+    assert client.get("/intake/active").json()["case_code"] != code
+    api.CASES.pop(cid, None)
+    api.LIVE_CASES.discard(cid)
+    api.TRUSTED.discard(cid)
+
+
 def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     msgs = _fake_anthropic(monkeypatch, "{}")
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16

@@ -82,7 +82,9 @@ def _scrub(obj: Any) -> Any:
 
 def _session_view(s: dict[str, Any]) -> dict[str, Any]:
     """The IntakeSession shape web/src/lib/types.ts expects."""
-    return {k: s.get(k) for k in ("case_code", "upload_url", "status", "story", "victim", "case_id", "message")}
+    v = {k: s.get(k) for k in ("case_code", "upload_url", "status", "story", "victim", "case_id", "message")}
+    v["approved"] = bool(s.get("approved"))  # web shows the operator's Approve button state
+    return v
 
 
 def _authorised(request: Request) -> bool:
@@ -176,13 +178,11 @@ def active(request: Request):
     full = _authorised(request)
     with _LOCK:
         _expire()
+        # Newest first: the first session still in progress, or validated in the last 120 s (kept
+        # visible for the reveal). An older stale session must never hide a newer validated one.
         for code in reversed(_ACTIVE):
             s = SESSIONS.get(code)
-            if s and s["status"] != "validated":
-                return _session_view(s) if full else _public_view(s)
-        for code in reversed(_ACTIVE):  # a just-validated session stays visible for the reveal
-            s = SESSIONS.get(code)
-            if s and time.time() - s.get("_validated_at", 0) < 120:
+            if s and (s["status"] != "validated" or time.time() - s.get("_validated_at", 0) < 120):
                 return _session_view(s) if full else _public_view(s)
     return Response(status_code=204)
 
