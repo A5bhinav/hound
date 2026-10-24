@@ -16,6 +16,22 @@ from typing import Any
 from hound.proof.chainabuse import chainabuse_reports, group_by_address
 from hound.proof.ethcall import usdt_balance, usdt_is_blacklisted
 
+try:  # team label DB (exchanges, OFAC "sanctioned", infra allowlist); optional so proof/ stays importable alone
+    from hound.chain import label as chain_label
+except Exception:  # noqa: BLE001
+    chain_label = None
+
+
+def _labelled(address: str) -> dict | None:
+    """Exchange / sanctioned / infra label from the team label DB, else None."""
+    if chain_label is None:
+        return None
+    try:
+        return chain_label("ethereum", address)
+    except Exception as e:  # noqa: BLE001
+        print(f"[scan] label lookup failed for {address}: {e}")
+        return None
+
 ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "data" / "cases_live" / "scan_latest.json"  # gitignored: live addresses never public
 CATEGORIES = ("PIGBUTCHERING", "ROMANCE", "FAKE_RETURNS", "OTHER_INVESTMENT_SCAM")
@@ -38,7 +54,10 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
         except Exception as e:  # noqa: BLE001
             print(f"[scan] {addr}: {e}")
             continue
-        r = r | {"balance_usdt": bal, "is_frozen": frozen, "freezable_now": (bal >= min_usdt and not frozen)}
+        lab = _labelled(addr)
+        r = r | {"balance_usdt": bal, "is_frozen": frozen, "label": lab,
+                 # AUDIT 20: exchange hot wallets, sanctioned and infra addresses are never gold candidates
+                 "freezable_now": (bal >= min_usdt and not frozen and lab is None)}
         cases.append(r)
         time.sleep(0.2)
     cases.sort(key=lambda c: (-c["freezable_now"], -c["balance_usdt"]))
