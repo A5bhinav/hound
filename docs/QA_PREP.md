@@ -1,7 +1,7 @@
 # Q&A prep (CK) — the follow-ups PITCH.md does not cover. Every number has a source.
 
 **"Your backtest says 45 days. What does that measure?"**
-"For 200 of the 657 Ethereum USDT addresses Tether froze in 2025, the time from the first USDT arriving to the freeze: median 45 days, 10th percentile 36 hours, 90th percentile about 13 months. And by the freeze, a median 44 percent of what came in had already left. Caveat we print on screen: it only measures addresses Tether did freeze, so the true picture for everything it never froze is worse." [data/proof/backtest.json, seed 13, OFAC addresses excluded]
+"For 192 of the 657 Ethereum USDT addresses Tether froze in 2025, the time from the first USDT arriving to the freeze: median 45 days, 10th percentile 36 hours, 90th percentile about 13 months. And by the freeze, a median 44 percent of what came in had already left. Caveat we print on screen: it only measures addresses Tether did freeze, so the true picture for everything it never froze is worse." [data/proof/backtest.json, seed 13, OFAC addresses excluded]
 
 **"Why not just say Tether froze 54 percent?"**
 "That's BlockSec's number about burned funds, and we cite it as theirs. Ours is a different measurement we can reproduce from the chain." [BlockSec 2025 report]
@@ -22,7 +22,7 @@
 "The adapter and the Tron freeze lookup work (50 ms, offline). We kept the demo on Ethereum because that's where the public DOJ answer key is. Tether froze 3,509 addresses on Tron in 2025, so it's the obvious next case." [BlockSec: 3,509 Tron / 657 Ethereum]
 
 **"The live case: how fresh, how fast?"**
-"Reported on Chainabuse on October 21. Victim sent on October 8 and 15. The trace runs in under a second from cache, about 17 seconds cold. Her first 96,028 USDT hit a Coinbase deposit address and was swept into Coinbase 10 within four minutes. That's the window we're talking about."
+"Reported on Chainabuse on October 21. Victim sent on October 8 and 15. The trace runs in under a second from cache, about 17 seconds cold. One victim, two payments, two cases on screen. The October 15 one (live-mindchain-binance, the one in the pitch): 11,082 USDT, 85 percent reached Binance within hours. The October 8 one (live-mindchain-coinbase): her first 96,028 USDT hit a Coinbase deposit address and was swept into Coinbase 10 within four minutes. That's the window we're talking about."
 
 **"What happens to the victim's data?"**
 "Phone numbers are never stored. Live addresses are truncated for anyone not on the operator's machine, the story is never shown off-machine, and nothing is published: packets go to IC3, Chainabuse and the exchange. The repo can't even pack a live address into its snapshot."
