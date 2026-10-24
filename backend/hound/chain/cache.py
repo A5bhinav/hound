@@ -1,72 +1,118 @@
-"""Disk cache for every chain API response.
+"""Disk cache for every chain API response (AUDIT issues 4, 10, N5).
 
-Each raw response is stored as one JSON file under `cache/<namespace>/`, keyed by a
-hash of the request parameters (never API keys). TTL is decided when reading, from
-the stored value, so "historical, never changes" data is kept forever and "might
-still change" data expires.
+Each raw response is one JSON file under `cache/<namespace>/`, keyed by a hash of the request
+parameters with every secret removed. TTL is decided when reading, from the stored value, so
+history that can't change is kept forever and anything near the chain head expires.
 
-Env:
-  HOUND_CACHE_DIR   where to store files (default: <repo>/cache)
-  HOUND_OFFLINE=1   never touch the network: use any cached copy regardless of age,
-                    and raise CacheMiss if there is none (for the demo on bad wifi)
+A committed snapshot (data/fixtures/cache/<namespace>.json.gz) is consulted after the local
+cache, so a fresh clone can run the demo with no network. Build it with
+    .venv/bin/python -m hound.chain.snapshot
+
+HOUND_CACHE_MODE:
+  live          (default) TTLs respected, misses and expired entries fetched and stored
+  record        same as live; use while warming the snapshot
+  readonly      never touch the network: any cached copy regardless of age, CacheMiss on a miss
+                (tests and the frozen demo)
+  prefer_cache  any cached copy regardless of age; a miss goes live (demo "try your own")
+HOUND_OFFLINE=1 is an alias for readonly. HOUND_CACHE_DIR overrides <repo>/cache.
 """
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import json
 import logging
 import os
 import tempfile
 import time
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
 log = logging.getLogger("hound.chain.cache")
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+SNAPSHOT_DIR = REPO_ROOT / "data" / "fixtures" / "cache"
+MODES = ("live", "record", "readonly", "prefer_cache")
 
-# Empty results are suspicious (the kill test got a silent zero that a retry fixed),
-# so they are never kept longer than this, whatever the caller's TTL.
-EMPTY_TTL = 3600.0
+# Empty results are suspicious (the kill test's silent zero), so never kept longer than this.
+EMPTY_TTL = 600.0
+# Request params that carry credentials; removed before hashing and never stored.
+SECRET_PARAMS = {"apikey", "api_key", "apiKey", "key", "access_token"}
 
 
 class CacheMiss(RuntimeError):
-    """Raised in offline mode when a response was never cached."""
+    """Raised in readonly mode when a response was never cached."""
 
 
 def cache_dir() -> Path:
     return Path(os.environ.get("HOUND_CACHE_DIR") or REPO_ROOT / "cache")
 
 
+def mode() -> str:
+    if os.environ.get("HOUND_OFFLINE", "").lower() in ("1", "true", "yes"):
+        return "readonly"
+    m = os.environ.get("HOUND_CACHE_MODE", "live").strip().lower() or "live"
+    if m not in MODES:
+        raise ValueError(f"HOUND_CACHE_MODE={m!r}; expected one of {MODES}")
+    return m
+
+
 def offline() -> bool:
-    return os.environ.get("HOUND_OFFLINE", "").lower() in ("1", "true", "yes")
+    return mode() == "readonly"
+
+
+def _secret_values() -> set[str]:
+    out = set()
+    for k, v in os.environ.items():
+        if v and len(v) >= 8 and any(s in k.upper() for s in ("KEY", "TOKEN", "SECRET", "PASSWORD")):
+            out.add(v)
+    return out
+
+
+def clean_parts(parts: dict) -> dict:
+    """Drop credential params and any value equal to a secret from the environment."""
+    secrets = _secret_values()
+    return {k: v for k, v in parts.items() if k not in SECRET_PARAMS and not (isinstance(v, str) and v in secrets)}
+
+
+def key(parts: dict) -> str:
+    blob = json.dumps(clean_parts(parts), sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(blob.encode()).hexdigest()[:40]
 
 
 def _path(namespace: str, parts: dict) -> Path:
-    blob = json.dumps(parts, sort_keys=True, separators=(",", ":"), default=str)
-    h = hashlib.sha256(blob.encode()).hexdigest()[:40]
+    h = key(parts)
     return cache_dir() / namespace / h[:2] / f"{h}.json"
 
 
-def read(namespace: str, parts: dict) -> dict | None:
-    """Return the stored entry {"saved_at", "value", "empty", "parts"} or None."""
-    p = _path(namespace, parts)
+@lru_cache(maxsize=16)
+def _snapshot(namespace: str) -> dict[str, dict]:
+    p = SNAPSHOT_DIR / f"{namespace}.json.gz"
     if not p.exists():
-        return None
-    try:
-        return json.loads(p.read_text())
-    except (OSError, ValueError) as e:
-        log.warning("corrupt cache file %s (%s); ignoring it", p, e)
-        return None
+        return {}
+    with gzip.open(p, "rt") as f:
+        return json.load(f)
+
+
+def read(namespace: str, parts: dict) -> dict | None:
+    """Return the stored entry {"saved_at", "value", "empty", "parts"} from the local cache,
+    else from the committed snapshot, else None."""
+    p = _path(namespace, parts)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except (OSError, ValueError) as e:
+            log.warning("corrupt cache file %s (%s); ignoring it", p, e)
+    return _snapshot(namespace).get(key(parts))
 
 
 def write(namespace: str, parts: dict, value: Any, empty: bool = False) -> None:
     p = _path(namespace, parts)
     p.parent.mkdir(parents=True, exist_ok=True)
-    entry = {"parts": parts, "saved_at": time.time(), "empty": empty, "value": value}
-    # atomic write so a crash mid-write never leaves half a file
-    fd, tmp = tempfile.mkstemp(dir=p.parent, suffix=".tmp")
+    entry = {"parts": clean_parts(parts), "saved_at": time.time(), "empty": empty, "value": value}
+    fd, tmp = tempfile.mkstemp(dir=p.parent, suffix=".tmp")  # atomic: never half a file
     with os.fdopen(fd, "w") as f:
         json.dump(entry, f)
     os.replace(tmp, p)
@@ -81,13 +127,13 @@ def cached(
     on_hit: Callable[[], None] | None = None,
 ) -> Any:
     """Return the cached value for `parts`, or call `fetch()` and store the result.
-
     ttl: seconds, None = forever, or a function of the value returning either.
-    """
+    `fetch` must raise on an error response: errors are never cached."""
+    m = mode()
     entry = read(namespace, parts)
     if entry is not None:
         value = entry["value"]
-        if offline():
+        if m in ("readonly", "prefer_cache"):
             if on_hit:
                 on_hit()
             return value
@@ -98,9 +144,13 @@ def cached(
             if on_hit:
                 on_hit()
             return value
-    elif offline():
-        raise CacheMiss(f"HOUND_OFFLINE=1 and nothing cached for {namespace} {parts}")
+    elif m == "readonly":
+        raise CacheMiss(f"HOUND_CACHE_MODE=readonly and nothing cached for {namespace} {clean_parts(parts)}")
 
     value = fetch()
     write(namespace, parts, value, empty=bool(is_empty and is_empty(value)))
     return value
+
+
+def reload_snapshot() -> None:
+    _snapshot.cache_clear()
