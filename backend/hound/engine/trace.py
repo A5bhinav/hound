@@ -298,11 +298,23 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             "method": method,
         })
 
+    # Money sent INTO a stopped address (exchange, high volume, failed fetch, budget) is not
+    # replayed further, so count it from the edges; it must never silently become zero.
+    edge_in = {}
+    for (src, dst), by in result["edge_seed"].items():
+        if src in in_trace:
+            for sid, v in by.items():
+                edge_in.setdefault(dst, {}).setdefault(sid, 0)
+                edge_in[dst][sid] += v
     nodes, endpoints = [], []
     for addr in sorted(in_trace, key=lambda a: (depth.get(a, 99), a)):
         lab = labels.get(addr)
         fz = frozen.get(addr) or NO_FREEZE
-        remaining = result["remaining"].get(addr, {})
+        if addr in explored:
+            remaining = result["remaining"].get(addr, {})
+            inflow_by = result["tainted_in"].get(addr, {})
+        else:
+            remaining = inflow_by = edge_in.get(addr, {})
         rem_total = sum(remaining.values())
         if addr in victims:
             kind = "victim"
@@ -329,7 +341,7 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
                          and balance * 10 ** 6 >= rem_total)
             endpoints.append({
                 "address": addr, "reason": reason,
-                "victim_inflow": from_base(sum(result["tainted_in"].get(addr, {}).values())),
+                "victim_inflow": from_base(sum(inflow_by.values())),
                 "victim_remaining": from_base(rem_total), "attributed_by_seed": _amounts(remaining),
                 "balance_usdt": balance, "freezable": bool(freezable),
                 "exchange": lab.get("name") if lab and lab.get("kind") in EXCHANGE_KINDS else None,

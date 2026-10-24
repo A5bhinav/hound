@@ -131,6 +131,10 @@ def test_high_volume_and_fetch_errors_are_visible_not_fatal():
     assert reasons[A6] == "high_volume"
     assert reasons["0x212a021291a4a4007bc8892b2176c41204d9c794"] == "dead_end"
     assert t["status"] == "partial" and t["stats"]["fetch_errors"] == 1
+    # integrity: the victim money that reached the unfetchable addresses is still accounted for
+    ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
+    assert ends[(A6, "high_volume")]["victim_inflow"] > 0
+    assert ends[("0x212a021291a4a4007bc8892b2176c41204d9c794", "dead_end")]["victim_inflow"] > 0
 
 
 def test_input_limits_cannot_bypass_the_call_budget():
