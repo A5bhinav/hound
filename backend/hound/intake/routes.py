@@ -29,6 +29,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, Response, Upl
 from starlette.concurrency import run_in_threadpool
 
 from hound.chain import CacheMiss, ChainAPIError
+from hound.chain.net import TooManyTransfers
 from hound.intake import sms
 
 log = logging.getLogger("hound.intake")
@@ -121,6 +122,9 @@ def reset() -> None:
         n = len(SESSIONS)
         SESSIONS.clear()
         _ACTIVE.clear()
+        _WEB_RECENT.clear()  # rehearsing the online form must not leave the next judge locked out
+        _MISSES.clear()
+        _ALL_MISSES.clear()
     save_state()
     log.warning("intake reset: %d session(s) cleared", n)
 
@@ -433,12 +437,15 @@ async def web_start(request: Request):
     if not isinstance(body, dict):
         raise HTTPException(422, "body must be a JSON object")
     who, now = _client_key(request), time.time()
+    from hound import api as hound_api
+    local = hound_api._is_local(request)  # the operator laptop rehearsing the form is never locked out
     with _LOCK:
         _WEB_RECENT[:] = [(t, k) for t, k in _WEB_RECENT if now - t < 3600]
-        if len(_WEB_RECENT) >= WEB_PER_HOUR or sum(k == who for _, k in _WEB_RECENT) >= WEB_PER_IP_HOUR:
-            log.warning("intake web start: rate limit for a caller (%d this hour)", len(_WEB_RECENT))
-            raise HTTPException(429, "Too many reports from here in the last hour. Please try again later, or call us.")
-        _WEB_RECENT.append((now, who))
+        if not local:
+            if len(_WEB_RECENT) >= WEB_PER_HOUR or sum(k == who for _, k in _WEB_RECENT) >= WEB_PER_IP_HOUR:
+                log.warning("intake web start: rate limit for a caller (%d this hour)", len(_WEB_RECENT))
+                raise HTTPException(429, "Too many reports from here in the last hour. Please try again later, or call us.")
+            _WEB_RECENT.append((now, who))
     clip = lambda v, n: v.strip()[:n] if isinstance(v, str) and v.strip() else None  # noqa: E731
     story = {"summary": clip(body.get("summary"), 1200), "scam_app": clip(body.get("scam_app"), 120),
              "platform": clip(body.get("platform"), 120), "first_contact": clip(body.get("first_contact"), 20)}
@@ -504,6 +511,9 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         case = await run_in_threadpool(validate_and_build_case, s, extracted)  # chain reads block
     except NeedsRetake as e:
         return _retake(s, str(e))
+    except TooManyTransfers:  # a busy wallet (an exchange) can't be searched by amount: the hash finds it directly
+        log.info("intake %s: recipient too busy to search by amount, asking for the hash", code)
+        return _retake(s, BUSY_WALLET_MSG)
     except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault
         log.warning("intake %s: chain unreachable while validating: %s", code, type(e).__name__, exc_info=True)
         return _retake(s, CHAIN_DOWN_MSG)
@@ -660,6 +670,8 @@ def _search_window(ts: Any) -> tuple[str, str]:
     return (when - TIME_WINDOW).strftime(fmt), (when + TIME_WINDOW).strftime(fmt)
 
 
+BUSY_WALLET_MSG = ("That address receives too many payments for us to find yours by the amount. Please send the "
+                   "transaction hash (TxID) from your payment screen instead, or a screenshot that shows it.")
 CHAIN_DOWN_MSG = "We couldn't reach the blockchain right now. Please try again in a minute."
 
 

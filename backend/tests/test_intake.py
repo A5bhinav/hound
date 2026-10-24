@@ -631,3 +631,28 @@ def test_voice_names_the_site_when_no_text_was_sent(monkeypatch):
     monkeypatch.setenv("HOUND_SPOKEN_SITE", "hound help dot vercel dot app")
     say = client.post("/intake/voice/story", json={"story": {}, "victim": {}}).json()["say"]
     assert "go to hound help dot vercel dot app" in say and "Check my case" in say
+
+
+def test_operator_laptop_is_never_rate_limited_and_reset_clears_limits():
+    intake._WEB_RECENT.clear()
+    for _ in range(intake.WEB_PER_IP_HOUR + 3):
+        assert client.post("/intake/web/start", json={}).status_code == 200  # localhost rehearsal
+    remote = TestClient(api.app, client=("203.0.113.70", 1))
+    for _ in range(intake.WEB_PER_IP_HOUR):
+        remote.post("/intake/web/start", json={})
+    assert remote.post("/intake/web/start", json={}).status_code == 429
+    assert client.post("/demo/reset").status_code == 200
+    assert remote.post("/intake/web/start", json={}).status_code == 200
+    intake._WEB_RECENT.clear()
+
+
+def test_busy_recipient_asks_for_the_hash(monkeypatch):
+    from hound.chain.net import TooManyTransfers
+
+    def busy(s, ex):
+        raise TooManyTransfers("0x" + "2" * 40, 10001, 10000)
+
+    monkeypatch.setattr(intake, "validate_and_build_case", busy)
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    r = client.post(f"/intake/{code}/screenshot", data={"typed": "I sent 500 USDT to 0x" + "2" * 40}).json()
+    assert r["status"] == "needs_retake" and "transaction hash" in r["message"] and "reach the blockchain" not in r["message"]
