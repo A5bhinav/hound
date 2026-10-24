@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       { source: "/api/traces/:id", destination: `${API_URL}/traces/:id` },
       // Exchange hold screen (query string ?chain=&address= is passed through).
       { source: "/api/check", destination: `${API_URL}/check` },
+      // DEMO.md step 7: reset between judges.
+      { source: "/api/demo/reset", destination: `${API_URL}/demo/reset` },
       // Intake (CK): the live case card polls the active call; the victim's upload page posts the screenshot.
       { source: "/api/intake/active", destination: `${API_URL}/intake/active` },
       { source: "/api/intake/:code/screenshot", destination: `${API_URL}/intake/:code/screenshot` },

@@ -171,3 +171,15 @@
   color: var(--ink-2);
   font-size: 0.78rem;
 }
+
+.controls button.reveal {
+  border-color: var(--ice);
+  background: var(--ice);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.controls button.reveal:hover:not(:disabled) {
+  background: var(--ink);
+  border-color: var(--ink);
+}

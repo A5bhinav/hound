@@ -1,7 +1,6 @@
 import type { Case, CaseSummary, Endpoint, EndpointReason, Trace } from "@/lib/types";
-import { explorerUrl, shortAddr, usdt } from "@/lib/format";
+import { explorerUrl, shortAddr, tok, usdt } from "@/lib/format";
 
-const amount = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
 import styles from "./CaseCard.module.css";
 
 const REASON: Record<EndpointReason, string> = {
@@ -43,7 +42,7 @@ export default function CaseCard({
   // Sends can be ETH (replay) or USDT; never label one token as another. Sum per token.
   const totals = new Map<string, number>();
   for (const s of sendList) totals.set(s.token, (totals.get(s.token) ?? 0) + s.amount);
-  const totalText = [...totals].map(([tok, n]) => `${amount(n)} ${tok}`).join(" + ");
+  const totalText = [...totals].map(([token, n]) => tok(n, token)).join(" + ");
   const chain = trace?.nodes[0]?.chain ?? ("sends" in c ? c.sends[0]?.chain : undefined) ?? "ethereum";
   const facts = FACTS.map(([k, get]) => [k, get(c)] as const).filter(([, v]) => v && v !== "unknown");
   const asOf = "as_of" in c ? c.as_of : null;
@@ -62,7 +61,13 @@ export default function CaseCard({
           {totalText} in {sendList.length} sends
         </p>
       )}
-      {replay && asOf && <p className={styles.replay}>Traced as of {asOf.slice(0, 10)}, the date the victim reported.</p>}
+      {replay && (trace?.method.as_of_block || asOf) && (
+        // The cutoff is a block just before Tether's last freeze; the report date is only the story date (review web-integration-4).
+        <p className={styles.replay}>
+          {trace?.method.as_of_block ? `Chain data up to block ${trace.method.as_of_block}, just before Tether's last freeze.` : ""}
+          {asOf ? ` The victim reported on ${asOf.slice(0, 10)}.` : ""}
+        </p>
+      )}
 
       {facts.length > 0 && (
         <dl className={styles.facts}>
@@ -81,7 +86,7 @@ export default function CaseCard({
         {sendList.map((s) => (
           <li key={s.tx_hash}>
             <span>
-              {amount(s.amount)} {s.token}
+              {tok(s.amount, s.token)}
             </span>
             <span className={styles.meta}>
               {"time" in s && <>{s.time.slice(0, 10)} · </>}

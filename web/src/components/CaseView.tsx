@@ -39,6 +39,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
             {freezesShown && (
               <>
                 <OtherPayers trace={state.trace} />
+                <AuditLog log={state.trace.audit_log} />
                 <nav className={styles.next} aria-label="Next steps">
                   <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
                     Open the detective packet
@@ -58,6 +59,25 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         )}
       </main>
     </>
+  );
+}
+
+/** Every step the engine took, for the investigator (Hyphenate: "would you hire it?"). Addresses shortened. */
+function AuditLog({ log }: { log: AuditEntry[] }) {
+  if (!log.length) return null;
+  return (
+    <details className={styles.audit}>
+      <summary>Engine audit log: every step, {log.length} entries</summary>
+      <ol className={styles.log}>
+        {log.map((e, i) => (
+          <li key={i} data-step={e.step}>
+            <span className={styles.step}>{e.step.replaceAll("_", " ")}</span>
+            {e.address && <span className="mono">{shortAddr(e.address)}</span>}
+            <span className={styles.detail}>{e.detail.replace(/0x[0-9a-fA-F]{40,64}/g, shortAddr)}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 

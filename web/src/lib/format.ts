@@ -3,8 +3,13 @@ import type { Chain, NodeKind, TraceNode } from "./types";
 export const usdt = (n: number | null | undefined) =>
   n == null ? "—" : `${n.toLocaleString("en-US", { maximumFractionDigits: 2 })} USDT`;
 
-/** Whole USDT, for dense spots like graph edges. */
-export const usdt0 = (n: number) => `${Math.round(n).toLocaleString("en-US")} USDT`;
+/** An amount in its own token. Never label one token as another (review contracts-3). */
+export const tok = (n: number, token: string) =>
+  `${n.toLocaleString("en-US", { maximumFractionDigits: token === "USDT" ? 2 : 4 })} ${token}`;
+
+/** Dense version for graph edges: whole USDT, two decimals for other tokens. */
+export const tok0 = (n: number, token: string) =>
+  `${n.toLocaleString("en-US", { maximumFractionDigits: token === "USDT" ? 0 : 2 })} ${token}`;
 
 export const daysBetween = (fromIso: string, toIso: string) =>
   Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 86_400_000);

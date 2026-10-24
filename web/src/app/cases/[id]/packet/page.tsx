@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ApiError, Bar } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
 import { HoundApiError, getPacket, usingFixtures, type Packet } from "@/lib/api";
-import { pct, usdt } from "@/lib/format";
+import { pct, shortAddr, usdt } from "@/lib/format";
 import type { Trace } from "@/lib/types";
 import styles from "./packet.module.css";
 
@@ -77,7 +77,7 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
 
         <section className={styles.text}>
           {packet.text.split(/\n\n+/).map((para, i) => (
-            <Para key={i} text={para} />
+            <Para key={i} text={para} live={!trace.replay} />
           ))}
           <p className={styles.verify}>
             {packet.citations_verified
@@ -88,6 +88,9 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
         </section>
 
         {audience === "detective" && <Tables trace={trace} />}
+        {!trace.replay && (
+          <p className={`${styles.verify} ${styles.screenOnly}`}>Live case: addresses are shortened on screen and printed in full.</p>
+        )}
 
         <footer className={styles.foot}>
           Public blockchain data only. Hound never takes custody of funds and never asks for keys or seed phrases. Send through IC3
@@ -98,17 +101,52 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
   );
 }
 
-function Para({ text }: { text: string }) {
+const IS_HEX = /^0x[0-9a-fA-F]{40,64}$/; // no /g: .test() must not carry lastIndex between parts
+
+/** Live cases: short on screen (§0, DEMO.md "never on screen"), full in the printed / PDF copy for the detective. */
+function Addr({ v, live }: { v: string; live: boolean }) {
+  if (!live) return <>{v}</>;
+  return (
+    <>
+      <span className={styles.screenOnly}>{shortAddr(v)}</span>
+      <span className={styles.printOnly}>{v}</span>
+    </>
+  );
+}
+
+/** Writer text, with every address / hash passed through Addr. */
+function Rich({ text, live }: { text: string; live: boolean }) {
+  if (!live) return <>{text}</>;
+  const parts = text.split(/(0x[0-9a-fA-F]{40,64})/g);
+  return (
+    <>
+      {parts.map((p, i) => (IS_HEX.test(p) ? <Addr key={i} v={p} live /> : p))}
+    </>
+  );
+}
+
+function Para({ text, live }: { text: string; live: boolean }) {
   const lines = text.split("\n");
   const items = lines.filter((l) => l.startsWith("- "));
-  if (items.length === 0) return <p>{text}</p>;
+  if (items.length === 0)
+    return (
+      <p>
+        <Rich text={text} live={live} />
+      </p>
+    );
   const lead = lines.filter((l) => !l.startsWith("- "));
   return (
     <>
-      {lead.length > 0 && <p>{lead.join(" ")}</p>}
+      {lead.length > 0 && (
+        <p>
+          <Rich text={lead.join(" ")} live={live} />
+        </p>
+      )}
       <ul>
         {items.map((l) => (
-          <li key={l}>{l.slice(2)}</li>
+          <li key={l}>
+            <Rich text={l.slice(2)} live={live} />
+          </li>
         ))}
       </ul>
     </>
@@ -137,7 +175,9 @@ function Tables({ trace }: { trace: Trace }) {
                 const n = trace.nodes.find((x) => x.address === p.address);
                 return (
                   <tr key={p.address}>
-                    <td className="mono">{p.address}</td>
+                    <td className="mono">
+                      <Addr v={p.address} live={!trace.replay} />
+                    </td>
                     <td>
                       {p.reason.replaceAll("_", " ")}
                       {p.exchange ? ` (${p.exchange})` : ""}
@@ -147,7 +187,12 @@ function Tables({ trace }: { trace: Trace }) {
                       {n?.frozen?.is_frozen ? (
                         <>
                           Frozen {n.frozen.frozen_at?.slice(0, 10)}
-                          {n.frozen.freeze_tx && <span className="mono"> {n.frozen.freeze_tx}</span>}
+                          {n.frozen.freeze_tx && (
+                            <span className="mono">
+                              {" "}
+                              <Addr v={n.frozen.freeze_tx} live={!trace.replay} />
+                            </span>
+                          )}
                         </>
                       ) : (
                         "Not frozen"
@@ -183,8 +228,8 @@ function Tables({ trace }: { trace: Trace }) {
                 <tr key={`${e.from}${e.to}`}>
                   <td>{e.hop}</td>
                   <td className="mono">
-                    {e.from}
-                    <br />→ {e.to}
+                    <Addr v={e.from} live={!trace.replay} />
+                    <br />→ <Addr v={e.to} live={!trace.replay} />
                   </td>
                   <td className="mono">{usdt(e.attributed_amount)}</td>
                   <td>
@@ -193,7 +238,7 @@ function Tables({ trace }: { trace: Trace }) {
                   <td className="mono">
                     {e.tx_hashes.map((h) => (
                       <span key={h} className={styles.tx}>
-                        {h}
+                        <Addr v={h} live={!trace.replay} />
                       </span>
                     ))}
                   </td>
