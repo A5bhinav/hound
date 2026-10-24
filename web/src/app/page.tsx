@@ -29,10 +29,7 @@ export default async function Home() {
               <br />
               <span className={styles.quiet}>We help you follow it.</span>
             </h1>
-            <p className={styles.lede}>
-              Hound traces where your money went on the blockchain, warns exchanges before the next victim pays the same
-              wallets, and gives you a clear report for law enforcement.
-            </p>
+            <p className={styles.lede}>See where your money went, who can freeze it, and get a report for the police.</p>
             <div className={styles.ctas}>
               <Link href="/report" className={`btn btn-primary btn-lg ${styles.cta}`}>
                 Report a scam
