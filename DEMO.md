@@ -25,13 +25,14 @@ cd web && npm run build && npm run start    # http://localhost:3000 (rebuild aft
 Health check: open http://localhost:8000/health and expect `"ok": true`.
 
 ## The 2-minute click path (script: PITCH.md)
+0. (Optional, for the intake beat) **Intake** in the top bar → **Replay intake**: the case card fills in, QR + short link appear, then **Trace this case →**. It is labelled "Replay of a recorded intake".
 1. Open http://localhost:3000, pick **ohnd-replay-ah** (the DOJ replay).
-2. Start the trace. Hops unfold live from the audit log (about 1 second from the snapshot).
-3. Click **reveal**: Tether's freezes appear on A-7, A-8, A-9.
-4. Exchange hold screen: withdraw to A-1 (`0xcf9b…5027`), expect **HOLD** with evidence. A Binance hot wallet gives **allow**.
-5. Packet page (detective audience).
-6. Proof panel: 8/8 intermediates, 3/3 seized, A-7 and A-8 green, A-9 amber.
-7. Hidden reset button (`POST /demo/reset`) before the next judge.
+2. The trace starts by itself: the engine's steps stream in, then the hops unfold column by column (about 1 second from the snapshot).
+3. Once the last hop is drawn, click **Reveal what Tether did** (top right of the graph): A-7, A-8, A-9 turn teal ("Tether froze this"), the banner reads "Tether froze 3 of these wallets 16 to 20 days after the victim's report", and the case card switches to the freeze dates. Below the graph: **other wallets paying in** and the engine audit log.
+4. **Exchange check** in the top bar → **Try: A scam wallet from the DOJ replay** (A-7) → **Withdraw**: expect **Withdrawal held** with evidence (or paste A-1 `0xcf9b…5027`). **Try: An exchange hot wallet** gives **Withdrawal sent** (allow).
+5. Back on the case page, **Open the detective packet**; the toggle switches to the victim's version; **Print or save as PDF** works.
+6. **Proof** in the top bar: 8/8 intermediates, 3/3 seized, A-7 and A-8 green, A-9 amber.
+7. Before the next judge: **Reset demo** at the bottom of the case list (click twice). It calls `POST /demo/reset`.
 
 ## When something breaks
 | Symptom | Do this |
@@ -42,6 +43,8 @@ Health check: open http://localhost:8000/health and expect `"ok": true`.
 | No internet at all | Both the DOJ replay (committed snapshot) and the live case (local bundle) run with zero network calls |
 | Claude API down / no key | Packets fall back to the deterministic template (`source: template`) within about 20 seconds; every number is still verified. Wallet explanations keep their rule text. With a key set, each trace also asks Claude to reword those explanations, so a stalled network slows the trace too: unset the key if the venue network is bad |
 | UI shows OFFLINE | `HOUND_DATA=fixture` is set in `web/.env.local`; clear it and rebuild |
+| Intake page says "intake backend isn't running" | Expected until CK's intake routes ship (issue #19). Use **Replay intake** |
+| "Reveal what Tether did" is greyed out | The hops are still unfolding; wait for the last column, or click **Show all hops** |
 
 ## Never on screen
 - A live-case address in full (truncate it), and never call a reported wallet "the scammer" (reported, not proven).
