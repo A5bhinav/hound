@@ -33,7 +33,7 @@ export default async function Home() {
               <span className={styles.phone}>{formatPhone(phone)}</span>
               <ul className="checks">
                 <li>A calm voice takes your story</li>
-                <li>We text you a link for your screenshot</li>
+                <li>We tell you our website and walk you through sending a screenshot</li>
                 <li>About 5 minutes</li>
               </ul>
               <span className="btn btn-primary">Call now</span>
