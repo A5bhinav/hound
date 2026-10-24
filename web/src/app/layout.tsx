@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
-// IBM Plex Sans for everything: a plain, engineered face that reads as a security product, not a crypto app.
-// Plex Mono (same family) for addresses and hashes, so evidence and interface look like one system.
-const display = IBM_Plex_Sans({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700"] });
-const body = IBM_Plex_Sans({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// Manrope: a round geometric sans for big calm headlines and readable body text. Plex Mono for addresses and hashes.
+const display = Manrope({ variable: "--font-display", subsets: ["latin"], weight: ["600", "700", "800"] });
+const body = Manrope({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 const mono = IBM_Plex_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {

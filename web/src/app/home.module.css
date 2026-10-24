@@ -1,0 +1,178 @@
+/* The victim's front door. Hero: copy left, the product tilted right; three features under a hairline. */
+.main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 5rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: 3rem;
+  padding: clamp(2.5rem, 6vw, 5.5rem) 0 clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.eyebrow {
+  margin: 0 0 1.6rem;
+  font-family: var(--font-m);
+  font-size: 0.82rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #b9b9b5;
+}
+
+.h1 {
+  margin: 0;
+  font-size: clamp(2.7rem, 5.2vw, 4.6rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--white);
+}
+
+.quiet {
+  font-weight: 400;
+  color: var(--ink-hero);
+}
+
+.lede {
+  max-width: 36rem;
+  margin: 2.2rem 0 2.4rem;
+  font-size: clamp(1.05rem, 1.35vw, 1.28rem);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.ctas {
+  display: flex;
+  gap: 1.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.9rem;
+}
+
+.cta {
+  min-width: 12.5rem;
+}
+
+.cta svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-left: 0.6rem;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2.5rem;
+  padding: 2.75rem 1.5rem 0;
+  border-top: 1px solid var(--rule);
+}
+
+.features h2 {
+  margin: 1rem 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.features p {
+  max-width: 24rem;
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.fIcon {
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--trace);
+}
+
+.ways {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 4.5rem;
+}
+
+/* .ways .way beats the global a.box { display: block }, so each card is a column with its button at the bottom. */
+.ways .way {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.wayCall {
+  border-color: #4a1a1d;
+  box-shadow: inset 3px 0 0 var(--red);
+}
+
+.wayBig {
+  font-family: var(--font-d);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.wayText {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--ink-2);
+}
+
+.ways .way :global(.btn) {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.ways :global(.label) {
+  margin: 0;
+}
+
+.never {
+  margin-top: 1.25rem;
+}
+
+.never h2 {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+}
+
+.never p {
+  margin: 1rem 0 0;
+  color: var(--ink-2);
+}
+
+.foot {
+  margin-top: 2rem;
+}
+
+@media (max-width: 1100px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .features,
+  .ways {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .features {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .cta {
+    width: 100%;
+  }
+
+  .wayBig {
+    white-space: normal;
+  }
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BarGlass from "./BarGlass";
 
 /** The Hound mark, traced from the brand sheet (docs/brand/mark.svg). Inline so it takes the text colour. */
 export function HoundMark({ className = "wordmark-mark" }: { className?: string }) {
@@ -23,49 +24,62 @@ const STEPS: { n: 1 | 2 | 3 | 4; label: string; href: (caseId: string) => string
   { n: 4, label: "Police report", href: (c) => `/cases/${encodeURIComponent(c)}/packet` },
 ];
 
+/** The lock + "Read-only · never touches funds": Hound's trust promise. */
+export function Secure() {
+  return (
+    <span className="secure" title="Hound reads public blockchain data only. It never holds, moves or asks for funds or keys.">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+        <rect x="4" y="9" width="12" height="8.5" rx="2" />
+        <path d="M7 9V6.5a3 3 0 0 1 6 0V9" />
+      </svg>
+      Read-only · never touches funds
+    </span>
+  );
+}
+
 /** offline: HOUND_DATA=fixture, serving the repo's examples/ instead of the live backend.
- *  step: which step this page is (highlighted). caseId: the case steps 2 and 4 open. */
+ *  step: on the guided tour (/how and its four steps), the steps row shows under the bar with this one current.
+ *  caseId: the case steps 2 and 4 open. */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: boolean; step?: Step; caseId?: string; children?: React.ReactNode }) {
   const current = typeof step === "number" ? step : 0; // steps before this one get a check
   return (
-    <header className="bar">
-      <Link href="/" className="wordmark" aria-label="Hound home">
-        <HoundMark />
-        Hound
-      </Link>
-      <span className="bar-secure" title="Hound reads public blockchain data only. It never holds, moves or asks for funds or keys.">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-          <rect x="3" y="7" width="10" height="7" rx="1.5" />
-          <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
-        </svg>
-        Read-only · never touches funds
-      </span>
-      {step === undefined ? (
-        <nav className="bar-nav" aria-label="Main">
-          <Link href="/report">Report a scam</Link>
-          <Link href="/c">Check my case</Link>
-          <Link href="/how">How Hound works</Link>
-        </nav>
-      ) : (
-      <nav className="bar-nav" aria-label="How Hound works">
-        <ol className="steps">
-          {STEPS.map((s) => (
-            <li key={s.n}>
-              <Link href={s.href(caseId)} aria-current={step === s.n ? "step" : undefined}>
-                <span className="step-n" aria-hidden="true">{s.n < current ? "✓" : s.n}</span>
-                {s.label}
-              </Link>
-            </li>
-          ))}
-        </ol>
-        <Link href="/proof" className="proof-link" aria-current={step === "proof" ? "page" : undefined}>
-          Proof it works
+    <>
+      <header className="bar">
+        <Link href="/" className="wordmark" aria-label="Hound home">
+          <HoundMark />
+          Hound
         </Link>
-      </nav>
+        <nav className="bar-nav" aria-label="Main">
+          <Link href="/how" aria-current={step !== undefined ? "page" : undefined}>How it works</Link>
+          <Link href="/">For victims</Link>
+          <Link href={`/cases/${encodeURIComponent(DEMO_CASE)}/packet`}>For law enforcement</Link>
+          <Link href="/exchange">For exchanges</Link>
+        </nav>
+        <Link href="/report" className="btn btn-primary bar-cta">
+          Report a scam
+        </Link>
+        {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}
+        <BarGlass />
+      </header>
+      {step !== undefined && (
+        <nav className="tour" aria-label="How Hound works">
+          <ol className="steps">
+            {STEPS.map((s) => (
+              <li key={s.n}>
+                <Link href={s.href(caseId)} aria-current={step === s.n ? "step" : undefined}>
+                  <span className="step-n" aria-hidden="true">{s.n < current ? "✓" : s.n}</span>
+                  {s.label}
+                </Link>
+              </li>
+            ))}
+          </ol>
+          <Link href="/proof" className="proof-link" aria-current={step === "proof" ? "page" : undefined}>
+            Proof it works
+          </Link>
+        </nav>
       )}
-      {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}
-    </header>
+    </>
   );
 }
 
