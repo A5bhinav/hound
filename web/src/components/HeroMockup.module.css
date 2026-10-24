@@ -238,3 +238,10 @@
     transform: none;
   }
 }
+
+/* Decorative only: too small to read on a phone, so it isn't shown there. */
+@media (max-width: 640px) {
+  .stage {
+    display: none;
+  }
+}

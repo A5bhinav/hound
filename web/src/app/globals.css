@@ -240,6 +240,13 @@ h3 {
   font-weight: 500;
 }
 
+.bar-check {
+  padding: 0.85rem 1.4rem;
+  font-size: 0.97rem;
+  font-weight: 500;
+  margin-left: -1.25rem; /* sits close to the red button */
+}
+
 /* "Read-only · never touches funds": the trust promise, green, with a lock. */
 .secure {
   display: inline-flex;
@@ -352,7 +359,7 @@ h3 {
     display: none;
   }
 
-  .bar-cta {
+  .bar-check {
     margin-left: auto;
   }
 
@@ -378,8 +385,18 @@ h3 {
     width: 2.3rem;
   }
 
-  .bar-cta {
-    padding: 0.7rem 1.1rem;
+  .bar-check {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  /* On a phone the hero's big red button is right below: the bar keeps only Check my case, on one row. */
+  .bar .bar-cta {
+    display: none;
+  }
+
+  .wordmark {
+    margin-right: auto;
   }
 
   .steps {

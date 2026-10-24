@@ -24,14 +24,10 @@
 }
 
 @media (min-width: 1101px) and (min-height: 600px) {
-  .first {
-    min-height: calc(100svh - 92px);
-    padding-bottom: 1.5rem;
-  }
-
+  /* The hero alone is the first screen; the numbered features start one scroll down. */
   .first .hero {
-    flex: 1;
-    padding: 1rem 0 2.25rem;
+    min-height: calc(100svh - 92px);
+    padding: 1rem 0 4.5rem;
   }
 }
 

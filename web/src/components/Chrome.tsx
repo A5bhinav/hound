@@ -56,6 +56,10 @@ export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: 
           <Link href="/exchange">For Exchanges</Link>
           <Link href="/how" aria-current={step !== undefined ? "page" : undefined}>How It Works</Link>
         </nav>
+        {/* The voice agent tells callers "at the top of the page, press Check my case": keep it here, on every screen. */}
+        <Link href="/c" className="btn bar-check">
+          Check my case
+        </Link>
         <Link href="/report" className="btn btn-primary bar-cta">
           Report a scam
         </Link>
