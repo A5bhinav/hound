@@ -574,12 +574,27 @@ def test_eth_seeds_are_never_summed_or_labelled_as_usdt():
         validate(f"You sent {{{{case.sends.{i}.amount|usdt}}}} on {{{{case.sends.{i}.time|date}}}}.", f)
     # the same amount with a plain number format is fine (the model can still say ETH in words)
     validate(f"You sent {{{{case.sends.{i}.amount|raw}}}} ETH.", f)
+    validate(f"You sent {{{{case.sends.{i}.amount|raw}}}} {{{{case.sends.{i}.token|raw}}}}.", f)
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("tail", [" USDT.", " of USDT.", ".", "  usdt today."])
+def test_eth_send_amount_labelled_usdt_in_words_is_rejected(tail, audience):
+    f = build_facts(TRACE, CASE)
+    i = next(i for i, s in enumerate(f["case"]["sends"]) if s["token"] == "ETH")
+    with pytest.raises(TemplateError, match="not USDT"):
+        validate(f"You sent {{{{case.sends.{i}.amount|raw}}}}{tail}", f, audience=audience)
+    with pytest.raises(TemplateError):
+        render(f"You sent {{{{case.sends.{i}.amount|raw}}}}{tail}", f, audience=audience)
 
 
 @pytest.mark.parametrize("para", [
     "Good news: you will get your money back. Your funds are guaranteed to be recovered.",
     "The person behind this will be arrested.",
     "They are going to be caught and charged.",
+    "He will be held accountable and sent to prison.",
+    "They will be brought to justice.",
+    "Charges will follow.",
     "Write to fbi dot gov today.",
     "Email ic3 dot gov for help.",
 ])
