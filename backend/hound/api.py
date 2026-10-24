@@ -395,6 +395,11 @@ def _other_payers_skip_reason(trace):
         return "a seed send was not found on chain"
     if not trace.get("edges"):
         return "no USDT was traced"
+    # Past the engine deadline the chain is slow; other_payers would only add its own budget on top.
+    if (any(e.get("reason") == "time_cap" for e in trace.get("endpoints") or [])
+            or any(e.get("step") == "cap_hit" and (e.get("detail") or "").startswith("time_cap")
+                   for e in trace.get("audit_log") or [])):
+        return "the trace hit its time cap"
     return None
 
 

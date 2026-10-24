@@ -503,6 +503,20 @@ def test_other_payers_skipped_when_chain_was_unreachable(monkeypatch):
     assert any(e["step"] == "skip_branch" and "fetch errors" in e["detail"] for e in trace["audit_log"])
 
 
+def test_other_payers_skipped_when_trace_hit_time_cap(monkeypatch):
+    real, called = api.run_trace, []
+
+    def capped(case, **deps):
+        t = real(case, **deps)
+        t["audit_log"].append({"t": "x", "step": "cap_hit", "address": None, "detail": "time_cap: not expanded"})
+        return t
+
+    monkeypatch.setattr(api, "run_trace", capped)
+    monkeypatch.setattr(api, "other_payers", lambda trace: called.append(1) or [])
+    trace = _trace_done()
+    assert called == [] and any("time cap" in e["detail"] for e in trace["audit_log"] if e["step"] == "skip_branch")
+
+
 def test_engine_value_error_reaches_the_poller(monkeypatch):
     def bad(case, **deps):
         raise ValueError("a case must start on one chain for now, got ['ethereum', 'tron']")
