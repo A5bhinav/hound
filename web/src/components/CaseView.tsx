@@ -118,7 +118,6 @@ function Stops({ trace, freezesShown }: { trace: Trace; freezesShown: boolean })
                 : p.reason === "swap_unresolved" ? "Swap not followed" : p.reason.replaceAll("_", " ");
           return (
             <li key={p.address} data-tone={t}>
-              <span className={styles.dot} aria-hidden="true" />
               <span className="mono">{n?.label ?? shortAddr(p.address)}</span>
               <span className={styles.status}>{status}</span>
               <span className={styles.amt}>{usdt(Math.round(held(p)))}</span>

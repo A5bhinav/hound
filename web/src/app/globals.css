@@ -1,41 +1,49 @@
 :root {
-  /* Hound "money flow" theme (dark). Every module reads these tokens; print switches to the light set below. */
-  --fog: #0b121c;        /* page */
-  --paper: #121c2a;      /* panels, cards */
-  --paper-2: #182536;    /* raised: drawers, inputs, buttons */
-  --ink: #e8eef5;        /* text */
-  --ink-2: #a3b3c6;      /* secondary text (7:1 on panels) */
-  --ink-3: #6f8196;      /* quiet labels */
-  --rule: #213047;
-  --rule-2: #2c3e58;
+  /* Hound: light, evidence-first. Colour comes from the assets themselves and only marks meaning. */
+  --fog: #f4f4f1;        /* page: tinted off-white, never pure white */
+  --paper: #fbfbf9;      /* the one raised surface: the trace canvas, inputs */
+  --paper-2: #ecede8;    /* hover, drawers */
+  --ink: #161b22;        /* text, primary actions (15.7:1 on page) */
+  --ink-2: #474f5c;      /* secondary text (7.5:1) */
+  --ink-3: #5f6774;      /* quiet labels (5.2:1) */
+  --rule: #dcddd6;
+  --rule-2: #c6c8c0;
 
-  /* Money and outcomes. Colour carries meaning, nothing else does. */
-  --eth: #9b8cff;        /* the victim's ETH sends */
-  --trace: #5b9dff;      /* USDT moving, links, primary */
-  --exchange: #ff8a65;   /* reached an exchange: request ready */
-  --hold: #ffc94d;       /* holding, freezable */
-  --hold-wash: rgb(255 201 77 / 0.13);
-  --dead: #5b6b80;
-  --ice: #4cc9f0;        /* Tether froze it */
-  --ice-wash: rgb(76 201 240 / 0.14);
-  --ice-deep: #0f3a4a;
-  --ice-ink: #9fe3f7;
-  --on-ice: #062030;
-  --on-trace: #06101c;
-  --ok: #3ddc97;
-  --ok-wash: rgb(61 220 151 / 0.13);
-  --bad: #ff6b5b;
-  --bad-wash: rgb(255 107 91 / 0.13);
-  --white: #ffffff;
+  --trace: #13795b;      /* USDT, the money we follow: Tether's green, darkened to 4.9:1 */
+  --eth: #5263b8;        /* the victim's ETH, before the swap */
+  --exchange: #a8481a;   /* reached an exchange: request ready */
+  --hold: #8a6100;       /* holding, freezable */
+  --hold-wash: #f3ead2;
+  --dead: #8b929c;
+  --ice: #2b5b84;        /* Tether froze it (drawn with a seal hatch in the trace) */
+  --ice-wash: #e2eaf1;
+  --ice-deep: #2b5b84;
+  --ice-ink: #1f4566;
+  --on-ice: #ffffff;
+  --on-trace: #ffffff;
+  --ok: #1e6e45;
+  --ok-wash: #e1efe6;
+  --bad: #a3271b;
+  --bad-wash: #f6e3e0;
+  --white: #fbfbf9;
 
   --font-d: var(--font-display), system-ui, sans-serif;
   --font-b: var(--font-body), system-ui, sans-serif;
   --font-m: var(--font-mono), ui-monospace, Consolas, monospace;
-  color-scheme: dark;
+  --radius: 6px;
+  color-scheme: light;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* One corner radius for every control, so nothing looks stitched together. */
+button,
+input,
+select,
+textarea {
+  border-radius: var(--radius);
 }
 
 html,
@@ -139,7 +147,8 @@ h2 {
   margin: 3rem auto;
   padding: 1.25rem 1.5rem;
   background: var(--paper);
-  border-left: 4px solid var(--exchange);
+  border: 1px solid var(--bad);
+  border-radius: 8px;
 }
 
 .api-error p {
@@ -147,26 +156,6 @@ h2 {
 }
 
 @media print {
-  :root {
-    --fog: #ffffff;
-    --paper: #ffffff;
-    --paper-2: #f4f6f8;
-    --ink: #111418;
-    --ink-2: #44505c;
-    --ink-3: #6b7682;
-    --rule: #d3d9df;
-    --rule-2: #c3cad2;
-    --trace: #1f4f86;
-    --eth: #5b46c9;
-    --exchange: #b8322a;
-    --hold: #8a5a00;
-    --ice: #1f7a8c;
-    --ice-ink: #145766;
-    --ice-wash: #dcedf1;
-    --ok: #1e7a4c;
-    --bad: #b8322a;
-    color-scheme: light;
-  }
   html,
   body {
     background: #ffffff;

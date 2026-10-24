@@ -43,7 +43,7 @@
 .notice {
   padding: 0.6rem 0.8rem;
   background: var(--hold-wash);
-  border-left: 3px solid var(--hold);
+  border-radius: var(--radius);
   font-size: 0.9rem;
 }
 
@@ -59,7 +59,7 @@
   padding: 1.25rem 1.5rem;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-top: 4px solid var(--trace);
+  border-radius: 8px;
 }
 
 .steps {

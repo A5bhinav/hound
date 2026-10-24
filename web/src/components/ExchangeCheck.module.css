@@ -8,8 +8,7 @@
   margin: 0 auto;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  box-shadow: 0 12px 36px rgb(0 0 0 / 0.35);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -20,8 +19,8 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.85rem 1.25rem;
-  background: var(--paper-2);
-  color: #ffffff;
+  background: #1d2430; /* the mock exchange is a different product: its own dark header */
+  color: #f4f4f1;
 }
 
 .exName {
@@ -70,9 +69,9 @@
   font: 600 1rem var(--font-b);
   padding: 0.75rem;
   border: 0;
-  border-radius: 6px;
-  background: var(--paper-2);
-  color: #ffffff;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
   cursor: pointer;
 }
 
@@ -93,8 +92,8 @@
 .samples button {
   font: inherit;
   padding: 0.25rem 0.55rem;
-  border: 1px dashed var(--rule);
-  border-radius: 999px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
   background: none;
   color: var(--trace);
   cursor: pointer;
@@ -105,7 +104,6 @@
   padding: 1rem 1.1rem;
   border-radius: 8px;
   border: 1px solid var(--rule);
-  border-left-width: 5px;
 }
 
 .result[data-decision="hold"],

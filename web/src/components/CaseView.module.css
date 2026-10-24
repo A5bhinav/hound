@@ -26,7 +26,7 @@
 .note {
   margin: 0;
   padding: 0.6rem 0.9rem;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-size: 0.9rem;
   color: var(--hold);
   background: var(--hold-wash);
@@ -34,7 +34,7 @@
 
 .panel {
   padding: 1.25rem 1.5rem;
-  border-radius: 18px;
+  border-radius: 8px;
   background: var(--paper);
   border: 1px solid var(--rule);
 }
@@ -83,7 +83,7 @@
 
 .stops li {
   display: grid;
-  grid-template-columns: 0.7rem auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 0;
@@ -94,18 +94,6 @@
   border-bottom: 1px solid var(--rule);
 }
 
-.dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 50%;
-  background: var(--trace);
-}
-
-.stops li[data-tone="frozen"] .dot { background: var(--ice); }
-.stops li[data-tone="exchange"] .dot { background: var(--exchange); }
-.stops li[data-tone="hold"] .dot { background: var(--hold); }
-.stops li[data-tone="dead"] .dot { background: var(--dead); }
-
 .status {
   color: var(--ink-2);
   font-size: 0.95rem;
@@ -113,6 +101,12 @@
 
 .stops li[data-tone="frozen"] .status {
   color: var(--ice-ink);
+  font-weight: 600;
+}
+
+.stops li[data-tone="exchange"] .status {
+  color: var(--exchange);
+  font-weight: 600;
 }
 
 .amt {
@@ -124,30 +118,26 @@
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 1.25rem;
 }
 
 .next a {
-  padding: 0.7rem 1.2rem;
-  border-radius: 999px;
-  border: 1px solid var(--rule-2);
   color: var(--ink);
-  text-decoration: none;
   font-weight: 600;
-}
-
-.next a:hover {
-  border-color: var(--ink-2);
+  text-underline-offset: 3px;
 }
 
 .next .primary {
-  background: var(--trace);
-  border-color: var(--trace);
-  color: var(--on-trace);
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
 }
 
 .next .primary:hover {
-  filter: brightness(1.08);
+  background: #2a313b;
 }
 
 .more {

@@ -229,10 +229,10 @@ export default function TraceGraph({
     return { fill: NODE_FILL[victim ? "victim" : t], sub, tone: victim ? "victim" : t };
   };
   const ribbonFill = (r: Ribbon) => {
-    if (r.edge.token === "ETH") return "url(#rb-eth)";
+    if (r.edge.token === "ETH") return "var(--eth)";
     const to = trace.nodes.find((n) => n.address === r.edge.to);
     const t = to ? tone(to, freezesShown) : "trace";
-    return t === "frozen" ? "url(#rb-frozen)" : t === "exchange" ? "url(#rb-exchange)" : t === "hold" ? "url(#rb-hold)" : "url(#rb-usdt)";
+    return t === "frozen" ? "url(#rb-seal)" : t === "exchange" ? "var(--exchange)" : t === "hold" ? "var(--hold)" : "var(--trace)";
   };
   const depthOf = (a: string) => lay.nodes.find((n) => n.address === a)?.depth ?? 0;
   // Where the money stopped (meaningful amounts only): these keep a permanent label.
@@ -290,11 +290,11 @@ export default function TraceGraph({
             aria-label={`Money flow over ${maxHop} hops: ${lay.nodes.length} wallets, ribbon width is victim money`}
           >
             <defs>
-              <linearGradient id="rb-eth" x1="0" x2="1"><stop offset="0" stopColor="var(--eth)" stopOpacity="0.7" /><stop offset="1" stopColor="var(--eth)" stopOpacity="0.4" /></linearGradient>
-              <linearGradient id="rb-usdt" x1="0" x2="1"><stop offset="0" stopColor="var(--trace)" stopOpacity="0.5" /><stop offset="1" stopColor="var(--trace)" stopOpacity="0.32" /></linearGradient>
-              <linearGradient id="rb-frozen" x1="0" x2="1"><stop offset="0" stopColor="var(--trace)" stopOpacity="0.35" /><stop offset="1" stopColor="var(--ice)" stopOpacity="0.8" /></linearGradient>
-              <linearGradient id="rb-exchange" x1="0" x2="1"><stop offset="0" stopColor="var(--trace)" stopOpacity="0.35" /><stop offset="1" stopColor="var(--exchange)" stopOpacity="0.75" /></linearGradient>
-              <linearGradient id="rb-hold" x1="0" x2="1"><stop offset="0" stopColor="var(--trace)" stopOpacity="0.35" /><stop offset="1" stopColor="var(--hold)" stopOpacity="0.75" /></linearGradient>
+              {/* Frozen funds are drawn sealed: a diagonal hatch, like a redacted exhibit. Everything else is a flat fill. */}
+              <pattern id="rb-seal" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <rect width="7" height="7" fill="var(--ice)" fillOpacity="0.22" />
+                <line x1="0" y1="0" x2="0" y2="7" stroke="var(--ice)" strokeWidth="2.6" />
+              </pattern>
             </defs>
 
             {Array.from({ length: maxHop + 1 }, (_, d) => (
@@ -351,7 +351,7 @@ export default function TraceGraph({
                   }}
                 >
                   <rect x={n.x - 6} y={n.y - 6} width={NODE_W + 12} height={n.h + 12} fill="transparent" />
-                  <rect x={n.x} y={n.y} width={NODE_W} height={n.h} rx={4} fill={look.fill} />
+                  <rect x={n.x} y={n.y} width={NODE_W} height={n.h} rx={2} fill={look.tone === "frozen" ? "url(#rb-seal)" : look.fill} stroke={look.tone === "frozen" ? "var(--ice)" : "none"} strokeWidth={1.5} />
                   {showLabel && (
                     <>
                       {/* The victim's label sits above her bar, off the ribbons; every other label to the right of its wallet. */}
