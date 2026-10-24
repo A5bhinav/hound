@@ -191,6 +191,13 @@ def _incomplete(trace):
 
 def _endpoint_rows(trace, fetch_failed=frozenset()):
     nodes = {_norm_addr(n.get("address")): n for n in trace.get("nodes", [])}
+    # a swap_unresolved endpoint holds ETH the engine could not match to USDT: its USDT fields are 0,
+    # the ETH amount is in swaps.unresolved. The row carries it so a packet never prints "0.00 USDT".
+    eth_out = {}
+    for j, u in enumerate((trace.get("swaps") or {}).get("unresolved") or []):
+        a, v = _addr(u.get("address"), f"swaps.unresolved.{j}.address"), _num(u.get("eth_out"), f"swaps.unresolved.{j}.eth_out")
+        if a and v is not None:
+            eth_out[a] = eth_out.get(a, 0.0) + v
     rows = []
     for i, e in enumerate(trace.get("endpoints", [])):
         addr = _addr(e.get("address"), f"endpoints.{i}.address")
@@ -234,6 +241,8 @@ def _endpoint_rows(trace, fetch_failed=frozenset()):
             "balance_usdt": balance,
             "freezable": freezable,
             "exchange_kind": exchange_kind,
+            "token": "ETH" if reason == "swap_unresolved" else "USDT",
+            "eth_amount": round(eth_out[addr], 9) if reason == "swap_unresolved" and addr in eth_out else None,
             "is_frozen": bool(frozen.get("is_frozen")),
             "frozen_at": _iso(frozen.get("frozen_at"), f"nodes[{addr}].frozen_at"),
             "freeze_tx": _tx(frozen.get("freeze_tx"), f"nodes[{addr}].freeze_tx"),

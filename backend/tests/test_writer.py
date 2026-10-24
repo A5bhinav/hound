@@ -922,3 +922,18 @@ def test_inferred_deposit_and_hot_wallet_are_worded_apart():
     hot_line = next(ln for ln in det.splitlines() if ln.startswith(f"- {hot}"))
     assert "exchange label Binance, inferred deposit address" in dep_line
     assert "exchange label Binance, labelled exchange hot wallet" in hot_line
+
+
+def test_swap_unresolved_endpoint_prints_eth_never_zero_usdt():
+    swap = next(e["address"] for e in TRACE["endpoints"] if e["reason"] == "swap_unresolved")
+    facts = build_facts(TRACE, CASE)
+    i, row = next((i, r) for i, r in enumerate(facts["derived"]["endpoints"]) if r["address"] == swap)
+    assert row["token"] == "ETH" and row["eth_amount"] == 0.075531024
+    for audience in ("victim", "detective"):
+        text = write_case(TRACE, CASE, audience)["text"]
+        line = next(ln for ln in text.splitlines() if swap in ln or short_addr(swap) in ln and ln.startswith("- "))
+        assert "0.075531024 ETH" in line and "0.00 USDT" not in line, line
+    with pytest.raises(TemplateError, match="holds ETH"):
+        validate(f"Some went to {{{{derived.endpoints.{i}.address|short}}}} ({{{{derived.endpoints.{i}.victim_funds|usdt}}}}).",
+                 facts)
+    assert writer._fmt_eth(1234.5) == "1,234.5 ETH" and writer._fmt_eth(0.0) == "0 ETH"

@@ -28,7 +28,7 @@ from hound.llm.facts import ACCUSE, LIMIT_REASONS, WriterInputError, build_facts
 log = logging.getLogger("hound.writer")
 
 MODEL = os.environ.get("HOUND_WRITER_MODEL", "claude-opus-5-5")
-FORMATS = ("usdt", "short", "date", "int", "raw")
+FORMATS = ("usdt", "eth", "short", "date", "int", "raw")
 MAX_PARAGRAPHS = 8
 MAX_PARAGRAPH_CHARS = 1200
 CLAUDE_TIMEOUT_S = 20  # per read, inside the overall deadline
@@ -135,13 +135,20 @@ def _fmt_date(v):
     return f"{d:%B} {d.day}, {d.year}"
 
 
+def _fmt_eth(v):
+    if not _finite(v):
+        raise TypeError("eth needs a number")
+    s = f"{v:,.9f}".rstrip("0").rstrip(".")
+    return f"{s if s not in ('', '-0') else '0'} ETH"
+
+
 def _fmt_raw(v):
     if not (isinstance(v, str) or _finite(v)):
         raise TypeError("raw needs a string or a finite number")
     return str(v)
 
 
-_FORMATTERS = {"usdt": _fmt_usdt, "int": _fmt_int, "short": _fmt_short, "date": _fmt_date, "raw": _fmt_raw}
+_FORMATTERS = {"usdt": _fmt_usdt, "eth": _fmt_eth, "int": _fmt_int, "short": _fmt_short, "date": _fmt_date, "raw": _fmt_raw}
 
 
 # ---------------------------------------------------------------- validation
@@ -177,6 +184,11 @@ def validate(template_text, facts, allow_untrusted=False, audience="victim"):
             continue
         if path not in table:
             errors.append(f"placeholder {m.group(0)!r} cites unknown path {path!r}")
+            continue
+        end = re.fullmatch(r"derived\.endpoints\.(\d+)\.(?:victim_funds|victim_inflow)", path)
+        if fmt == "usdt" and end and table.get(f"derived.endpoints.{end.group(1)}.token") != "USDT":
+            errors.append(f"placeholder {m.group(0)!r}: that endpoint holds ETH, not USDT; cite "
+                          f"{{{{derived.endpoints.{end.group(1)}.eth_amount|eth}}}} instead")
             continue
         send = re.fullmatch(r"case\.sends\.(\d+)\.amount", path)
         if fmt == "usdt" and send and table.get(f"case.sends.{send.group(1)}.token") != "USDT":
@@ -285,6 +297,13 @@ _WHERE = {
 }
 
 
+def _endpoint_amount(p, r):
+    """An endpoint's amount in its own token: a swap_unresolved row is ETH, never '0.00 USDT'."""
+    if r["token"] == "USDT":
+        return f"{{{{{p}.victim_funds|usdt}}}}"
+    return f"{{{{{p}.eth_amount|eth}}}}" if r["eth_amount"] is not None else "some ETH"
+
+
 def _exchange_where(facts, i, r):
     """A listed hot wallet and a deposit address inferred from a sweep pattern are worded apart.
     The exchange name is a sanitized label, cited from case.untrusted (code-written template only)."""
@@ -383,7 +402,7 @@ def fallback_paragraphs(facts, audience):
                 where = _exchange_where(facts, i, r)
             if r["is_frozen"] and r["reason"] == "holding":
                 where = "ended up in a wallet"
-            line = f"- {{{{{p}.victim_funds|usdt}}}} {where}: {{{{{p}.address|short}}}}"
+            line = f"- {_endpoint_amount(p, r)} {where}: {{{{{p}.address|short}}}}"
             if r["is_frozen"] and r["frozen_at"]:
                 line += f". Tether froze this wallet on {{{{{p}.frozen_at|date}}}}"
             lines.append(line + ".")
@@ -437,8 +456,12 @@ def _endpoint_section(facts):
             lines.append(f"- {{{{{p}.victim_funds|usdt}}}} victim funds sent on from {{{{{p}.address|raw}}}} {how}, "
                          f"not followed (reason {{{{{p}.reason|raw}}}}). Not held at that wallet.")
             continue
-        line = (f"- {{{{{p}.address|raw}}}}: {{{{{p}.victim_funds|usdt}}}} victim funds attributed, "
-                f"{{{{{p}.victim_inflow|usdt}}}} victim inflow, reason {{{{{p}.reason|raw}}}}")
+        if r["token"] != "USDT":
+            line = (f"- {{{{{p}.address|raw}}}}: {_endpoint_amount(p, r)} of victim ETH swapped with no matching "
+                    f"USDT leg, reason {{{{{p}.reason|raw}}}}")
+        else:
+            line = (f"- {{{{{p}.address|raw}}}}: {{{{{p}.victim_funds|usdt}}}} victim funds attributed, "
+                    f"{{{{{p}.victim_inflow|usdt}}}} victim inflow, reason {{{{{p}.reason|raw}}}}")
         # A replay balance is a placeholder (0.00 next to large attributed funds reads as an error).
         if r["balance_usdt"] is not None and (r["balance_usdt"] > 0 or not replay):
             line += f", balance {{{{{p}.balance_usdt|usdt}}}}"
@@ -503,7 +526,7 @@ _SYSTEM = """You write the narrative part of a case packet about stolen USDT tha
 Output JSON {"paragraphs": [..]}, at most %d short paragraphs.
 
 HARD RULES (a validator rejects your draft otherwise):
-- Never type a number, digit, date, month name, amount, address or hash. Every one of them must be a placeholder {{path|fmt}} with a path from FACTS. Formats: usdt (adds the word USDT, so do not type USDT after it), short (shortens a full address: use it only on a path ending in .address, .from, .to or .tx_hash), date (only on a path whose value is an ISO time), int (whole numbers), raw (copies a string exactly).
+- Never type a number, digit, date, month name, amount, address or hash. Every one of them must be a placeholder {{path|fmt}} with a path from FACTS. Formats: usdt (adds the word USDT, so do not type USDT after it), eth (adds the word ETH; use it on derived.endpoints.N.eth_amount, never usdt on an endpoint whose token is ETH), short (shortens a full address: use it only on a path ending in .address, .from, .to or .tx_hash), date (only on a path whose value is an ISO time), int (whole numbers), raw (copies a string exactly).
 - Never write these number words anywhere, not even inside a phrase like "one of" or "the two wallets": %s. Use "a", "an", "a single", "both", "each", "some", "most", "many", "a few" or a {{path|int}} placeholder instead.
 - Never promise or suggest recovery, return or refund. Banned wording includes: "get ... back" in any form ("get it back", "get your money back", "get the funds back"), "come back", "can be recovered", "will be returned", "made whole", "guarantee"; for the victim do not write refund, returned, recovered, restore, reclaim, repay or "paid back" at all. Never use the words %s in a sentence that cites an address, wallet, endpoint or send, or in the sentence just before one that does.
 - Do not write links, domains (anything like word.word), emails or phone numbers except {{const.contacts.ic3|raw}} and {{const.contacts.tether|raw}}. Do not start a sentence with "May".
