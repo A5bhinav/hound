@@ -29,6 +29,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, Response, Upl
 from starlette.concurrency import run_in_threadpool
 
 from hound.chain import CacheMiss, ChainAPIError
+from hound.intake import sms
 
 log = logging.getLogger("hound.intake")
 router = APIRouter()
@@ -180,8 +181,43 @@ async def voice_story(request: Request):
     log.info("intake voice tool call: body keys %s", sorted(body.keys()))
     s = open_session(_tool_arg(body, "story"), _tool_arg(body, "victim"))
     spoken = " ".join(s["case_code"])  # "K 7 M 2 P Q" reads better than "K7M2PQ"
-    return {"case_code": s["case_code"], "upload_url": s["upload_url"],
-            "say": f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, where you can add a picture of the payment screen or type in the details."}
+    # Cartesia fills caller_number from system__caller_id (empty in browser test calls).
+    caller = _tool_arg(body, "caller_number") or request.headers.get("x-caller-id")
+    texted = await run_in_threadpool(sms.send_link, caller, s["upload_url"], s["case_code"])
+    if texted:
+        say = (f"I have opened case {spoken}. I just sent a text message with a link to the phone you are calling from. "
+               "Stay on the line and I will walk you through it.")
+    else:
+        say = (f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, "
+               "where you can add a picture of the payment screen or type in the details.")
+    return {"case_code": s["case_code"], "upload_url": s["upload_url"], "texted": texted, "say": say}
+
+
+_STATUS_SAY = {
+    "awaiting_upload": "The picture has not arrived yet.",
+    "validating": "Your picture just arrived. I am checking it now, this takes a few seconds.",
+    "validated": "Your payment is confirmed on the blockchain. Your case is ready for review.",
+}
+
+
+@router.post("/intake/voice/status")
+async def voice_status(request: Request):
+    """Cartesia agent tool, while walking the caller through the upload page: has their picture arrived?
+    Body {case_code}. Returns status + a 'say' line; never the story, the number or any address."""
+    if not _authorised(request):
+        raise HTTPException(403, "intake token required")
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    code = str(_tool_arg(body if isinstance(body, dict) else {}, "case_code") or "").replace(" ", "").upper()
+    s = SESSIONS.get(code)
+    if not s:
+        log.warning("intake voice status: unknown case code %r", code)
+        return {"status": "unknown", "say": "I could not find that case code. Please read me the code again."}
+    st = s["status"]
+    say = f"We need another picture. {s.get('message') or ''}".strip() if st == "needs_retake" else _STATUS_SAY.get(st, "")
+    return {"status": st, "say": say}
 
 
 @router.post("/intake/start")

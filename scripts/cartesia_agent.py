@@ -27,8 +27,13 @@ VERSION = "2026-08-14"
 
 INSTRUCTIONS = """You are Hound, a free phone service that helps people who were scammed out of cryptocurrency.
 You never ask for money, passwords, seed phrases, recovery phrases or private keys. If the caller offers one, stop them.
-
 Speak slowly and kindly, one short question at a time. Many callers are older and upset.
+
+Listening comes first. Callers pause in the middle of a sentence to think or to find a word. Let them finish.
+When a caller's answer could go on (it trails off, or names one thing that might be followed by more), do not
+move on: say only "mm-hm" or "take your time" and wait. Never start your next question while they may still be
+talking. Keep your own turns short, one or two sentences. If they ask for a moment, give it to them.
+
 First ask what you should call them, and use only their first name. Use that first name naturally
 while you talk (not in every sentence), for example "Thank you, Maria." If they give a full name,
 use just the first name. If they would rather not say, call them "friend" and carry on.
@@ -42,9 +47,22 @@ Ask their age band only if they bring it up (60+ or unknown). Never ask for a la
 
 As soon as you have these, call the open_case tool once. Then tell the caller, starting with their first name,
 that their case is open, and spell the case code from the tool result letter by letter, slowly, twice.
-Hound does not send text messages: never say you are texting, emailing or sending them anything, even if the
-tool result says so. Tell them the next step is a short web page where they send a picture of the payment
-screen or type the transaction details, and that the Hound team will help them open it with this case code.
+Then read the tool result's "say" line. Only say you sent a text message if the tool result has "texted": true.
+
+If "texted" is true, stay on the line and walk them through the web page, one step at a time, waiting for them
+to say they are done before giving the next step:
+1. Open your text messages. You will see a message from Hound with a link. Tap the link.
+2. The page says "Send us a picture of your payment". Keep this call going while you do this.
+3. Open the app you used to send the money, find that payment, and take a screenshot of it.
+4. Go back to the Hound page and press the big button, "Choose the picture of my payment", then choose that screenshot.
+5. If they cannot take a screenshot, tell them to press "I can't take a picture. Let me type it instead"
+   and type the transaction details, then press send.
+After they say they sent it, call the check_upload tool with the case code and read its "say" line. If the picture
+has not arrived, or is still being checked, wait about ten seconds and call check_upload again, up to four times.
+If it says another picture is needed, read the reason and help them try again. If they get stuck on a step,
+explain that step again in simpler words; never give them a web address to type.
+
+If "texted" is false, tell them the Hound team will help them open the page with their case code.
 
 Never promise the money will come back. Say the case is reported, not proven, and that Hound sends
 the evidence to the exchange and to the FBI's IC3. End with their first name and: "Keep this case code." Then end the call."""
@@ -127,6 +145,8 @@ def tool_body(url: str, token: str) -> dict:
                 "type": "secret", "secret_value": token,
                 "secret_description": "Hound intake token (shared with the backend HOUND_INTAKE_TOKEN)"}},
             "request_body_schema": {"type": "object", "required": ["story", "victim"], "properties": {
+                # Filled by Cartesia from the call itself, so the link can be texted; the agent never asks for it.
+                "caller_number": {"type": "string", "dynamic_variable": "system__caller_id"},
                 "story": {"type": "object", "description": "What happened", "required": ["summary"], "properties": {
                     "scam_app": s("App or website they invested through"),
                     "platform": s("How the scammer first contacted them, e.g. text message, WhatsApp, dating app"),
@@ -142,7 +162,24 @@ def tool_body(url: str, token: str) -> dict:
     }
 
 
-def agent_body(model: str, voice: str, tool_id: str) -> dict:
+def status_tool_body(url: str, token: str) -> dict:
+    return {
+        "type": "webhook", "name": "check_upload",
+        "description": "While walking the caller through the upload page: check whether their payment picture or "
+                       "typed details arrived and were confirmed. Returns status and a 'say' line to read to the caller.",
+        "pre_tool_speech": "auto", "execution_mode": "immediate", "response_timeout_secs": 10,
+        "api_schema": {
+            "url": url, "method": "POST",
+            "request_headers": {"X-Hound-Intake-Token": {
+                "type": "secret", "secret_value": token,
+                "secret_description": "Hound intake token (shared with the backend HOUND_INTAKE_TOKEN)"}},
+            "request_body_schema": {"type": "object", "required": ["case_code"], "properties": {
+                "case_code": {"type": "string", "description": "The 6-character case code from open_case, no spaces"}}},
+        },
+    }
+
+
+def agent_body(model: str, voice: str, tool_ids: list[str]) -> dict:
     return {"name": "Hound intake", "description": "Free scam-victim intake line (Cal Hacks 13.0)", "config": {
         "instructions": INSTRUCTIONS, "initial_message": INITIAL,
         "language": {"primary": "en"},
@@ -151,8 +188,10 @@ def agent_body(model: str, voice: str, tool_id: str) -> dict:
                                                                      "Kraken", "USDT", "Tether", "WhatsApp"]},
                   "output": {"voice_id": voice, "speed": 0.9, "emotion": "calm"}},
         "turn": {"inactivity_end_call_secs": 120, "inactivity_check_in_secs": 12},
-        "tools": [{"id": tool_id}],
-        "system_tools": {"end_call": {"description": None, "pre_tool_speech": "auto"}},
+        "tools": [{"id": t} for t in tool_ids],
+        # skip_turn: when the caller asks for a moment, stay quiet instead of talking over them.
+        "system_tools": {"end_call": {"description": None, "pre_tool_speech": "auto"},
+                         "skip_turn": {"wait_timeout_secs": 30}},
         "timezone": "America/Los_Angeles",
     }}
 
@@ -175,11 +214,21 @@ def main(argv: list[str]) -> int:
         save_env(CARTESIA_TOOL_ID=tool_id)
     print(f"tool open_case -> {url} ({tool_id})")
 
+    status_url = url.rsplit("/", 1)[0] + "/status"  # .../intake/voice/story -> .../intake/voice/status
+    if env.get("CARTESIA_STATUS_TOOL_ID"):
+        patch = {k: v for k, v in status_tool_body(status_url, token).items() if k != "type"}
+        call(key, "PATCH", f"/v1/agents/tools/{env['CARTESIA_STATUS_TOOL_ID']}", patch)
+        status_id = env["CARTESIA_STATUS_TOOL_ID"]
+    else:
+        status_id = call(key, "POST", "/v1/agents/tools", status_tool_body(status_url, token))["id"]
+        save_env(CARTESIA_STATUS_TOOL_ID=status_id)
+    print(f"tool check_upload -> {status_url} ({status_id})")
+
     if env.get("CARTESIA_AGENT_ID"):
-        call(key, "PATCH", f"/v1/agents/{env['CARTESIA_AGENT_ID']}", agent_body(model, voice, tool_id))
+        call(key, "PATCH", f"/v1/agents/{env['CARTESIA_AGENT_ID']}", agent_body(model, voice, [tool_id, status_id]))
         agent_id = env["CARTESIA_AGENT_ID"]
     else:
-        agent_id = call(key, "POST", "/v1/agents", agent_body(model, voice, tool_id))["id"]
+        agent_id = call(key, "POST", "/v1/agents", agent_body(model, voice, [tool_id, status_id]))["id"]
     save_env(CARTESIA_TOOL_ID=tool_id, CARTESIA_AGENT_ID=agent_id)
     print(f"agent {agent_id}")
 

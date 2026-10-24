@@ -184,6 +184,63 @@ def test_voice_say_line_never_promises_a_text_message():
     assert "text" not in say.lower().replace("type in the details", "")
 
 
+def _twilio_env(monkeypatch):
+    for k, v in (("TWILIO_ACCOUNT_SID", "AC1"), ("TWILIO_AUTH_TOKEN", "t"), ("TWILIO_FROM_NUMBER", "+15550001111")):
+        monkeypatch.setenv(k, v)
+
+
+def test_voice_texts_the_link_through_twilio(monkeypatch):
+    _twilio_env(monkeypatch)
+    sent = []
+
+    class Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"status": "queued"}'
+
+    def fake_urlopen(req, timeout):
+        sent.append(req)
+        return Resp()
+
+    monkeypatch.setattr(intake.sms.urllib.request, "urlopen", fake_urlopen)
+    r = client.post("/intake/voice/story", json={"story": {}, "victim": {}, "caller_number": "(415) 555-0134"}).json()
+    assert r["texted"] is True and "walk you through" in r["say"]
+    form = sent[0].data.decode()
+    assert "To=%2B14155550134" in form and r["case_code"] in form and sent[0].full_url.endswith("/AC1/Messages.json")
+    # the number is never kept in the session the web reads
+    assert "555" not in str(client.get("/intake/active").json())
+
+
+def test_voice_falls_back_to_spoken_line_without_a_number_or_on_failure(monkeypatch):
+    _twilio_env(monkeypatch)
+
+    def refuse(req, timeout):
+        raise intake.sms.urllib.error.HTTPError(req.full_url, 400, "bad", {}, io.BytesIO(b'{"code": 21211}'))
+
+    monkeypatch.setattr(intake.sms.urllib.request, "urlopen", refuse)
+    for body in ({"story": {}, "victim": {}}, {"story": {}, "victim": {}, "caller_number": "+14155550134"}):
+        r = client.post("/intake/voice/story", json=body).json()
+        assert r["texted"] is False and "Hound team will help" in r["say"]
+
+
+def test_voice_status_tool_reports_upload_progress():
+    code = client.post("/intake/voice/story", json={"story": {}, "victim": {}}).json()["case_code"]
+    r = client.post("/intake/voice/status", json={"case_code": " ".join(code)}).json()
+    assert r["status"] == "awaiting_upload" and "not arrived" in r["say"]
+    intake.SESSIONS[code].update(status="needs_retake", message="We need the transaction hash.")
+    assert "another picture" in client.post("/intake/voice/status", json={"args": {"case_code": code}}).json()["say"]
+    assert client.post("/intake/voice/status", json={"case_code": "ZZZZZZ"}).json()["status"] == "unknown"
+    remote = TestClient(api.app, client=("203.0.113.9", 1))
+    assert remote.post("/intake/voice/status", json={"case_code": code}).status_code == 403
+
+
+def test_sms_normalize():
+    assert intake.sms.normalize("+1 415-555-0134") == "+14155550134"
+    assert intake.sms.normalize("4155550134") == "+14155550134"
+    assert intake.sms.normalize("+353 87 123 4567") == "+353871234567"
+    assert intake.sms.normalize("anonymous") is None and intake.sms.normalize("") is None
+
+
 def test_demo_reset_clears_intake_sessions():
     code = client.post("/intake/start", json={}).json()["case_code"]
     assert client.get("/intake/active").status_code == 200
