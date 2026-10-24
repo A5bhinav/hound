@@ -179,7 +179,7 @@ function Flows({ title, side, edges, chain }: { title: string; side: "from" | "t
       <p className="eyebrow">{title}</p>
       <ul className={styles.flows}>
         {edges.map((e) => (
-          <li key={`${e.from}${e.to}`}>
+          <li key={`${e.from}->${e.to}:${e.token}`}>
             <span>
               {tok(e.attributed_amount, e.token)} {side} <span className="mono">{shortAddr(e[side])}</span>
             </span>

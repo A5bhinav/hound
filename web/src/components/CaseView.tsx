@@ -41,14 +41,15 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
               <>
                 <OtherPayers trace={state.trace} />
                 <AuditLog log={state.trace.audit_log} />
-                <nav className={styles.next} aria-label="Next steps">
-                  <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
-                    Open the detective packet
-                  </Link>
-                  <Link href="/exchange">Check an address at the exchange</Link>
-                </nav>
               </>
             )}
+            {/* Always there once the trace is done: the demo comes back here to open the packet (H8). */}
+            <nav className={styles.next} aria-label="Next steps">
+              <Link href={`/cases/${encodeURIComponent(c.case_id)}/packet`} className={styles.primary}>
+                Open the detective packet
+              </Link>
+              <Link href="/exchange">Check an address at the exchange</Link>
+            </nav>
           </div>
         )}
         {state.phase === "running" && <Progress log={state.log} startedAt={state.startedAt} />}

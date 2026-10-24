@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Core, ElementDefinition } from "cytoscape";
 import type { Trace, TraceNode } from "@/lib/types";
 import { KIND_LABEL, daysBetween, pct, shortAddr, tok0, tone } from "@/lib/format";
+import { readFreezesShown, writeFreezesShown } from "@/lib/useTrace";
 import NodeDetail from "./NodeDetail";
 import styles from "./TraceGraph.module.css";
 
@@ -90,11 +91,13 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
     els.push({
       group: "edges",
       data: {
-        id: `${e.from}->${e.to}`,
+        // Token in the id: an ETH and a USDT flow between the same pair are two edges (M9).
+        id: `${e.from}->${e.to}:${e.token}`,
         source: e.from,
         target: e.to,
         hop: e.hop,
-        text: `${tok0(e.attributed_amount, e.token)}\n${pct(e.confidence)} · ${e.method}`,
+        // Amount and confidence only; the method lives in the detail drawer.
+        text: `${tok0(e.attributed_amount, e.token)}\n${pct(e.confidence)}`,
         // Thickness compares value, so non-USDT flows are converted at the trace's own swap rate.
         width: 1.5 + Math.log10(Math.max(e.attributed_amount * toUsdt(e.token), 10)) * 1.6,
       },
@@ -116,6 +119,23 @@ function fitReadable(cy: Core) {
     cy.panBy({ x: -(cy.width() / 2) + 170, y: 0 });
   }
 }
+
+/** Frame what the room should look at (frozen wallets, the exchange) with the flows around it.
+ *  If the whole trail still reads at zoom 0.6 or more, show the whole trail instead. */
+function fitFocus(cy: Core, ids: string[], animate: boolean) {
+  const pad = 60;
+  const all = cy.elements();
+  const bb = all.boundingBox();
+  const wholeZoom = Math.min((cy.width() - 2 * pad) / bb.w, (cy.height() - 2 * pad) / bb.h);
+  let focus = cy.collection();
+  for (const id of ids) focus = focus.union(cy.getElementById(id));
+  const eles = wholeZoom >= 0.6 || focus.empty() ? all : focus.closedNeighborhood();
+  cy.stop(true, false);
+  if (animate) cy.animate({ fit: { eles, padding: pad }, duration: 600, easing: "ease-in-out-cubic" });
+  else cy.fit(eles, pad);
+}
+
+const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const swapAddresses = (trace: Trace) => new Set((trace.swaps?.resolved ?? []).map((s) => s.address));
 
@@ -149,6 +169,12 @@ export default function TraceGraph({
   const hideFreezes = trace.method.freeze_visibility === "hidden";
   const [freezesShown, setFreezesShown] = useState(!hideFreezes);
   const frozen = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen && n.frozen.frozen_at), [trace]);
+  const frozenIds = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen).map((n) => n.address), [trace]);
+  // Live case: nothing to reveal, so the last hop frames the exchange (and any frozen wallet) instead.
+  const liveFocus = useMemo(
+    () => [...new Set([...trace.endpoints.filter((p) => p.reason === "exchange").map((p) => p.address), ...frozenIds])],
+    [trace, frozenIds],
+  );
 
   // Replay: freezes stay hidden until the presenter clicks "Reveal what Tether did" after the last hop (§0, AUDIT N1).
 
@@ -181,15 +207,26 @@ export default function TraceGraph({
 
   const play = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
-    if (hideFreezes) setFreezesShown(false);
+    if (hideFreezes) {
+      setFreezesShown(false);
+      writeFreezesShown(trace.trace_id, false);
+    }
     reveal(0);
     let hop = 0;
     timer.current = setInterval(() => {
       hop += 1;
       reveal(hop);
-      if (hop >= maxHop && timer.current) clearInterval(timer.current);
+      if (hop < maxHop) return;
+      if (timer.current) clearInterval(timer.current);
+      if (!hideFreezes && cyRef.current) fitFocus(cyRef.current, liveFocus, true);
     }, STEP_MS);
-  }, [maxHop, reveal, hideFreezes]);
+  }, [maxHop, reveal, hideFreezes, trace, liveFocus]);
+
+  const revealFreezes = useCallback(() => {
+    setFreezesShown(true);
+    writeFreezesShown(trace.trace_id, true);
+    if (cyRef.current) fitFocus(cyRef.current, frozenIds, !prefersReducedMotion());
+  }, [trace, frozenIds]);
 
   const showAll = useCallback(() => {
     // Stop a running replay first, or its next tick would hide later hops again.
@@ -213,7 +250,6 @@ export default function TraceGraph({
         layout: { name: "preset", padding: 40 },
         minZoom: 0.5,
         maxZoom: 2.5,
-        wheelSensitivity: 0.2,
         style: [
           {
             selector: "node",
@@ -221,8 +257,6 @@ export default function TraceGraph({
               shape: "round-rectangle",
               width: 232,
               height: 72,
-              "background-color": "data(fill)",
-              "border-color": "data(color)",
               "border-width": 2.5,
               label: "data(text)",
               "text-wrap": "wrap",
@@ -230,11 +264,15 @@ export default function TraceGraph({
               "font-family": mono,
               "font-size": 16,
               "font-weight": 600,
-              color: "data(ink)",
               "line-height": 1.35,
               "transition-property": "opacity, background-color, border-color, color",
               "transition-duration": 600,
             },
+          },
+          // Colour mappings only where the data exists: column headers have none, and Cytoscape warns on them.
+          {
+            selector: "node[fill]",
+            style: { "background-color": "data(fill)", "border-color": "data(color)", color: "data(ink)" },
           },
           { selector: "node.dead", style: { "border-style": "dashed" } },
           { selector: "node:selected", style: { "border-width": 4, "overlay-opacity": 0 } },
@@ -289,8 +327,12 @@ export default function TraceGraph({
       cyRef.current = cy;
       fitReadable(cy);
 
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) reveal(maxHop);
+      // Coming back after the reveal (e.g. from the packet): show the revealed trail at once, no replay (H8).
+      if (hideFreezes && readFreezesShown(trace.trace_id)) {
+        reveal(maxHop);
+        setFreezesShown(true);
+        fitFocus(cy, frozenIds, false);
+      } else if (prefersReducedMotion()) reveal(maxHop);
       else play();
     })().catch((err) => {
       console.error("[hound-web] trace graph failed to render:", err);
@@ -302,7 +344,7 @@ export default function TraceGraph({
       cyRef.current?.destroy();
       cyRef.current = null;
     };
-  }, [trace, maxHop, play, reveal, hideFreezes]);
+  }, [trace, maxHop, play, reveal, hideFreezes, frozenIds]);
 
   const node = selected ? trace.nodes.find((n) => n.address === selected) ?? null : null;
 
@@ -324,7 +366,7 @@ export default function TraceGraph({
           <button
             type="button"
             className={styles.reveal}
-            onClick={() => setFreezesShown(true)}
+            onClick={revealFreezes}
             disabled={shownHop < maxHop}
             title={shownHop < maxHop ? "Available once the last hop has unfolded" : undefined}
           >

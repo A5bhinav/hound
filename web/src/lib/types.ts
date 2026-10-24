@@ -166,7 +166,8 @@ export interface AuditEntry {
 export interface IntakeSession {
   case_code: string;
   /** Public short link to the upload page (/c/{case_code}); shown as text and QR. */
-  upload_url: string;
+  /** null for viewers beyond localhost: only the operator's screen shows the upload link. */
+  upload_url: string | null;
   status: "story" | "awaiting_upload" | "validating" | "validated" | "needs_retake";
   story?: { scam_app?: string | null; platform?: string | null; first_contact?: string | null; summary?: string | null } | null;
   victim?: { alias?: string; age_band?: string; exchange_used?: string | null } | null;
@@ -174,6 +175,8 @@ export interface IntakeSession {
   case_id?: string | null;
   /** Why a retake is needed, in plain words. */
   message?: string | null;
+  /** Set once the operator approved the case, so it can feed exchange holds. */
+  approved?: boolean | null;
 }
 
 export type IntakeUploadResult =

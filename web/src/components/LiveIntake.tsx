@@ -171,11 +171,53 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
                 Trace this case →
               </Link>
             )}
+            {feed.k === "live" && s.status === "validated" && s.case_id && s.upload_url && (
+              // Operator only (upload_url is null beyond localhost): a validated send proves the payment
+              // exists, not who made it, so a human approves before the case can cause exchange holds.
+              <Approve code={s.case_code} caseId={s.case_id} approved={!!s.approved} />
+            )}
           </section>
-          {s.status !== "story" && <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />}
+          {s.status !== "story" &&
+            (s.upload_url ? (
+              <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />
+            ) : (
+              <p className={styles.notice}>The upload link is shown on the operator&apos;s screen.</p>
+            ))}
         </div>
       )}
     </div>
+  );
+}
+
+function Approve({ code, caseId, approved }: { code: string; caseId: string; approved: boolean }) {
+  const [st, setSt] = useState<{ k: "idle" | "busy" | "done" } | { k: "error"; message: string }>({ k: approved ? "done" : "idle" });
+  if (approved || st.k === "done") return <p className={styles.summary}>Approved: this case can now trigger exchange holds.</p>;
+  const go = async () => {
+    setSt({ k: "busy" });
+    try {
+      const res = await fetch(`/api/intake/${encodeURIComponent(code)}/approve`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ case_id: caseId }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.error(`[hound-web] approve ${code} -> ${res.status}: ${text.slice(0, 300)}`);
+        return setSt({ k: "error", message: res.status === 403 ? "Only the operator's laptop can approve." : `Approve failed (${res.status}).` });
+      }
+      setSt({ k: "done" });
+    } catch (err) {
+      console.error(`[hound-web] approve ${code} failed:`, err);
+      setSt({ k: "error", message: "Couldn't reach the backend." });
+    }
+  };
+  return (
+    <>
+      <button type="button" className={styles.go} onClick={go} disabled={st.k === "busy"}>
+        {st.k === "busy" ? "Approving…" : "Approve: I reviewed this send"}
+      </button>
+      {st.k === "error" && <p className={styles.notice} role="alert">{st.message}</p>}
+    </>
   );
 }
 

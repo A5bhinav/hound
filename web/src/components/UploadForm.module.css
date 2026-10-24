@@ -5,6 +5,8 @@
   gap: 1.25rem;
   font-size: 1.3rem;
   line-height: 1.5;
+  /* A 66-character tx hash must wrap on a 390 px phone instead of widening the page. */
+  overflow-wrap: anywhere;
 }
 
 .steps {

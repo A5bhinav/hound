@@ -76,13 +76,17 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
         </header>
 
         <section className={styles.text}>
-          {packet.text.split(/\n\n+/).map((para, i) => (
-            <Para key={i} text={para} live={!trace.replay} />
-          ))}
+          {packet.text === null ? (
+            <p>The written summary of a live case is shown only on the operator&apos;s screen, because it quotes the victim&apos;s report.</p>
+          ) : (
+            packet.text.split(/\n\n+/).map((para, i) => <Para key={i} text={para} live={!trace.replay} />)
+          )}
           <p className={styles.verify}>
-            {packet.citations_verified
-              ? `Every number above was checked against the trace (${packet.cited.length} cited fields).`
-              : "Citations not verified against the trace."}
+            {packet.text === null
+              ? ""
+              : verified(packet.citations_verified)
+                ? `Every number above was checked against the trace (${packet.cited.length} cited fields).`
+                : "Citations not verified against the trace."}
             {packet.source ? ` Written by: ${packet.source}.` : ""}
           </p>
         </section>
@@ -225,7 +229,7 @@ function Tables({ trace }: { trace: Trace }) {
             </thead>
             <tbody>
               {edges.map((e) => (
-                <tr key={`${e.from}${e.to}`}>
+                <tr key={`${e.from}->${e.to}:${e.token}`}>
                   <td>{e.hop}</td>
                   <td className="mono">
                     <Addr v={e.from} live={!trace.replay} />
@@ -236,11 +240,12 @@ function Tables({ trace }: { trace: Trace }) {
                     {pct(e.confidence)} · {e.method}
                   </td>
                   <td className="mono">
-                    {e.tx_hashes.map((h) => (
+                    {e.tx_hashes.slice(0, TX_SHOWN).map((h) => (
                       <span key={h} className={styles.tx}>
                         <Addr v={h} live={!trace.replay} />
                       </span>
                     ))}
+                    {e.tx_hashes.length > TX_SHOWN && <span className={styles.tx}>+{e.tx_hashes.length - TX_SHOWN} more in the trace</span>}
                   </td>
                 </tr>
               ))}
@@ -250,4 +255,13 @@ function Tables({ trace }: { trace: Trace }) {
       </section>
     </>
   );
+}
+
+/** The writer reports {verified, total}; older backends sent a boolean. */
+// A consolidation hop can carry hundreds of transfers; three per row keeps the packet printable.
+const TX_SHOWN = 3;
+
+function verified(c: { verified: number; total: number } | boolean | undefined): boolean {
+  if (typeof c === "boolean" || c === undefined) return !!c;
+  return c.total > 0 && c.verified === c.total;
 }

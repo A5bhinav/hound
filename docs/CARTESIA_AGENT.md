@@ -9,7 +9,7 @@ Gate: Sat 6 PM. Recorded clip is the default on stage; live call for Cartesia ju
 4. Never promises recovery. Says "reported, not proven" language only. Ends with "Keep this case code."
 
 ## Tool: `open_case`
-- Method POST, URL `{PUBLIC_BASE_URL}/intake/voice/story` (stable tunnel host, N8; Ishaan owns the tunnel; verify Sun 8 AM).
+- Method POST, URL `https://<backend ngrok domain>/intake/voice/story` (stable reserved domain; Ishaan owns the tunnel; verify Sun 8 AM). The web host's proxy also forwards `https://<web host>/api/intake/voice/story`. Register with `python scripts/cartesia_agent.py --tool-url <url>`.
 - Header `X-Hound-Intake-Token: {HOUND_INTAKE_TOKEN}` (set the same value in backend .env).
 - Body: `{"story": {"scam_app": str, "platform": str, "first_contact": "YYYY-MM", "summary": str}, "victim": {"alias": "Caller", "age_band": "60+|unknown", "exchange_used": str}}`
 - Response: `{"case_code": "K7M2PQ", "upload_url": ".../c/K7M2PQ", "say": "..."}` — the agent speaks `say`.

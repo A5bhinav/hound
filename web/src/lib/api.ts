@@ -2,6 +2,7 @@
 // HOUND_API_URL and HOUND_DATA are not exposed to the browser.
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import type { Case, CaseSummary, Trace } from "./types";
 
@@ -15,13 +16,29 @@ const EXAMPLES = path.join(process.cwd(), "..", "examples");
 
 export class HoundApiError extends Error {}
 
+// The backend redacts live cases for anyone beyond localhost by reading these headers. Server pages
+// fetch from loopback, so without forwarding them a tunnel viewer would look local and see full data.
+const FORWARD = ["cf-connecting-ip", "x-forwarded-for", "x-real-ip", "forwarded", "true-client-ip"];
+
+async function viewerHeaders(): Promise<Record<string, string>> {
+  const h = await headers();
+  const out: Record<string, string> = {};
+  for (const k of FORWARD) {
+    const v = h.get(k);
+    if (v) out[k] = v;
+  }
+  const host = h.get("x-forwarded-host") || h.get("host");
+  if (host) out["x-forwarded-host"] = host;
+  return out;
+}
+
 async function call<T>(method: "GET" | "POST", apiPath: string): Promise<T> {
   // Backend data is live: render at request time, never bake it (or an error) into the build.
   await connection();
   const url = `${API_URL}${apiPath}`;
   let res: Response;
   try {
-    res = await fetch(url, { method, cache: "no-store" });
+    res = await fetch(url, { method, cache: "no-store", headers: await viewerHeaders() });
   } catch (err) {
     console.error(`[hound-web] ${method} ${url} failed:`, err);
     throw new HoundApiError(
@@ -45,7 +62,7 @@ export async function intakeCodeActive(code: string): Promise<boolean | null> {
   await connection();
   const url = `${API_URL}/intake/${encodeURIComponent(code)}`;
   try {
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-store", headers: await viewerHeaders() });
     if (res.status === 404) return false;
     if (res.ok) return true;
     console.error(`[hound-web] GET ${url} -> ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
@@ -136,17 +153,25 @@ export async function getProof(): Promise<{ scoreboard: Scoreboard; backtest: Ba
 }
 
 export interface Packet {
-  packet: { text: string; cited: string[]; source?: string; citations_verified?: boolean };
+  /** text is null (redacted: true) for a live case viewed beyond localhost: the prose quotes the victim's story. */
+  packet: {
+    text: string | null;
+    cited: string[];
+    source?: string;
+    redacted?: boolean;
+    citations_verified?: { verified: number; total: number } | boolean;
+  };
   trace: Trace;
 }
 
-/** GET /cases/{id}/packet. Null when the case has no finished trace yet (409). */
+/** GET /cases/{id}/packet. Null when there is nothing to write yet (409 no finished trace, 422 nothing traced). */
 export async function getPacket(id: string, audience: "detective" | "victim"): Promise<Packet | null> {
   if (usingFixtures) throw new HoundApiError("The packet is written by the backend (GET /cases/{id}/packet). Unset HOUND_DATA to use it.");
   try {
     return await call<Packet>("GET", `/cases/${encodeURIComponent(id)}/packet?audience=${audience}`);
   } catch (err) {
-    if (err instanceof HoundApiError && err.message.includes("returned 409")) return null;
+    // 409: no finished trace yet. 422: the trace has no endpoints to write about (e.g. a judge's wrong hash).
+    if (err instanceof HoundApiError && /returned (409|422)/.test(err.message)) return null;
     throw err;
   }
 }

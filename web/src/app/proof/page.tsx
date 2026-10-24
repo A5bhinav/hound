@@ -176,7 +176,7 @@ function ScanPanel({ scan }: { scan: Scan }) {
         Reported scam money not yet frozen
       </h2>
       {!computed ? (
-        <p className={styles.empty}>Not computed yet. {scan.method}</p>
+        <p className={styles.empty}>Not computed yet.</p>
       ) : (
         <>
           <div className={styles.big}>
@@ -185,7 +185,7 @@ function ScanPanel({ scan }: { scan: Scan }) {
           {scan.addresses_unfrozen === 0 && (
             // The scan fails closed: rows whose transfer counts were not checked are left out of the total.
             <p className={styles.empty}>
-              Nothing is counted yet: transfer counts for these addresses have not been checked. {scan.method}
+              Nothing is counted yet: transfer counts for these addresses have not been checked.
             </p>
           )}
           <ul className={styles.scanList}>

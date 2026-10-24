@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { clearTraceCache } from "@/lib/useTrace";
 
 /** DEMO.md step 7: clear traces between judges (POST /demo/reset). Deliberately quiet; second click confirms. */
 export default function ResetDemo() {
@@ -14,6 +15,8 @@ export default function ResetDemo() {
       const res = await fetch("/api/demo/reset", { method: "POST" });
       const body = await res.text();
       if (!res.ok) throw new Error(`HTTP ${res.status} ${body.slice(0, 120)}`);
+      // The backend forgot its traces; forget ours too, or the next judge sees this one's revealed case.
+      clearTraceCache();
       setState("done");
       setMsg("Demo reset: traces cleared, curated cases reloaded.");
     } catch (err) {

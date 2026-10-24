@@ -26,6 +26,40 @@ function startTrace(caseId: string): Promise<TraceJob> {
   return p;
 }
 
+// Last finished trace per case, so navigating back (e.g. from the packet) shows it without re-POSTing (H8).
+const finished = new Map<string, Trace>();
+
+// Freezes revealed per trace_id, so coming back doesn't hide what the presenter already revealed.
+const FREEZES_KEY = "hound:freezesShown:";
+
+export function readFreezesShown(traceId: string): boolean {
+  try {
+    return sessionStorage.getItem(FREEZES_KEY + traceId) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeFreezesShown(traceId: string, shown: boolean) {
+  try {
+    if (shown) sessionStorage.setItem(FREEZES_KEY + traceId, "1");
+    else sessionStorage.removeItem(FREEZES_KEY + traceId);
+  } catch (err) {
+    console.warn("[hound-web] couldn't persist the freeze reveal:", err);
+  }
+}
+
+/** Demo reset: forget every cached trace and revealed state, so the next judge starts clean (G3). */
+export function clearTraceCache() {
+  finished.clear();
+  starts.clear();
+  try {
+    for (const k of Object.keys(sessionStorage)) if (k.startsWith(FREEZES_KEY)) sessionStorage.removeItem(k);
+  } catch (err) {
+    console.warn("[hound-web] couldn't clear the freeze reveals:", err);
+  }
+}
+
 class JobFailed extends Error {}
 
 /** The finished Trace, or null while running. Throws JobFailed when the backend reports the job failed. */
@@ -60,14 +94,20 @@ async function getJson<T>(method: "GET" | "POST", path: string, signal: AbortSig
  * POST returns a job view ({trace_id, status: "running", audit_log_so_far}); poll GET /traces/{trace_id}
  * until it is the finished Trace or {status: "error"}. A synchronous POST returning the Trace also works.
  * initial: an already-finished trace (fixture mode), so nothing is fetched.
+ * A trace this page already finished for the case is reused until Reset demo clears it.
  */
 export function useTrace(caseId: string, initial: Trace | null): TraceState {
-  const [state, setState] = useState<TraceState>(() =>
-    initial ? { phase: "done", trace: initial } : { phase: "running", log: [], traceId: null, startedAt: Date.now() },
-  );
+  const [state, setState] = useState<TraceState>(() => {
+    const done = initial ?? finished.get(caseId);
+    return done ? { phase: "done", trace: done } : { phase: "running", log: [], traceId: null, startedAt: Date.now() };
+  });
 
   useEffect(() => {
-    if (initial) return;
+    if (initial || finished.has(caseId)) return;
+    const finish = (trace: Trace) => {
+      finished.set(caseId, trace);
+      setState({ phase: "done", trace });
+    };
     const ctl = new AbortController();
     const fail = (err: unknown) => {
       if (ctl.signal.aborted) return;
@@ -80,7 +120,7 @@ export function useTrace(caseId: string, initial: Trace | null): TraceState {
       const first = await startTrace(caseId);
       if (ctl.signal.aborted) return;
       const done = settle(first);
-      if (done) return setState({ phase: "done", trace: done });
+      if (done) return finish(done);
       if (!first.trace_id) throw new Error(`POST /trace returned no trace_id: ${JSON.stringify(first).slice(0, 200)}`);
       setState({ phase: "running", log: progressOf(first as TraceRunning), traceId: first.trace_id, startedAt });
 
@@ -100,8 +140,8 @@ export function useTrace(caseId: string, initial: Trace | null): TraceState {
           if (failures >= MAX_POLL_FAILURES) throw err;
           continue;
         }
-        const finished = settle(now); // a failed job throws here: reported at once, not retried
-        if (finished) return setState({ phase: "done", trace: finished });
+        const result = settle(now); // a failed job throws here: reported at once, not retried
+        if (result) return finish(result);
         setState({ phase: "running", log: progressOf(now as TraceRunning), traceId: first.trace_id, startedAt });
       }
     })().catch(fail);

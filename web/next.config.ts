@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
       // Intake (CK): the live case card polls the active call; the victim's upload page posts the screenshot.
       { source: "/api/intake/active", destination: `${API_URL}/intake/active` },
       { source: "/api/intake/:code/screenshot", destination: `${API_URL}/intake/:code/screenshot` },
+      // Operator approves a validated intake case so it can feed holds (local only; the backend checks).
+      { source: "/api/intake/:code/approve", destination: `${API_URL}/intake/:code/approve` },
+      // Cartesia's tool call reaches the backend through the same public host (token checked by the backend).
+      { source: "/api/intake/voice/story", destination: `${API_URL}/intake/voice/story` },
     ];
   },
   experimental: {

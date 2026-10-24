@@ -23,6 +23,9 @@ export function LinkNotActive() {
 }
 
 /** The victim's upload page (AUDIT N7): one big button, 18px+ text, ARIA, and a "type it instead" field. */
+// The /api proxy and the backend cap uploads near 10 MB; a screenshot is far smaller.
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
 export default function UploadForm({ code, heading }: { code: string; heading?: React.ReactNode }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<State>({ k: "idle" });
@@ -33,7 +36,8 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
     setState({ k: "sending" });
     let res: Response;
     try {
-      res = await fetch(`/api/intake/${encodeURIComponent(code)}/screenshot`, { method: "POST", body });
+      // Reading the picture can take a few seconds; past a minute something is stuck.
+      res = await fetch(`/api/intake/${encodeURIComponent(code)}/screenshot`, { method: "POST", body, signal: AbortSignal.timeout(60_000) });
     } catch (err) {
       console.error("[hound-web] upload failed:", err);
       return setState({ k: "error", message: "We couldn't send it. Check your internet connection and try again.", detail: String(err) });
@@ -73,6 +77,10 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
     const f = e.target.files?.[0];
     if (!f) return;
     const fd = new FormData();
+    if (f.size > MAX_UPLOAD_BYTES) {
+      e.target.value = "";
+      return setState({ k: "error", message: "That picture is too big to send. Please take a screenshot instead of a photo.", detail: `${f.size} bytes` });
+    }
     fd.append("file", f);
     void send(fd);
     e.target.value = ""; // allow choosing the same picture again after a retake
