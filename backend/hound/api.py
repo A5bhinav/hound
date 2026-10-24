@@ -82,7 +82,7 @@ def create_case(case: dict):
 
 
 def _chain_deps(case):
-    """Real hound.chain adapters if merged, else the fixture chain (loud warning).
+    """Returns (deps, using_fixture): real hound.chain adapters if merged, else the fixture chain (loud warning).
 
     get_native_txs is forwarded on both paths: run_trace needs it for ETH-send cases (the A.H.
     replay starts from six ETH sends). If the real chain has no get_native_txs yet and the case
@@ -97,12 +97,27 @@ def _chain_deps(case):
         deps = {k: getattr(chain, k) for k in CHAIN_FUNCS}
         deps["get_native_txs"] = getattr(chain, "get_native_txs", None)
         if deps["get_native_txs"] is not None or not any(s.get("token") == "ETH" for s in case["sends"]):
-            return deps
+            return deps, False
         missing = ["get_native_txs (case has ETH sends)"]
     log.warning("REAL CHAIN ADAPTERS MISSING (%s), tracing on fixture data from examples/ohnd_transfers.json",
                 ", ".join(missing))
     from hound import fixture_chain as fc
-    return {k: getattr(fc, k) for k in CHAIN_FUNCS + ("get_native_txs",)}
+    return {k: getattr(fc, k) for k in CHAIN_FUNCS + ("get_native_txs",)}, True
+
+
+def _attach_other_payers(job_id, trace, using_fixture):
+    """other_payers reads the live hound.chain, so it is skipped on fixture traces (never mix data)
+    and a failure in it leaves the finished trace intact with other_payers = []."""
+    if using_fixture:
+        log.warning("trace job %s ran on fixture data; other_payers skipped (it would read the live chain)", job_id)
+        trace["other_payers"] = []
+        return
+    try:
+        trace["other_payers"] = other_payers(trace)
+    except Exception:
+        log.error("trace job %s: other_payers failed, trace kept with other_payers=[]: %s",
+                  job_id, _redact(traceback.format_exc()))
+        trace["other_payers"] = []
 
 
 def _finish(job_id, generation, ok, trace=None):
@@ -127,10 +142,10 @@ def _finish(job_id, generation, ok, trace=None):
     return True
 
 
-def _run_job(job_id, case, generation):
+def _run_job(job_id, case, generation, progress):
     try:
-        trace = run_trace(case, **_chain_deps(case))
-        trace["other_payers"] = other_payers(trace)
+        deps, using_fixture = _chain_deps(case)
+        trace = run_trace(case, progress=progress, **deps)
     except Exception as e:  # report every engine failure to the poller, never swallow it
         # Full detail stays in the server log (secrets redacted); the poller gets the type only,
         # because adapter errors can carry request URLs with API keys in them.
@@ -140,6 +155,7 @@ def _run_job(job_id, case, generation):
             if _finish(job_id, generation, ok=False):
                 job.update(status="error", error=f"{type(e).__name__}: trace failed; see the server log for job {job_id}")
         return
+    _attach_other_payers(job_id, trace, using_fixture)
     with _LOCK:
         if not _finish(job_id, generation, ok=True, trace=trace):
             return
@@ -152,13 +168,14 @@ def _job_view(job_id):
     if job is None:
         raise HTTPException(404, f"no trace {job_id!r}")
     if job["status"] == "running":
-        # The engine has no hook to stream its audit log, so the UI animates the hops after the
-        # trace completes; while running it shows elapsed time.
+        # run_trace appends audit entries to job["progress"] live; return a copy of what is there.
         return {"trace_id": job_id, "case_id": job["case_id"], "status": "running",
-                "started_at": job["started_at"], "elapsed_s": round(time.monotonic() - job["started_mono"], 1)}
+                "started_at": job["started_at"], "elapsed_s": round(time.monotonic() - job["started_mono"], 1),
+                "audit_log_so_far": list(job["progress"])}
     if job["status"] == "error":
         return {"trace_id": job_id, "case_id": job["case_id"], "status": "error", "error": job["error"]}
-    return TRACES[job["result_trace_id"]]
+    # The engine Trace has its own trace_id; job_id is the handle POST returned, so clients can key on it.
+    return {**TRACES[job["result_trace_id"]], "job_id": job_id}
 
 
 @app.post("/cases/{case_id}/trace")
@@ -176,12 +193,13 @@ def trace_case(case_id: str):
             prev.update(status="error", error=f"TimeoutError: trace ran over {JOB_STALE_S}s and was superseded by job {job_id}")
             case["status"] = prev["prev_status"]
         JOBS[job_id] = {"case_id": case_id, "status": "running", "prev_status": case["status"],
-                        "started_at": _now_iso(), "started_mono": time.monotonic()}
+                        "started_at": _now_iso(), "started_mono": time.monotonic(), "progress": []}
         LATEST[case_id] = job_id
         case["status"] = "tracing"
         generation = _GENERATION
         view = _job_view(job_id)
-    threading.Thread(target=_run_job, args=(job_id, case, generation), daemon=True,
+        progress = JOBS[job_id]["progress"]
+    threading.Thread(target=_run_job, args=(job_id, case, generation, progress), daemon=True,
                      name=f"trace-{job_id[:8]}").start()
     return view
 

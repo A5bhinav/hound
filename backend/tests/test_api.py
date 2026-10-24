@@ -71,7 +71,8 @@ def test_chain_deps_forwards_native_txs_from_real_chain(monkeypatch):
     full = types.SimpleNamespace(**{k: getattr(fixture_chain, k) for k in api.CHAIN_FUNCS},
                                  get_native_txs=lambda *a, **k: [])
     monkeypatch.setitem(sys.modules, "hound.chain", full)
-    deps = api._chain_deps(api.CASES[CASE])
+    deps, using_fixture = api._chain_deps(api.CASES[CASE])
+    assert not using_fixture
     assert deps["get_native_txs"] is full.get_native_txs
     assert deps["get_transfers"] is full.get_transfers
 
@@ -80,18 +81,21 @@ def test_chain_deps_without_native_txs_uses_fixture_for_eth_case(monkeypatch, ca
     real = types.SimpleNamespace(**{k: (lambda *a, **k: None) for k in api.CHAIN_FUNCS})
     monkeypatch.setitem(sys.modules, "hound.chain", real)
     with caplog.at_level("WARNING", logger="hound.api"):
-        deps = api._chain_deps(api.CASES[CASE])
+        deps, using_fixture = api._chain_deps(api.CASES[CASE])
+    assert using_fixture
     assert deps["get_native_txs"] is fixture_chain.get_native_txs
     assert deps["get_transfers"] is fixture_chain.get_transfers
     assert "get_native_txs" in caplog.text
-    usdt = api._chain_deps({"sends": [SEND]})
+    usdt, using_fixture = api._chain_deps({"sends": [SEND]})
+    assert not using_fixture
     assert usdt["get_transfers"] is real.get_transfers and usdt["get_native_txs"] is None
 
 
 def test_fixture_fallback_when_chain_missing(monkeypatch, caplog):
     monkeypatch.setitem(sys.modules, "hound.chain", types.SimpleNamespace())
     with caplog.at_level("WARNING", logger="hound.api"):
-        deps = api._chain_deps({"sends": [SEND]})
+        deps, using_fixture = api._chain_deps({"sends": [SEND]})
+    assert using_fixture
     assert deps["get_transfers"] is fixture_chain.get_transfers
     assert deps["get_native_txs"] is fixture_chain.get_native_txs
     assert "REAL CHAIN ADAPTERS MISSING" in caplog.text
@@ -258,3 +262,58 @@ def test_make_demo_prefers_cache():
     demo = (ROOT / "Makefile").read_text().split("\ndemo:")[1].split("\n\n")[0]
     assert "HOUND_CACHE_MODE=prefer_cache" in demo  # AUDIT N5: judges may try their own scenario
     assert "HOUND_OFFLINE=1" not in demo and "readonly" not in demo
+
+
+def test_audit_log_streams_while_running(monkeypatch):
+    """A chain call blocks mid-trace; the poll must already show the audit entries written so far."""
+    import hound.chain as chain
+    entered, gate = threading.Event(), threading.Event()
+    calls = {"n": 0}
+    real = chain.get_transfers
+
+    def blocking(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 2:  # block partway: after the first fetch has been audited
+            entered.set()
+            assert gate.wait(10), "test gate never opened"
+        return real(*a, **k)
+
+    monkeypatch.setattr(chain, "get_transfers", blocking)
+    job = client.post(f"/cases/{CASE}/trace").json()
+    try:
+        assert entered.wait(10), "trace never reached the second get_transfers call"
+        view = client.get(f"/traces/{job['trace_id']}").json()
+        assert view["status"] == "running"
+        assert len(view["audit_log_so_far"]) > 0
+    finally:
+        gate.set()
+    done = _poll(job["trace_id"])
+    assert done["status"] in ("done", "partial")
+    assert done["job_id"] == job["trace_id"]
+
+
+def test_other_payers_failure_keeps_trace(monkeypatch, caplog):
+    def boom(trace):
+        raise RuntimeError("GET https://eth.blockscout.com/api?apikey=SECRET timed out")
+
+    monkeypatch.setattr(api, "other_payers", boom)
+    with caplog.at_level("ERROR", logger="hound.api"):
+        trace = _trace_done()
+    assert trace["other_payers"] == []
+    assert "other_payers failed" in caplog.text and "SECRET" not in caplog.text
+    assert client.get(f"/cases/{CASE}/packet").status_code == 200
+
+
+def test_other_payers_skipped_on_fixture_fallback(monkeypatch):
+    called = []
+    monkeypatch.setattr(api, "_chain_deps", lambda case: ({k: getattr(fixture_chain, k) for k in api.CHAIN_FUNCS + ("get_native_txs",)}, True))
+    monkeypatch.setattr(api, "other_payers", lambda trace: called.append(1) or [{"address": "live"}])
+    trace = _trace_done()
+    assert called == [] and trace["other_payers"] == []
+
+
+def test_done_response_carries_job_id():
+    job = client.post(f"/cases/{CASE}/trace").json()
+    done = _poll(job["trace_id"])
+    assert done["job_id"] == job["trace_id"]
+    assert client.get(f"/cases/{CASE}/trace").json()["job_id"] == job["trace_id"]
