@@ -1,0 +1,46 @@
+{
+  "case_id": "ohnd-replay-001",
+  "created_at": "2026-10-24T05:00:00Z",
+  "source": "doj_replay",
+  "victim": {
+    "alias": "DOJ replay: US v. 4,340,000 Tether (N.D. Ohio 1:25-cv-00386)",
+    "age_band": "unknown",
+    "exchange_used": null
+  },
+  "story": {
+    "scam_app": null,
+    "platform": null,
+    "first_contact": null,
+    "summary": "Replay of a public DOJ forfeiture case. Sends are real USDT transfers into the first USDT-holding wallet after the victims' swaps. Historical: funds were frozen by Tether in June 2024."
+  },
+  "sends": [
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x7268269f9b95788f6898c47c4f4c0e34d9ab7826ef5a91cab07c07421f10a9f9",
+      "from": "0x8d90113a1e286a5ab3e496fbd1853f265e5913c6",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 151486.630813,
+      "time": "2024-05-21T15:19:59Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0xc36ac0e14af4a2e07929aa01c046848424cef534a435cc76b624c66f7eaa8eeb",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 101352.431358,
+      "time": "2024-05-17T14:40:47Z"
+    },
+    {
+      "chain": "ethereum",
+      "tx_hash": "0x68be3cb0c689b285e325c87f0051e5c190900ef9dfbd9773e71ee039d99d8df8",
+      "from": "0x91c986709bb4fe0763edf8e2690ee9d5019bea4a",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+      "token": "USDT",
+      "amount": 93480.534389,
+      "time": "2024-06-19T14:36:47Z"
+    }
+  ],
+  "status": "traced"
+}
