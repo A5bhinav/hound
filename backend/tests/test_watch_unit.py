@@ -408,3 +408,61 @@ def test_victim_paying_from_an_exchange_never_fetches_the_exchange(monkeypatch):
     monkeypatch.setattr(chain, "get_native_txs", lambda *a, **k: [], raising=False)
     op_mod.payments(t, window_days=7)
     assert COINBASE10 not in fetched and A1 in fetched
+
+
+def test_retrace_clears_the_cases_old_entries():
+    import copy
+    w = Watchlist()
+    w.add_trace(FIXTURE)
+    assert w.lookup("ethereum", HOP3) is not None
+    # the re-run no longer reaches HOP3: its old entry must go, not linger as a warn/hold
+    rerun = copy.deepcopy(FIXTURE)
+    rerun["nodes"] = [n for n in rerun["nodes"] if n["address"] != HOP3]
+    rerun["edges"] = [e for e in rerun["edges"] if HOP3 not in (e.get("from"), e.get("to"))]
+    w.add_trace(rerun)
+    assert w.lookup("ethereum", HOP3) is None
+    assert w.lookup("ethereum", A1)["cases"] == [FIXTURE["case_id"]]
+
+
+def test_retrace_keeps_entries_other_cases_or_reports_back():
+    import copy
+    w = Watchlist()
+    w.add_trace(FIXTURE)
+    other = copy.deepcopy(FIXTURE)
+    other["case_id"], other["trace_id"] = "other-case", "other-trace"
+    w.add_trace(other)
+    w.add_reports([{"address": HOP3, "chain": "ethereum", "report_count": 1}])
+    empty = {**copy.deepcopy(FIXTURE), "nodes": [], "edges": []}
+    w.add_trace(empty)  # FIXTURE's case now reaches nothing
+    e = w.lookup("ethereum", A1)
+    assert e["cases"] == ["other-case"] and FIXTURE["case_id"] not in e["inflow_by_case"]
+    other_empty = {**empty, "case_id": "other-case"}
+    w.add_trace(other_empty)
+    assert w.lookup("ethereum", A1) is None
+    h = w.lookup("ethereum", HOP3)  # still reported, but no trace backs it
+    assert h is not None and h["cases"] == [] and h["victim_inflow"] == 0 and h["path"] == []
+
+
+def test_save_is_atomic_and_leaves_no_temp_files(tmp_path):
+    w = Watchlist()
+    w.add_trace(FIXTURE)
+    target = tmp_path / "watchlist.json"
+    w.save(target)
+    w.save(target)
+    assert [p.name for p in tmp_path.iterdir()] == ["watchlist.json"]
+    w2 = Watchlist()
+    assert w2.load(target) == len(w) and w2.version() == w.version()
+
+
+def test_readers_wait_for_writers():
+    import threading
+    w = Watchlist()
+    w.add_trace(FIXTURE)
+    got = []
+    with w._lock:  # a writer holds the lock
+        t = threading.Thread(target=lambda: got.append((w.version(), w.lookup("ethereum", A1), w.to_json())))
+        t.start()
+        t.join(0.2)
+        assert t.is_alive() and not got  # readers block until the writer is done
+    t.join(5)
+    assert got and got[0][1]["address"] == A1

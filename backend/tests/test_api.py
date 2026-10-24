@@ -503,6 +503,20 @@ def test_other_payers_skipped_when_chain_was_unreachable(monkeypatch):
     assert any(e["step"] == "skip_branch" and "fetch errors" in e["detail"] for e in trace["audit_log"])
 
 
+def test_other_payers_skipped_when_trace_hit_time_cap(monkeypatch):
+    real, called = api.run_trace, []
+
+    def capped(case, **deps):
+        t = real(case, **deps)
+        t["audit_log"].append({"t": "x", "step": "cap_hit", "address": None, "detail": "time_cap: not expanded"})
+        return t
+
+    monkeypatch.setattr(api, "run_trace", capped)
+    monkeypatch.setattr(api, "other_payers", lambda trace: called.append(1) or [])
+    trace = _trace_done()
+    assert called == [] and any("time cap" in e["detail"] for e in trace["audit_log"] if e["step"] == "skip_branch")
+
+
 def test_engine_value_error_reaches_the_poller(monkeypatch):
     def bad(case, **deps):
         raise ValueError("a case must start on one chain for now, got ['ethereum', 'tron']")
@@ -550,10 +564,38 @@ def test_demo_reset_is_localhost_only_without_token(monkeypatch):
 
 def test_demo_reset_with_token_needs_the_header(monkeypatch):
     monkeypatch.setenv("HOUND_ADMIN_TOKEN", "s3cret")
-    assert client.post("/demo/reset").status_code == 403
+    assert remote.post("/demo/reset").status_code == 403
     assert remote.post("/demo/reset", headers={"X-Hound-Admin": "wrong"}).status_code == 403
+    assert remote.post("/demo/reset", headers={"X-Hound-Admin": "sécret".encode("latin-1")}).status_code == 403  # non-ASCII: no 500
     assert remote.post("/demo/reset", headers={"X-Hound-Admin": "s3cret"}).status_code == 200
     monkeypatch.delenv("HOUND_ADMIN_TOKEN")
+
+
+def test_demo_reset_stays_local_with_a_token_set(monkeypatch):
+    # The Reset button on the operator laptop sends no token; setting one for remote use must not break it.
+    monkeypatch.setenv("HOUND_ADMIN_TOKEN", "s3cret")
+    assert client.post("/demo/reset").status_code == 200
+    assert client.post("/demo/reset", headers={"x-forwarded-for": "198.51.100.7"}).status_code == 403
+
+
+def test_demo_reset_refuses_cross_site_requests():
+    assert client.post("/demo/reset", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "https://evil.example"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "null"}).status_code == 403
+    assert client.post("/demo/reset", headers={"Origin": "http://localhost:3000", "Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert client.post("/demo/reset", headers={"Origin": "http://testserver"}).status_code == 200  # its own host
+
+
+def test_no_api_docs_routes():
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404
+
+
+def test_remote_can_still_post_and_trace_cases():
+    # judges trace through the web proxy: no admin or CSRF gate on case creation and tracing
+    created = remote.post("/cases", json={"source": "phone", "sends": [SEND]}, headers={"Origin": "https://judge.example"})
+    assert created.status_code == 200
+    assert remote.post(f"/cases/{CASE}/trace", headers={"Origin": "https://judge.example"}).status_code in (200, 202)
 
 
 def test_cases_live_are_marked_live(monkeypatch, tmp_path):
@@ -735,6 +777,16 @@ def test_spoofed_forwarded_for_is_never_local():
     assert not api._is_local(req({"x-forwarded-for": "127.0.0.1, ::1"}))
 
 
+def test_forwarded_host_from_the_lan_is_not_local():
+    from starlette.requests import Request
+    def req(host):
+        return Request({"type": "http", "client": ("127.0.0.1", 5000), "headers": [(b"x-forwarded-host", host.encode())]})
+    for ok in ("localhost:3000", "127.0.0.1:3000", "[::1]:3000", "localhost", "LOCALHOST:3000"):
+        assert api._is_local(req(ok)), ok
+    for far in ("192.168.1.20:3000", "hound.example.com", "abc.trycloudflare.com", "localhost.evil.com:3000", ""):
+        assert not api._is_local(req(far)), far
+
+
 def test_invalid_curated_case_is_skipped_not_fatal(tmp_path, monkeypatch):
     live = tmp_path / "data" / "cases_live"
     live.mkdir(parents=True)
@@ -761,3 +813,61 @@ def test_intake_router_is_included_when_present(monkeypatch):
     target = FastAPI()
     api._include_intake_router(target)
     assert "/intake/active" in api._route_paths(target.routes)
+
+
+# ---- round 3: prewarm after reset, packet cache eviction, writer crash ----
+
+def test_prewarm_retraces_replay_and_writes_both_packets(monkeypatch):
+    calls = []
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "claude"})
+    assert CASE == api.REPLAY_CASE
+    api._prewarm(api._GENERATION)
+    tid = api.LAST_DONE[CASE]
+    assert tid in api.TRACES and calls == ["victim", "detective"]
+    assert {(tid, "victim"), (tid, "detective")} <= set(api.PACKETS)
+    assert client.get(f"/cases/{CASE}/packet?audience=victim").status_code == 200 and len(calls) == 2  # served warm
+
+
+def test_prewarm_drops_results_after_another_reset(monkeypatch):
+    def reset_mid_write(t, c, a):
+        api._GENERATION += 1  # a /demo/reset landed while the packet was being written
+        return {"text": "x", "source": "claude"}
+
+    monkeypatch.setattr(api, "write_case", reset_mid_write)
+    api._prewarm(api._GENERATION)
+    assert not api.PACKETS
+
+
+def test_prewarm_for_an_old_generation_never_writes():
+    api._prewarm(api._GENERATION - 1)
+    assert CASE not in api.LAST_DONE and not api.PACKETS
+
+
+def test_reset_starts_prewarm_in_background(monkeypatch):
+    started = []
+    monkeypatch.delenv("HOUND_NO_PREWARM")
+    monkeypatch.setattr(api, "_prewarm", lambda g: started.append(g))
+    assert client.post("/demo/reset").status_code == 200
+    for _ in range(100):
+        if started:
+            break
+        time.sleep(0.01)
+    assert started == [api._GENERATION]
+
+
+def test_retrace_evicts_stale_packet(monkeypatch):
+    first = _trace_done()
+    api.PACKETS[(first["trace_id"], "detective")] = {"text": "stale", "source": "claude"}
+    api.FALLBACK_PACKETS[(first["trace_id"], "victim")] = ({"text": "stale"}, time.monotonic() + 60)
+    second = _trace_done()
+    assert (second["trace_id"], "detective") not in api.PACKETS
+    assert (second["trace_id"], "victim") not in api.FALLBACK_PACKETS
+
+
+def test_writer_assertion_is_a_plain_500(monkeypatch, caplog):
+    _trace_done()
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: (_ for _ in ()).throw(AssertionError("cite mismatch")))
+    with caplog.at_level("ERROR", logger="hound.api"):
+        r = TestClient(app, raise_server_exceptions=False, client=("127.0.0.1", 50000)).get(f"/cases/{CASE}/packet")
+    assert r.status_code == 500 and "could not be written" in r.json()["detail"]
+    assert "cite mismatch" in caplog.text

@@ -23,6 +23,7 @@ import hashlib
 import json
 import logging
 import os
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -188,10 +189,33 @@ def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
 
 class Watchlist:
     def __init__(self) -> None:
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()  # re-entrant: to_json() calls version() under the same lock
         self.entries: dict[tuple[str, str], dict[str, Any]] = {}
 
     # ------------------------------------------------------------ building
+
+    def _drop_case(self, case_id: str) -> int:
+        """Forget what an earlier run of `case_id` put on the list (caller holds the lock), so a re-trace
+        that no longer reaches a wallet stops holding it. An entry nothing else backs is removed; one
+        other cases or reports still back keeps their figures."""
+        dropped = 0
+        for k in [k for k, e in self.entries.items() if case_id in e["cases"]]:
+            e = self.entries[k]
+            e["cases"].discard(case_id)
+            e["inflow_by_case"].pop(case_id, None)
+            e["conf_by_case"].pop(case_id, None)
+            dropped += 1
+            if not e["cases"] and not e["reports"]:
+                del self.entries[k]
+                continue
+            if not e["cases"]:  # reports only now: trace-derived fields came from the dropped case
+                fresh = _new_entry(e["chain"], e["address"])
+                for f in ("traces", "direct_hit", "min_depth", "last_inflow", "replay", "path", "evidence"):
+                    e[f] = fresh[f]
+            _refresh(e)
+        if dropped:
+            log.info("watchlist: re-trace of %s cleared %d earlier entr%s", case_id, dropped, "y" if dropped == 1 else "ies")
+        return dropped
 
     def add_trace(self, trace: dict) -> int:
         """Add a trace's scam-controlled nodes. Returns how many entries were added or updated."""
@@ -205,6 +229,7 @@ class Watchlist:
         usdt_in = _victim_usdt_in(trace)
         added = 0
         with self._lock:
+            self._drop_case(case_id)
             for addr, n in nodes.items():
                 ch = n.get("chain", "ethereum")
                 if n.get("kind") not in LISTABLE_KINDS or addr in victims or addr in busy:
@@ -278,14 +303,26 @@ class Watchlist:
     def to_json(self) -> dict:
         def enc(e):
             return {**e, "cases": sorted(e["cases"]), "traces": sorted(e["traces"]), "reports": sorted(e["reports"])}
-        return {"format": FILE_FORMAT, "version": self.version(), "saved_at": iso(time.time()),
-                "entries": [enc(e) for _, e in sorted(self.entries.items())]}
+        with self._lock:
+            return {"format": FILE_FORMAT, "version": self.version(), "saved_at": iso(time.time()),
+                    "entries": [enc(e) for _, e in sorted(self.entries.items())]}
 
     def save(self, path: Path) -> None:
+        """Atomic: a unique temp file in the same directory, then os.replace (two concurrent saves
+        never share a temp name, and a reader never sees a half-written file)."""
+        blob = json.dumps(self.to_json())
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(self.to_json()))
-        os.replace(tmp, path)
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w") as f:
+                f.write(blob)
+            os.replace(tmp, path)
+        except BaseException:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+            raise
 
     def load(self, path: Path) -> int:
         if not path.exists():
@@ -316,21 +353,27 @@ class Watchlist:
         return len(data.get("entries", []))
 
     def version(self) -> str:
-        blob = json.dumps(sorted((k, sorted(v["cases"]), len(v["reports"])) for k, v in self.entries.items()))
+        with self._lock:
+            blob = json.dumps(sorted((k, sorted(v["cases"]), len(v["reports"])) for k, v in self.entries.items()))
         return hashlib.sha256(blob.encode()).hexdigest()[:12]
 
     # ------------------------------------------------------------ reading
 
     def lookup(self, ch: str, address: str) -> dict | None:
-        e = self.entries.get(_key(ch, address))
-        if not e:
-            return None
-        out = dict(e)
-        out["cases"] = sorted(e["cases"])
-        out["traces"] = sorted(e["traces"])
-        out["reports"] = len(e["reports"])
-        out["independent_reports"] = len(e["cases"]) + len(e["reports"])
-        return out
+        with self._lock:
+            e = self.entries.get(_key(ch, address))
+            if not e:
+                return None
+            out = dict(e)
+            out["inflow_by_case"] = dict(e["inflow_by_case"])
+            out["conf_by_case"] = dict(e["conf_by_case"])
+            out["path"] = list(e["path"])
+            out["evidence"] = list(e["evidence"])
+            out["cases"] = sorted(e["cases"])
+            out["traces"] = sorted(e["traces"])
+            out["reports"] = len(e["reports"])
+            out["independent_reports"] = len(e["cases"]) + len(e["reports"])
+            return out
 
     def decision(self, entry: dict, now: float | None = None) -> tuple[str, str, list[str]]:
         """-> (decision "hold" | "warn" | "allow", rule_fired, reasons) for a watchlist entry."""

@@ -56,7 +56,7 @@ from hound.watch.other_payers import other_payers
 from hound.watch import watchlist
 from hound.watch.watchlist import register_trace
 
-app = FastAPI(title="Hound")
+app = FastAPI(title="Hound", docs_url=None, redoc_url=None, openapi_url=None)  # no route map over the tunnel
 # Browsers reach the API through the Next proxy (same origin), so CORS only needs local dev origins
 # plus the one public web origin the operator names.
 PUBLIC_ORIGINS = [o.strip() for o in os.environ.get("HOUND_PUBLIC_ORIGIN", "").split(",") if o.strip()]
@@ -171,7 +171,23 @@ def _is_local(request):
     # client-controlled (X-Forwarded-For: 127.0.0.1 is trivial to send), so never trust them.
     if any(h in request.headers for h in PROXY_HEADERS) or "x-forwarded-for" in request.headers:
         return False
+    # The Next proxy adds X-Forwarded-Host: the host the browser asked for. A LAN viewer of
+    # http://192.168.x.y:3000 reaches us from loopback too, so only a localhost name stays local.
+    fwd_host = request.headers.get("x-forwarded-host")
+    if fwd_host is not None and _host_name(fwd_host) not in LOCAL_HOSTNAMES:
+        return False
     return True
+
+
+LOCAL_HOSTNAMES = ("localhost", "127.0.0.1", "[::1]", "::1")
+
+
+def _host_name(value):
+    """'localhost:3000' -> 'localhost', '[::1]:3000' -> '[::1]'; first entry of a comma list."""
+    h = value.split(",")[0].strip().lower()
+    if h.startswith("["):
+        return h.split("]")[0] + "]"
+    return h.rsplit(":", 1)[0] if h.count(":") == 1 else h
 
 
 ANY_ADDR = re.compile(r"(?<![0-9A-Za-z])(0x[0-9a-fA-F]{64}|0x[0-9a-fA-F]{40}|[0-9a-fA-F]{64}"
@@ -379,6 +395,11 @@ def _other_payers_skip_reason(trace):
         return "a seed send was not found on chain"
     if not trace.get("edges"):
         return "no USDT was traced"
+    # Past the engine deadline the chain is slow; other_payers would only add its own budget on top.
+    if (any(e.get("reason") == "time_cap" for e in trace.get("endpoints") or [])
+            or any(e.get("step") == "cap_hit" and (e.get("detail") or "").startswith("time_cap")
+                   for e in trace.get("audit_log") or [])):
+        return "the trace hit its time cap"
     return None
 
 
@@ -421,6 +442,10 @@ def _finish(job_id, generation, ok, trace=None):
     case = CASES.get(job["case_id"])
     if ok:
         TRACES[trace["trace_id"]] = trace
+        # A re-trace can reuse the trace_id (it is a digest of the case): never serve the old packet.
+        for cache in (PACKETS, FALLBACK_PACKETS):
+            for key in [k for k in cache if k[0] == trace["trace_id"]]:
+                cache.pop(key, None)
         job.update(status=trace.get("status", "done"), result_trace_id=trace["trace_id"])
         LAST_DONE[job["case_id"]] = trace["trace_id"]
         if case is not None:
@@ -496,15 +521,25 @@ def _job_view(job_id):
 
 @app.post("/cases/{case_id}/trace")
 def trace_case(case_id: str, request: Request):
+    view, _ = _start_trace(case_id)
+    return _public(case_id, view, request)
+
+
+def _start_trace(case_id, generation=None):
+    """Start (or join) the trace job for a case. Returns (job view, worker thread, or None when an
+    already running job was joined). generation (background prewarm): start nothing, (None, None),
+    if a /demo/reset has run since it was captured."""
     case = _case(case_id)
     job_id = uuid.uuid4().hex
     with _LOCK:
+        if generation is not None and generation != _GENERATION:
+            return None, None
         prev_id = LATEST.get(case_id)
         prev = JOBS.get(prev_id)
         if prev and prev["status"] == "running":
             age = time.monotonic() - prev["started_mono"]
             if age <= JOB_STALE_S:
-                return _public(case_id, _job_view(prev_id), request)  # one trace per case at a time
+                return _job_view(prev_id), None  # one trace per case at a time
             log.error("trace job %s for case %s hung for %.0fs; superseded by %s", prev_id, case_id, age, job_id)
             prev.update(status="error", error=f"TimeoutError: trace ran over {JOB_STALE_S}s and was superseded by job {job_id}")
             case["status"] = prev["prev_status"]
@@ -515,9 +550,10 @@ def trace_case(case_id: str, request: Request):
         generation = _GENERATION
         view = _job_view(job_id)
         progress = JOBS[job_id]["progress"]
-    threading.Thread(target=_run_job, args=(job_id, case, generation, progress), daemon=True,
-                     name=f"trace-{job_id[:8]}").start()
-    return _public(case_id, view, request)
+    t = threading.Thread(target=_run_job, args=(job_id, case, generation, progress), daemon=True,
+                         name=f"trace-{job_id[:8]}")
+    t.start()
+    return view, t
 
 
 @app.get("/cases/{case_id}/trace")
@@ -544,6 +580,17 @@ def get_trace(trace_id: str, request: Request):
 
 @app.get("/cases/{case_id}/packet")
 def packet(case_id: str, request: Request, audience: str = "detective"):
+    written, trace = _get_packet(case_id, audience)
+    if case_id in LIVE_CASES and not _is_local(request):
+        # The prose is written from the victim's story (scam app, platform, first contact); beyond
+        # localhost a live case returns only the structured fields, never the paragraphs.
+        written = {**{k: v for k, v in written.items() if k != "text"}, "text": None, "redacted": True}
+    return _public(case_id, {"packet": written, "trace": trace}, request)
+
+
+def _get_packet(case_id, audience, generation=None):
+    """(packet, trace) for the case's latest finished trace, cached per (trace_id, audience).
+    generation: set by the background prewarm; a packet finished after a reset is not cached."""
     case = _case(case_id)
     with _LOCK:
         trace = TRACES.get(LAST_DONE.get(case_id))
@@ -563,6 +610,12 @@ def packet(case_id: str, request: Request, audience: str = "detective"):
             except WriterInputError as e:
                 log.warning("packet %s: writer refused input: %s", case_id, e)
                 raise HTTPException(422, str(e))
+            except AssertionError:
+                log.exception("packet %s/%s: writer failed an internal check", case_id, audience)
+                raise HTTPException(500, "The case packet could not be written for this trace. See the server log.")
+            if generation is not None and generation != _GENERATION:
+                log.warning("packet %s/%s finished after /demo/reset; not cached", case_id, audience)
+                return written, trace
             if written.get("source") == "claude":
                 PACKETS[key] = written
             elif os.environ.get("ANTHROPIC_API_KEY"):
@@ -571,20 +624,102 @@ def packet(case_id: str, request: Request, audience: str = "detective"):
                 log.warning("packet %s/%s: Claude fell back to the template; caching it for %.0fs",
                             case_id, audience, FALLBACK_TTL_S)
                 FALLBACK_PACKETS[key] = (written, time.monotonic() + FALLBACK_TTL_S)
-    if case_id in LIVE_CASES and not _is_local(request):
-        # The prose is written from the victim's story (scam app, platform, first contact); beyond
-        # localhost a live case returns only the structured fields, never the paragraphs.
-        written = {**{k: v for k, v in written.items() if k != "text"}, "text": None, "redacted": True}
-    return _public(case_id, {"packet": written, "trace": trace}, request)
+    return written, trace
+
+
+def token_matches(sent, token):
+    """Constant-time header check; bytes so a non-ASCII header value is a mismatch, not a TypeError."""
+    return bool(token) and hmac.compare_digest((sent or "").encode("utf-8"), token.encode("utf-8"))
+
+
+def _origin_netloc(origin):
+    m = re.match(r"^[a-z][a-z0-9+.-]*://([^/?#]+)", origin.strip().lower())
+    return m.group(1) if m else None
+
+
+def reject_cross_site(request, what):
+    """CSRF guard for state-changing operator calls: a page on another site must not be able to
+    drive the operator's browser into them. Refuses Sec-Fetch-Site: cross-site, and an Origin that
+    is neither localhost nor the host this request was addressed to (direct or via the Next proxy)."""
+    if request.headers.get("sec-fetch-site", "").strip().lower() == "cross-site":
+        log.warning("%s refused: Sec-Fetch-Site cross-site", what)
+        raise HTTPException(403, f"{what} refused: cross-site request")
+    origin = request.headers.get("origin")
+    if origin is None:
+        return
+    netloc = _origin_netloc(origin)
+    if netloc is not None:
+        if _host_name(netloc) in LOCAL_HOSTNAMES:
+            return
+        own = {h.split(",")[0].strip().lower() for h in (request.headers.get("host"),
+                                                          request.headers.get("x-forwarded-host")) if h}
+        if netloc in own:
+            return
+    log.warning("%s refused: Origin %r is not this host or localhost", what, origin[:100])
+    raise HTTPException(403, f"{what} refused: cross-origin request")
 
 
 def _require_admin(request):
+    """Local caller OR a valid X-Hound-Admin token (the local Reset button keeps working with a token set)."""
+    reject_cross_site(request, "POST /demo/reset")
+    if _is_local(request):
+        return
     token = os.environ.get("HOUND_ADMIN_TOKEN")
-    if token:
-        if not hmac.compare_digest(request.headers.get("x-hound-admin", ""), token):
-            raise HTTPException(403, "POST /demo/reset needs header X-Hound-Admin equal to HOUND_ADMIN_TOKEN")
-    elif not _is_local(request):
+    if not token:
         raise HTTPException(403, "POST /demo/reset is localhost only (or set HOUND_ADMIN_TOKEN and send X-Hound-Admin)")
+    if not token_matches(request.headers.get("x-hound-admin"), token):
+        raise HTTPException(403, "POST /demo/reset needs header X-Hound-Admin equal to HOUND_ADMIN_TOKEN")
+
+
+PREWARM_AUDIENCES = ("victim", "detective")
+
+
+def _prewarm(generation):
+    """Re-trace the DOJ replay (about 1 s from the snapshot) and write both packets, so the next judge
+    after a reset or restart never waits on a cold trace and the home/proof tiles are there. Runs in a
+    background thread; every result is dropped if /demo/reset ran again meanwhile (generation moved)."""
+    t0 = time.monotonic()
+    try:
+        if REPLAY_CASE not in CASES:
+            log.warning("prewarm: %s not loaded; nothing to warm", REPLAY_CASE)
+            return
+        view, worker = _start_trace(REPLAY_CASE, generation=generation)
+        if worker is not None:
+            worker.join(JOB_STALE_S)
+        elif view is not None:  # joined a trace someone else started: wait for it to finish
+            end = time.monotonic() + JOB_STALE_S
+            while time.monotonic() < end and generation == _GENERATION:
+                with _LOCK:
+                    running = (JOBS.get(view["trace_id"]) or {}).get("status") == "running"
+                if not running:
+                    break
+                time.sleep(0.2)
+        if generation != _GENERATION:
+            log.warning("prewarm: reset ran during the replay trace; stopping")
+            return
+        with _LOCK:
+            done = LAST_DONE.get(REPLAY_CASE) in TRACES
+        if not done:
+            log.error("prewarm: replay trace did not finish; packets not warmed (see the trace job log)")
+            return
+        for audience in PREWARM_AUDIENCES:
+            if generation != _GENERATION:
+                log.warning("prewarm: reset ran while writing packets; stopping")
+                return
+            packet_, _ = _get_packet(REPLAY_CASE, audience, generation=generation)
+            log.info("prewarm: %s packet ready (%s)", audience, packet_.get("source"))
+        log.warning("prewarm: replay trace and packets ready in %.1fs", time.monotonic() - t0)
+    except Exception:  # noqa: BLE001 - a background warm-up must never take the server down
+        log.error("prewarm failed: %s", _redact(traceback.format_exc()))
+
+
+def _start_prewarm():
+    """Background only, never blocks a request or startup. HOUND_NO_PREWARM=1 turns it off (tests)."""
+    if os.environ.get("HOUND_NO_PREWARM") == "1":
+        return None
+    t = threading.Thread(target=_prewarm, args=(_GENERATION,), daemon=True, name="prewarm-replay")
+    t.start()
+    return t
 
 
 @app.post("/demo/reset")
@@ -611,6 +746,7 @@ def demo_reset(request: Request):
         intake_routes = None  # no intake module: nothing to clear (logged at startup)
     if intake_routes is not None:
         intake_routes.reset()
+    _start_prewarm()  # the cleared replay trace and packets come back in the background
     log.warning("demo reset: in-memory cases, traces and jobs cleared; %d curated cases reloaded", len(CASES))
     return {"ok": True, "cases": len(CASES)}
 
@@ -717,6 +853,9 @@ def backtest():  # serves the batch result written by `python -m hound.proof.bac
 def scan():
     from hound.proof.scan import serve as scan_serve
     return scan_serve()
+
+
+app.router.on_startup.append(_start_prewarm)  # served app only (not CLI imports); never blocks startup
 
 
 @app.get("/health")
