@@ -542,7 +542,9 @@ def test_demo_reset_is_localhost_only_without_token(monkeypatch):
     assert client.post("/demo/reset", headers={"cf-connecting-ip": "198.51.100.7"}).status_code == 403  # tunnel
     assert client.post("/demo/reset", headers={"x-forwarded-for": "198.51.100.7"}).status_code == 403
     assert created in api.CASES  # nothing was wiped
-    assert client.post("/demo/reset", headers={"x-forwarded-for": "127.0.0.1"}).status_code == 200  # local Next proxy
+    # A forwarded request is never local, even one claiming 127.0.0.1 (spoofable through a tunnel).
+    # The hidden reset button calls http://localhost:8000/demo/reset directly, or sends X-Hound-Admin.
+    assert client.post("/demo/reset", headers={"x-forwarded-for": "127.0.0.1"}).status_code == 403
 
 
 def test_demo_reset_with_token_needs_the_header(monkeypatch):
@@ -720,3 +722,13 @@ def test_claude_fallback_packet_negative_cached(monkeypatch):
     api.FALLBACK_PACKETS[key] = (api.FALLBACK_PACKETS[key][0], time.monotonic() - 1)
     client.get(f"/cases/{CASE}/packet")
     assert len(calls) == 2  # expired: Claude gets another try
+
+
+def test_spoofed_forwarded_for_is_never_local():
+    from starlette.requests import Request
+    def req(headers):
+        return Request({"type": "http", "client": ("127.0.0.1", 5000),
+                        "headers": [(k.encode(), v.encode()) for k, v in headers.items()]})
+    assert api._is_local(req({}))
+    assert not api._is_local(req({"x-forwarded-for": "127.0.0.1"}))
+    assert not api._is_local(req({"x-forwarded-for": "127.0.0.1, ::1"}))

@@ -151,10 +151,11 @@ def _is_local(request):
     so any proxy header naming another client, or a non-loopback X-Forwarded-For hop, is not local."""
     if not _loopback(request.client.host if request.client else None):
         return False
-    if any(h in request.headers for h in PROXY_HEADERS):
+    # Any forwarding header means the request came through a proxy or tunnel. The values are
+    # client-controlled (X-Forwarded-For: 127.0.0.1 is trivial to send), so never trust them.
+    if any(h in request.headers for h in PROXY_HEADERS) or "x-forwarded-for" in request.headers:
         return False
-    xff = request.headers.get("x-forwarded-for")
-    return xff is None or all(_loopback(h) for h in xff.split(","))
+    return True
 
 
 ANY_ADDR = re.compile(r"(?<![0-9A-Za-z])(0x[0-9a-fA-F]{64}|0x[0-9a-fA-F]{40}|[0-9a-fA-F]{64}"
