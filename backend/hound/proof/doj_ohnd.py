@@ -33,8 +33,10 @@ def load_holdout(path: Path = HOLDOUT_PATH) -> dict[str, Any]:
 
 def load_resolved(path: Path = RESOLVED_PATH) -> dict[str, str]:
     """label -> full lowercase address."""
-    r = json.load(open(path))["resolved"]
-    return {lab: v["address"].lower() for lab, v in r.items()}
+    d = json.load(open(path))
+    if "resolved" in d:
+        return {lab: v["address"].lower() for lab, v in d["resolved"].items()}
+    return {lab: a.lower() for lab, a in d["addresses"].items()}
 
 
 def _trace_addresses(trace: dict[str, Any]) -> set[str]:
