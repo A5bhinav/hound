@@ -211,9 +211,10 @@ export default function TraceGraph({
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) setShownHop(maxHop);
-    else play();
+    // Start on the next tick: reduced motion shows every hop at once, otherwise the hops unfold.
+    const t = setTimeout(() => (reduced ? setShownHop(maxHop) : play()), 0);
     return () => {
+      clearTimeout(t);
       if (timer.current) clearInterval(timer.current);
     };
   }, [play, maxHop]);
@@ -234,17 +235,32 @@ export default function TraceGraph({
     return t === "frozen" ? "url(#rb-frozen)" : t === "exchange" ? "url(#rb-exchange)" : t === "hold" ? "url(#rb-hold)" : "url(#rb-usdt)";
   };
   const depthOf = (a: string) => lay.nodes.find((n) => n.address === a)?.depth ?? 0;
+  // Where the money stopped (meaningful amounts only): these keep a permanent label.
+  const stops = new Set(trace.endpoints.filter((e) => (e.victim_inflow ?? 0) >= Math.max(100, lay.total * 0.005)).map((e) => e.address));
+  // Only the colours on screen get a legend entry.
+  const tones = new Set(trace.nodes.map((n) => tone(n, freezesShown)));
+  const legend = (
+    [
+      ["victim", trace.edges.some((e) => e.token === "ETH") ? "Her ETH" : "Victim"],
+      ["trace", "USDT moving"],
+      ["exchange", "At an exchange"],
+      ["hold", "Holding"],
+      ["frozen", "Tether froze it"],
+      ["dead", "Dead end"],
+    ] as const
+  ).filter(([t]) => t === "victim" || t === "trace" || tones.has(t));
 
   return (
     <section className={styles.wrap} aria-label="Money trail">
       <div className={styles.controls}>
-        <span className={styles.progress}>
-          {shownHop >= maxHop
-            ? `Traced ${maxHop} hops deep · ${trace.edges.length} money flows${lay.loops ? ` · ${lay.loops} loop back` : ""}`
-            : `Tracing hop ${shownHop} of ${maxHop}…`}
+        <span className={styles.progress} aria-live="polite">
+          {shownHop < maxHop ? `Hop ${shownHop} of ${maxHop}` : "Width = victim money"}
         </span>
-        <button type="button" onClick={play}>Replay</button>
-        <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>Show all hops</button>
+        {shownHop < maxHop ? (
+          <button type="button" onClick={showAll}>Skip to the end</button>
+        ) : (
+          <button type="button" onClick={play}>Replay</button>
+        )}
         {hideFreezes && !freezesShown && frozen.length > 0 && (
           <button
             type="button"
@@ -283,7 +299,7 @@ export default function TraceGraph({
 
             {Array.from({ length: maxHop + 1 }, (_, d) => (
               <text key={`h${d}`} x={PAD_X + d * colGap} y={24} className={styles.colHead} data-on={d <= shownHop}>
-                {d === 0 ? "VICTIM" : `HOP ${d}`}
+                {d === 0 ? "Victim" : `Hop ${d}`}
               </text>
             ))}
 
@@ -311,6 +327,7 @@ export default function TraceGraph({
               const on = n.depth <= shownHop;
               const name = n.label ?? shortAddr(n.address);
               const cy = n.y + n.h / 2;
+              const showLabel = n.depth === 0 || stops.has(n.address) || hover === n.address || selected === n.address;
               return (
                 <g
                   key={n.address}
@@ -335,13 +352,15 @@ export default function TraceGraph({
                 >
                   <rect x={n.x - 6} y={n.y - 6} width={NODE_W + 12} height={n.h + 12} fill="transparent" />
                   <rect x={n.x} y={n.y} width={NODE_W} height={n.h} rx={4} fill={look.fill} />
-                  <text x={n.x + NODE_W + 8} y={cy - 12} className={styles.nodeName}>{name.length > 18 ? `${name.slice(0, 17)}…` : name}</text>
-                  {n.value >= 1 && (
-                    <text x={n.x + NODE_W + 8} y={cy + 5} className={styles.nodeAmt}>{tok0(n.value, "USDT")}</text>
+                  {showLabel && (
+                    <>
+                      {/* The victim's label sits above her bar, off the ribbons; every other label to the right of its wallet. */}
+                      <text x={n.depth === 0 ? n.x : n.x + NODE_W + 8} y={n.depth === 0 ? n.y - 26 : cy - 4} className={styles.nodeAmt}>{n.value >= 1 ? tok0(n.value, "USDT") : name}</text>
+                      <text x={n.depth === 0 ? n.x : n.x + NODE_W + 8} y={n.depth === 0 ? n.y - 10 : cy + 13} className={styles.nodeSub} data-tone={look.tone}>
+                        {look.tone === "frozen" ? "Tether froze it" : look.tone === "exchange" ? (n.label ?? "Exchange") : n.depth === 0 ? "Victim" : name}
+                      </text>
+                    </>
                   )}
-                  <text x={n.x + NODE_W + 8} y={cy + (n.value >= 1 ? 21 : 6)} className={styles.nodeSub} data-tone={look.tone}>
-                    {look.sub}
-                  </text>
                 </g>
               );
             })}
@@ -350,13 +369,9 @@ export default function TraceGraph({
         {node && <NodeDetail trace={trace} node={node} freezesShown={freezesShown} onClose={() => setSelected(null)} />}
       </div>
       <ul className={styles.legend} aria-label="Legend">
-        <li data-tone="victim">Victim (ETH sends)</li>
-        <li data-tone="trace">USDT moving</li>
-        <li data-tone="exchange">Reached an exchange</li>
-        <li data-tone="hold">Holding</li>
-        <li data-tone="frozen">Tether froze this</li>
-        <li data-tone="dead">Dead end</li>
-        <li className={styles.legendNote}>Ribbon width = victim money, each dollar counted once. Click a wallet for its details.</li>
+        {legend.map(([t, label]) => (
+          <li key={t} data-tone={t}>{label}</li>
+        ))}
       </ul>
     </section>
   );

@@ -1,8 +1,18 @@
 .card {
-  padding: 1.25rem;
-  background: var(--paper);
-  border-right: 1px solid var(--rule);
-  overflow-y: auto;
+  padding: 0.5rem 0 0.25rem;
+  max-width: 46rem;
+}
+
+.caseId {
+  margin: 0 0 0.75rem;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.h3 {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .alias {

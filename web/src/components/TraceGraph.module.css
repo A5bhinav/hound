@@ -5,8 +5,7 @@
   min-width: 0;
   overflow: hidden;
   background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 18px;
+  border-radius: 20px;
 }
 
 .controls {
@@ -14,8 +13,7 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--rule);
+  padding: 0.9rem 1.1rem 0.4rem;
 }
 
 .controls button {
@@ -50,8 +48,7 @@
 }
 
 .progress {
-  font-family: var(--font-m);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--ink-2);
   margin-right: auto;
 }
@@ -105,8 +102,7 @@
 }
 
 .colHead {
-  font: 700 12px var(--font-b);
-  letter-spacing: 0.1em;
+  font: 600 13px var(--font-b);
   fill: var(--ink-3);
   transition: fill 400ms;
 }
@@ -203,11 +199,10 @@
   align-items: center;
   gap: 0.4rem 1.2rem;
   margin: 0;
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 1.1rem 0.9rem;
   list-style: none;
   font-size: 0.86rem;
   color: var(--ink-2);
-  border-top: 1px solid var(--rule);
 }
 
 .legend li::before {

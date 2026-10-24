@@ -1,175 +1,145 @@
 .main {
-  max-width: 72rem;
+  max-width: 64rem;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
+  padding: 3rem 1.5rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .pair {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 1.5rem;
 }
 
 .panel {
-  padding: 1.25rem 1.5rem;
+  padding: 1.75rem 2rem;
   background: var(--paper);
-  border: 1px solid var(--rule);
-  border-top: 4px solid var(--trace);
+  border-radius: 20px;
 }
 
 .h1 {
-  font-size: 2.1rem;
-  margin: 0.2rem 0 0.75rem;
+  font-size: clamp(1.8rem, 3.4vw, 2.4rem);
+  max-width: 24ch;
+  margin: 0 0 0.75rem;
 }
 
 .h2 {
-  font-size: 1.3rem;
-  margin: 0.2rem 0 0.75rem;
+  font-size: 1.45rem;
+  line-height: 1.25;
+  margin: 0 0 0.6rem;
+}
+
+.h1 em,
+.h2 em {
+  font-style: normal;
+  color: var(--trace);
+}
+
+.lede {
+  margin: 0 0 1.25rem;
+  color: var(--ink-2);
+  font-size: 1.02rem;
+  max-width: 62ch;
 }
 
 .warn {
-  padding: 0.4rem 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
   background: var(--hold-wash);
-  border-left: 3px solid var(--hold);
-  font-size: 0.85rem;
-}
-
-.big {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem 2.5rem;
-  margin: 0.5rem 0 1rem;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.statN {
-  font-family: var(--font-d);
-  font-weight: 800;
-  font-size: 2.6rem;
-  line-height: 1;
-}
-
-.statL {
-  font-size: 0.82rem;
-  color: var(--ink-2);
-  max-width: 14rem;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0 0 1.25rem;
-  padding: 0;
-  list-style: none;
-}
-
-.chips li {
-  font-family: var(--font-m);
-  font-size: 0.78rem;
-  padding: 0.2rem 0.5rem;
-  border: 1px dashed var(--dead);
-  color: var(--ink-2);
-}
-
-.chips li[data-reached] {
-  border: 1px solid var(--trace);
-  background: var(--paper-2);
-  color: var(--ink);
-}
-
-.tableWrap {
-  overflow-x: auto;
+  color: var(--hold);
+  font-size: 0.9rem;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.5rem;
 }
 
 .table th {
   text-align: left;
-  padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid var(--ink);
-  font-family: var(--font-d);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  padding: 0.4rem 0.75rem 0.4rem 0;
 }
 
 .table td {
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid var(--rule);
+  padding: 0.75rem 0.75rem 0.75rem 0;
+  border-top: 1px solid var(--rule);
 }
 
 .band {
   display: inline-block;
-  padding: 0.1rem 0.45rem;
-  font-family: var(--font-m);
-  font-size: 0.8rem;
-  border: 1px solid var(--rule);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .band[data-band="green"] {
+  color: var(--ok);
   background: var(--ok-wash);
-  border-color: var(--ok);
 }
 
 .band[data-band="amber"] {
+  color: var(--hold);
   background: var(--hold-wash);
-  border-color: var(--hold);
 }
 
 .band[data-band="red"] {
+  color: var(--bad);
   background: var(--bad-wash);
-  border-color: var(--exchange);
+}
+
+.more {
+  margin-top: 0.75rem;
+}
+
+.more summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--ink-2);
+}
+
+.more summary:hover {
+  color: var(--ink);
 }
 
 .note {
-  font-size: 0.82rem;
+  margin: 0.6rem 0 0;
   color: var(--ink-2);
-  max-width: 52rem;
-}
-
-.empty {
-  color: var(--ink-2);
-}
-
-.holdout summary {
-  cursor: pointer;
   font-size: 0.88rem;
-  font-weight: 500;
 }
 
-.holdout ul {
-  columns: 2 22rem;
-  font-size: 0.78rem;
-  padding-left: 1.1rem;
+.addrs {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  font-size: 0.8rem;
+  color: var(--ink-2);
 }
 
 .scanList {
   list-style: none;
-  margin: 0;
+  margin: 0.6rem 0 0;
   padding: 0;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .scanList li {
-  display: flex;
-  gap: 1rem;
-  padding: 0.3rem 0;
+  display: grid;
+  grid-template-columns: 8rem 9rem 1fr;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
   border-top: 1px solid var(--rule);
 }
 
 .cat {
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
