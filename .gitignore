@@ -3,7 +3,7 @@
 .env.*
 !.env.example
 # chain API response cache (large, regenerable)
-cache/
+/cache/
 # python
 __pycache__/
 *.pyc
