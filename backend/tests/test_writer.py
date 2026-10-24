@@ -807,3 +807,29 @@ def test_done_trace_with_only_limit_stops_says_incomplete_branches():
     assert "PARTIAL TRACE" not in det and ("0x" + "07" * 20) in head
     vhead = write_case(t, c, "victim")["text"].split("\n\n")[0]
     assert vhead.startswith("THIS TRACE IS INCOMPLETE. The trace hit a limit")
+
+
+_NO_ADDR_ERRORS = ["fetch failed: timeout", "could not load the swap history: timeout", "seed s1: only part arrived",
+                   "transfer without no log_index", "other_payers lookup failed: timeout", "other_payers: read timed out"]
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("replay", [True, False])
+def test_unaddressed_audit_errors_never_break_the_packet(audience, replay):
+    """An audit error with address=None (e.g. an other_payers timeout) must still write a packet."""
+    t, c = (copy.deepcopy(TRACE), copy.deepcopy(CASE)) if replay else live()
+    t["status"] = "partial"
+    t["audit_log"] = list(t.get("audit_log") or []) + [
+        {"t": "x", "step": "error", "address": None, "detail": d} for d in _NO_ADDR_ERRORS]
+    out = write_case(t, c, audience)
+    assert out["source"] == "template" and "not tied to a single wallet" in out["text"]
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("what", sorted(writer._INCOMPLETE) + ["unknown_kind"])
+def test_every_incomplete_kind_without_an_address_renders(audience, what):
+    facts = build_facts(copy.deepcopy(TRACE), copy.deepcopy(CASE))
+    facts["derived"].update(partial=True, incomplete_count=1, audit_error_count=1,
+                            incomplete=[{"what": what, "address": None, "seed_id": "s1", "send_number": 1}])
+    for tpl in writer._status_block(facts, audience):
+        render(tpl, facts, audience=audience)

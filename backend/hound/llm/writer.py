@@ -321,7 +321,7 @@ def _status_block(facts, audience):
         p = f"derived.incomplete.{i}"
         text = _INCOMPLETE.get(it["what"], _INCOMPLETE["other_error"])
         if "{A}" in text and not it.get("address"):
-            text = "an error was logged that is not tied to one wallet"
+            text = "an error was logged that is not tied to a single wallet"
         text = text.replace("{A}", f"{{{{{p}.address|{fmt}}}}}").replace("{S}", f"{{{{{p}.send_number|int}}}}")
         lines.append(f"- {text}.")
     n_inc, n_err = d["incomplete_count"], d["audit_error_count"]
