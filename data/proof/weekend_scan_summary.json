@@ -2,178 +2,727 @@
  "status": "ok",
  "scanned_at": "2026-10-24T05:46:26.924010+00:00",
  "label": "reported, not proven",
- "method": "Chainabuse public reports (PIGBUTCHERING, FAKE_RETURNS, OTHER_INVESTMENT_SCAM, ROMANCE; ETH) pulled from the website, each address checked on-chain: USDT balanceOf + isBlackListed. Excluded: exchange hot wallets, contracts, labelled exchange/service/infra addresses, wallets with >2,000 lifetime transfers, and every wallet whose transfer count was not checked (fail closed). This run did not store claimed-loss figures or per-row transfer counts, so no row has a measured count and the headline is 0 until `python -m hound.proof.scan` is re-run on the machine that holds the full file.",
+ "method": "Chainabuse public reports (PIGBUTCHERING, FAKE_RETURNS, OTHER_INVESTMENT_SCAM, ROMANCE; ETH) pulled from the website, each address checked on-chain: USDT balanceOf + isBlackListed; exchange hot wallets, contracts, >2,000-transfer wallets excluded.",
  "addresses": 963,
- "usdt_unfrozen": 0,
- "addresses_unfrozen": 0,
+ "usdt_unfrozen": 104741.74,
+ "addresses_unfrozen": 20,
  "already_frozen": 2,
- "note": "Public summary: addresses truncated, no report ids. The full file lives only on the demo laptop (data/cases_live/scan_latest.json).",
- "redacted": true,
  "cases": [
   {
-   "address": "0x28c6…1d60",
+   "address": "0x6f72\u202622a1",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-24T12:56:18.907Z",
+   "last_reported": "2026-09-24T12:56:18.907Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 55883.149652,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1392,
+   "label": null,
+   "capped_usdt": 55883.15,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xcf1e\u20263663",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-05T19:35:27.365Z",
+   "last_reported": "2026-09-05T19:35:27.365Z",
    "report_count": 1,
-   "reported_at": "2026-07-14",
-   "balance_usdt": 640287231.72,
+   "confidence": 0.5,
+   "balance_usdt": 10073.112375,
    "is_frozen": false,
-   "freezable_now": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1780,
+   "label": null,
+   "capped_usdt": 10073.11,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x092b\u2026c590",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-10-21T13:07:52.970Z",
+   "last_reported": "2026-10-21T13:07:52.970Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 6000.356393,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1372,
+   "label": null,
+   "capped_usdt": 6000.36,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xf51a\u202627e3",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-10-21T13:07:52.970Z",
+   "last_reported": "2026-10-21T13:07:52.970Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 6000.0,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 15,
+   "label": null,
+   "capped_usdt": 6000.0,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x0000\u202605fa",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-04T12:20:15.323Z",
+   "last_reported": "2026-09-04T12:20:15.323Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 4986.362222,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 4986.36,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xc7e7\u20268afd",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-28T18:12:10.571Z",
+   "last_reported": "2026-09-28T18:12:10.571Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 3735.934813,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 3735.93,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x0de7\u2026741b",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-21T22:07:05.496Z",
+   "last_reported": "2026-09-21T22:07:05.496Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 3403.335269,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 26,
+   "label": null,
+   "capped_usdt": 3403.34,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x4b23\u2026feb0",
+   "chain": "ethereum",
+   "category": "OTHER_INVESTMENT_SCAM",
+   "categories": [
+    "OTHER_INVESTMENT_SCAM"
+   ],
+   "reported_at": "2026-10-23T16:05:46.974Z",
+   "last_reported": "2026-10-23T16:05:46.974Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 3012.476041,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 146,
+   "label": null,
+   "capped_usdt": 3012.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x3f69\u2026a1a1",
+   "chain": "ethereum",
+   "category": "ROMANCE",
+   "categories": [
+    "ROMANCE"
+   ],
+   "reported_at": "2026-04-06T14:14:28.656Z",
+   "last_reported": "2026-04-06T14:14:28.656Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 2132.728497,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 2132.73,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xed13\u20264820",
+   "chain": "ethereum",
+   "category": "OTHER_INVESTMENT_SCAM",
+   "categories": [
+    "OTHER_INVESTMENT_SCAM"
+   ],
+   "reported_at": "2026-10-23T17:53:22.711Z",
+   "last_reported": "2026-10-23T17:53:22.711Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 2003.565225,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 29,
+   "label": null,
+   "capped_usdt": 2003.57,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xc01d\u20266de6",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-08-12T12:58:18.931Z",
+   "last_reported": "2026-08-12T12:58:18.931Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 1627.254923,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 16,
+   "label": null,
+   "capped_usdt": 1627.25,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xc654\u202628d8",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-10-06T14:25:59.661Z",
+   "last_reported": "2026-10-06T14:25:59.661Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 1558.374577,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 1558.37,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xca56\u20265156",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-10-17T12:00:06.298Z",
+   "last_reported": "2026-10-17T12:00:06.298Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 1503.100025,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 206,
+   "label": null,
+   "capped_usdt": 1503.1,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x3c49\u20263359",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-10-06T06:47:55.143Z",
+   "last_reported": "2026-10-06T06:47:55.143Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 1042.407468,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 209,
+   "label": null,
+   "capped_usdt": 1042.41,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x1481\u2026db70",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-14T10:55:33.438Z",
+   "last_reported": "2026-09-14T11:02:44.292Z",
+   "report_count": 2,
+   "confidence": 0.5,
+   "balance_usdt": 1000.0,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 1000.0,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xea35\u20262b49",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-16T19:33:54.140Z",
+   "last_reported": "2026-07-16T19:33:54.140Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 252.634317,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 46,
+   "label": null,
+   "capped_usdt": 252.63,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x50ac\u20264aca",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-16T19:33:54.140Z",
+   "last_reported": "2026-07-16T19:33:54.140Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 183.482504,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 94,
+   "label": null,
+   "capped_usdt": 183.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x1550\u2026157a",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-10-05T16:10:17.929Z",
+   "last_reported": "2026-10-05T16:10:17.929Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 131.13579,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 7,
+   "label": null,
+   "capped_usdt": 131.14,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x9277\u20263bee",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-24T12:56:18.907Z",
+   "last_reported": "2026-09-24T12:56:18.907Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 110.48207,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 110.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xec6e\u2026051d",
+   "chain": "ethereum",
+   "category": "OTHER_INVESTMENT_SCAM",
+   "categories": [
+    "OTHER_INVESTMENT_SCAM"
+   ],
+   "reported_at": "2026-10-23T17:11:23.681Z",
+   "last_reported": "2026-10-23T17:11:23.681Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 101.849137,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": true,
+   "transfer_count": 108,
+   "label": null,
+   "capped_usdt": 101.85,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x28c6\u20261d60",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-14T01:44:36.777Z",
+   "last_reported": "2026-07-14T01:44:36.777Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 640287231.716449,
+   "is_frozen": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 390,
+   "label": {
+    "name": "Binance 14",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Binance"
+   },
    "capped_usdt": 640287231.72,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x9696…6976",
+   "address": "0x9696\u20266976",
    "chain": "ethereum",
    "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-06-16T22:08:06.721Z",
+   "last_reported": "2026-10-15T19:56:07.637Z",
    "report_count": 2,
-   "reported_at": "2026-06-16",
-   "balance_usdt": 79780657.24,
+   "confidence": 0.5,
+   "balance_usdt": 79780657.235748,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": {
+    "name": "Binance 18",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Binance"
+   },
    "capped_usdt": 79780657.24,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x21a3…5549",
+   "address": "0x21a3\u20265549",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-05T04:50:42.257Z",
+   "last_reported": "2026-07-05T04:50:42.257Z",
    "report_count": 1,
-   "reported_at": "2026-07-05",
-   "balance_usdt": 61895750.59,
+   "confidence": 0.5,
+   "balance_usdt": 61895750.588811,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 10,
+   "label": {
+    "name": "Binance 15",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Binance"
+   },
    "capped_usdt": 61895750.59,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xaa8b…3efb",
+   "address": "0xaa8b\u20263efb",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-08-01T14:14:29.302Z",
+   "last_reported": "2026-08-01T14:14:29.302Z",
    "report_count": 1,
-   "reported_at": "2026-08-01",
-   "balance_usdt": 50850343.29,
+   "confidence": 0.5,
+   "balance_usdt": 50850343.286513,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 1532918,
+   "label": null,
    "capped_usdt": 50850343.29,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
     "exchange/service/infra label",
-    "transfer count not checked"
+    ">2,000 lifetime transfers"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x56ed…b17f",
+   "address": "0x56ed\u2026b17f",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-05T04:50:42.257Z",
+   "last_reported": "2026-07-05T04:50:42.257Z",
    "report_count": 1,
-   "reported_at": "2026-07-05",
-   "balance_usdt": 47954372.46,
+   "confidence": 0.5,
+   "balance_usdt": 47954372.458242,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": {
+    "name": "Binance 17",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Binance"
+   },
    "capped_usdt": 47954372.46,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x9642…5d4e",
+   "address": "0x9642\u20265d4e",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-16T17:11:09.590Z",
+   "last_reported": "2026-07-16T17:11:09.590Z",
    "report_count": 1,
-   "reported_at": "2026-07-16",
-   "balance_usdt": 8956891.82,
+   "confidence": 0.5,
+   "balance_usdt": 8956891.818595,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "transfer_count": 20000,
-   "transfer_count_is_lower_bound": true,
+   "flow_unverified": true,
+   "transfer_count": 104,
+   "label": {
+    "name": "MEXC 21",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "MEXC"
+   },
    "capped_usdt": 8956891.82,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    ">2,000 lifetime transfers"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x4e5b…972f",
+   "address": "0x4e5b\u2026972f",
    "chain": "ethereum",
    "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-04T23:18:42.447Z",
+   "last_reported": "2026-09-04T23:18:42.447Z",
    "report_count": 1,
-   "reported_at": "2026-09-04",
-   "balance_usdt": 3089426.62,
+   "confidence": 0.5,
+   "balance_usdt": 3089426.616432,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "transfer_count": 12557,
-   "transfer_count_is_lower_bound": true,
+   "flow_unverified": true,
+   "transfer_count": 3,
+   "label": {
+    "name": "FixedFloat: Hot Wallet 2",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "FIXEDFLOAT"
+   },
    "capped_usdt": 3089426.62,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    ">2,000 lifetime transfers"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x8078…ee1a",
+   "address": "0x8078\u2026ee1a",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-08-14T02:28:01.354Z",
+   "last_reported": "2026-08-14T02:28:01.354Z",
    "report_count": 1,
-   "reported_at": "2026-08-14",
-   "balance_usdt": 2226912.82,
+   "confidence": 0.5,
+   "balance_usdt": 2226912.82181,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 487594,
+   "label": {
+    "name": "HitBTC 12",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "HitBTC"
+   },
    "capped_usdt": 2226912.82,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
     "exchange/service/infra label",
-    "transfer count not checked"
+    ">2,000 lifetime transfers"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xdac1…1ec7",
+   "address": "0xdac1\u20261ec7",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING",
+    "ROMANCE"
+   ],
+   "reported_at": "2026-02-18T18:01:16.613Z",
+   "last_reported": "2026-09-14T11:14:40.232Z",
    "report_count": 7,
-   "reported_at": "2026-02-18",
-   "balance_usdt": 1178547.12,
+   "confidence": 0.5,
+   "balance_usdt": 1178547.118918,
    "is_frozen": true,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
    "capped_usdt": 1178547.12,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
@@ -183,71 +732,101 @@
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x7830…6f43",
+   "address": "0x7830\u20266f43",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-23T01:24:35.415Z",
+   "last_reported": "2026-09-23T01:24:35.415Z",
    "report_count": 1,
-   "reported_at": "2026-09-23",
-   "balance_usdt": 853611.7,
+   "confidence": 0.5,
+   "balance_usdt": 853611.695673,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
+   "label": {
+    "name": "Coinbase: Deposit",
+    "kind": "exchange_deposit",
+    "source": "blockscout_metadata"
+   },
+   "transfer_count": 1000,
    "capped_usdt": 853611.7,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x1bac…f3da",
+   "address": "0x1bac\u2026f3da",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-26T16:14:27.899Z",
+   "last_reported": "2026-09-26T16:14:27.899Z",
    "report_count": 1,
-   "reported_at": "2026-09-26",
-   "balance_usdt": 216142.67,
+   "confidence": 0.5,
+   "balance_usdt": 216142.671946,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 244981,
+   "label": null,
    "capped_usdt": 216142.67,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
     "exchange/service/infra label",
-    "transfer count not checked"
+    ">2,000 lifetime transfers"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xa0b8…eb48",
+   "address": "0xa0b8\u2026eb48",
    "chain": "ethereum",
    "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS",
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-07-02T08:43:14.197Z",
+   "last_reported": "2026-09-14T11:14:40.232Z",
    "report_count": 5,
-   "reported_at": "2026-07-02",
-   "balance_usdt": 210927.49,
+   "confidence": 0.5,
+   "balance_usdt": 210927.490546,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
    "capped_usdt": 210927.49,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x55d3…7955",
+   "address": "0x55d3\u20267955",
    "chain": "ethereum",
    "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-26T17:13:04.436Z",
+   "last_reported": "2026-09-26T17:13:04.436Z",
    "report_count": 1,
-   "reported_at": "2026-09-26",
-   "balance_usdt": 134417.74,
+   "confidence": 0.5,
+   "balance_usdt": 134417.738915,
    "is_frozen": true,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
    "capped_usdt": 134417.74,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
@@ -257,456 +836,146 @@
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x6f72…22a1",
+   "address": "0x4cd0\u2026bc31",
    "chain": "ethereum",
    "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-09-24",
-   "balance_usdt": 55883.15,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 55883.15,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
+   "categories": [
+    "FAKE_RETURNS"
    ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x4cd0…bc31",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
+   "reported_at": "2026-07-06T15:58:12.690Z",
+   "last_reported": "2026-07-06T15:58:12.690Z",
    "report_count": 1,
-   "reported_at": "2026-07-06",
-   "balance_usdt": 45948.32,
+   "confidence": 0.5,
+   "balance_usdt": 45948.315567,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 142,
+   "label": null,
    "capped_usdt": 45948.32,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label",
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x0796…0000",
+   "address": "0x0796\u20260000",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-26T20:40:32.152Z",
+   "last_reported": "2026-09-27T03:21:33.404Z",
    "report_count": 2,
-   "reported_at": "2026-09-26",
-   "balance_usdt": 12930.17,
+   "confidence": 0.5,
+   "balance_usdt": 12930.174761,
    "is_frozen": false,
-   "freezable_now": false,
    "excluded_as_exchange_or_infra": true,
+   "freezable_now": false,
+   "transfer_count": 521604,
+   "label": null,
    "capped_usdt": 12930.17,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
     "exchange/service/infra label",
-    "transfer count not checked"
+    ">2,000 lifetime transfers"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xcf1e…3663",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-09-05",
-   "balance_usdt": 10073.11,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 10073.11,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x092b…c590",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-10-21",
-   "balance_usdt": 6000.36,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 6000.36,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xf51a…27e3",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-10-21",
-   "balance_usdt": 6000.0,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 6000.0,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x0000…05fa",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-09-04",
-   "balance_usdt": 4986.36,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 4986.36,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x2dca…68cb",
+   "address": "0x2dca\u202668cb",
    "chain": "ethereum",
    "category": "ROMANCE",
+   "categories": [
+    "ROMANCE"
+   ],
+   "reported_at": "2026-07-10T02:35:15.843Z",
+   "last_reported": "2026-07-10T02:35:15.843Z",
    "report_count": 1,
-   "reported_at": "2026-07-10",
-   "balance_usdt": 4121.37,
+   "confidence": 0.5,
+   "balance_usdt": 4121.366944,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
+   "transfer_count": 1000,
+   "label": {
+    "name": "Roqqu: Wallet 1",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Roqqu"
+   },
    "capped_usdt": 4121.37,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xc7e7…8afd",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-09-28",
-   "balance_usdt": 3735.93,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 3735.93,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xa9ac…4573",
+   "address": "0xa9ac\u20264573",
    "chain": "ethereum",
    "category": "ROMANCE",
+   "categories": [
+    "ROMANCE"
+   ],
+   "reported_at": "2026-08-27T16:33:57.256Z",
+   "last_reported": "2026-08-27T16:33:57.256Z",
    "report_count": 1,
-   "reported_at": "2026-08-27",
-   "balance_usdt": 3579.46,
+   "confidence": 0.5,
+   "balance_usdt": 3579.457032,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
+   "transfer_count": 1000,
+   "label": {
+    "name": "OKX 167",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "OKX"
+   },
    "capped_usdt": 3579.46,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x0de7…741b",
+   "address": "0x1ab4\u20268f23",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-09-21",
-   "balance_usdt": 3403.34,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 3403.34,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
+   "categories": [
+    "PIGBUTCHERING"
    ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x4b23…feb0",
-   "chain": "ethereum",
-   "category": "OTHER_INVESTMENT_SCAM",
+   "reported_at": "2026-08-12T12:58:18.931Z",
+   "last_reported": "2026-08-12T12:58:18.931Z",
    "report_count": 1,
-   "reported_at": "2026-10-23",
-   "balance_usdt": 3012.48,
+   "confidence": 0.5,
+   "balance_usdt": 2843.371989,
    "is_frozen": false,
+   "excluded_as_exchange_or_infra": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 3012.48,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x1ab4…8f23",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-08-12",
-   "balance_usdt": 2843.37,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
+   "transfer_count": 1000,
+   "label": {
+    "name": "Bitget: Hot Wallet",
+    "kind": "exchange_hot",
+    "source": "blockscout_metadata",
+    "exchange": "Bitget"
+   },
    "capped_usdt": 2843.37,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x3f69…a1a1",
-   "chain": "ethereum",
-   "category": "ROMANCE",
-   "report_count": 1,
-   "reported_at": "2026-04-06",
-   "balance_usdt": 2132.73,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 2132.73,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xed13…4820",
-   "chain": "ethereum",
-   "category": "OTHER_INVESTMENT_SCAM",
-   "report_count": 1,
-   "reported_at": "2026-10-23",
-   "balance_usdt": 2003.57,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 2003.57,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xc01d…6de6",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-08-12",
-   "balance_usdt": 1627.25,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 1627.25,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xc654…28d8",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-10-06",
-   "balance_usdt": 1558.37,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 1558.37,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xca56…5156",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-10-17",
-   "balance_usdt": 1503.1,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 1503.1,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x3c49…3359",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-10-06",
-   "balance_usdt": 1042.41,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 1042.41,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x1481…db70",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 2,
-   "reported_at": "2026-09-14",
-   "balance_usdt": 1000.0,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 1000.0,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xea35…2b49",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-07-16",
-   "balance_usdt": 252.63,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 252.63,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x50ac…4aca",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-07-16",
-   "balance_usdt": 183.48,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 183.48,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x1550…157a",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-10-05",
-   "balance_usdt": 131.14,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 131.14,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x9277…3bee",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-09-24",
-   "balance_usdt": 110.48,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 110.48,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
-   ],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xec6e…051d",
-   "chain": "ethereum",
-   "category": "OTHER_INVESTMENT_SCAM",
-   "report_count": 1,
-   "reported_at": "2026-10-23",
-   "balance_usdt": 101.85,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false,
-   "capped_usdt": 101.85,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [
-    "transfer count not checked"
+    "exchange/service/infra label"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   }
- ]
+ ],
+ "note": "Two multi-million wallets (auextrade.com 8.96M, Telegram 3.09M) excluded from the headline until their flows are verified; Blockscout timed out on them."
 }
