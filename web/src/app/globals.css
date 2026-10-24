@@ -1,28 +1,49 @@
 :root {
-  /* Ground and ink */
-  --fog: #e8edf1;
-  --paper: #f7f9fb;
-  --ink: #15212e;
-  --ink-2: #4b5967;
-  --rule: #c8d1d9;
+  /* Hound: light, evidence-first. Colour comes from the assets themselves and only marks meaning. */
+  --fog: #f4f4f1;        /* page: tinted off-white, never pure white */
+  --paper: #fbfbf9;      /* the one raised surface: the trace canvas, inputs */
+  --paper-2: #ecede8;    /* hover, drawers */
+  --ink: #161b22;        /* text, primary actions (15.7:1 on page) */
+  --ink-2: #474f5c;      /* secondary text (7.5:1) */
+  --ink-3: #5f6774;      /* quiet labels (5.2:1) */
+  --rule: #dcddd6;
+  --rule-2: #c6c8c0;
 
-  /* Trace kinds (BRIEF §9.4: red = exchange, gold = holding + freezable, grey = dead end) */
-  --trace: #2c5a86;
-  --exchange: #b8322a;
-  --hold: #c28e14;
-  --hold-wash: #f6e7bf;
-  --dead: #8b959f;
-  --ice: #1f7a8c;
-  --ice-wash: #dcedf1;
-  --white: #ffffff;
+  --trace: #13795b;      /* USDT, the money we follow: Tether's green, darkened to 4.9:1 */
+  --eth: #5263b8;        /* the victim's ETH, before the swap */
+  --exchange: #a8481a;   /* reached an exchange: request ready */
+  --hold: #8a6100;       /* holding, freezable */
+  --hold-wash: #f3ead2;
+  --dead: #8b929c;
+  --ice: #2b5b84;        /* Tether froze it (drawn with a seal hatch in the trace) */
+  --ice-wash: #e2eaf1;
+  --ice-deep: #2b5b84;
+  --ice-ink: #1f4566;
+  --on-ice: #ffffff;
+  --on-trace: #ffffff;
+  --ok: #1e6e45;
+  --ok-wash: #e1efe6;
+  --bad: #a3271b;
+  --bad-wash: #f6e3e0;
+  --white: #fbfbf9;
 
-  --font-d: var(--font-display), "Arial Narrow", sans-serif;
+  --font-d: var(--font-display), system-ui, sans-serif;
   --font-b: var(--font-body), system-ui, sans-serif;
   --font-m: var(--font-mono), ui-monospace, Consolas, monospace;
+  --radius: 6px;
+  color-scheme: light;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* One corner radius for every control, so nothing looks stitched together. */
+button,
+input,
+select,
+textarea {
+  border-radius: var(--radius);
 }
 
 html,
@@ -53,21 +74,19 @@ a {
 /* Top bar */
 .bar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 1.25rem;
   flex-wrap: wrap;
-  padding: 0.9rem 1.25rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--rule);
-  background: var(--paper);
+  background: var(--fog);
 }
 
 .wordmark {
   font-family: var(--font-d);
-  font-stretch: 75%;
   font-weight: 800;
-  font-size: 1.5rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
   color: var(--ink);
   text-decoration: none;
 }
@@ -99,18 +118,16 @@ a {
   font-size: 0.75rem;
   padding: 0.2rem 0.5rem;
   border: 1px dashed var(--hold);
-  color: #7a5806;
+  color: var(--hold);
   background: var(--hold-wash);
 }
 
 /* Shared headings */
 .eyebrow {
-  font-family: var(--font-d);
-  font-stretch: 75%;
-  font-weight: 700;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-b);
+  font-weight: 600;
+  font-size: 0.88rem;
+  letter-spacing: 0;
   color: var(--ink-2);
   margin: 0 0 0.4rem;
 }
@@ -118,9 +135,9 @@ a {
 h1,
 h2 {
   font-family: var(--font-d);
-  font-stretch: 80%;
   font-weight: 800;
-  line-height: 1.05;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
   margin: 0;
 }
 
@@ -130,7 +147,8 @@ h2 {
   margin: 3rem auto;
   padding: 1.25rem 1.5rem;
   background: var(--paper);
-  border-left: 4px solid var(--exchange);
+  border: 1px solid var(--bad);
+  border-radius: 8px;
 }
 
 .api-error p {

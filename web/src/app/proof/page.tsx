@@ -52,73 +52,50 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
   const mids = sb.targets.filter((t) => t.group === "intermediate");
   return (
     <section className={styles.panel} aria-labelledby="doj-h">
-      <p className="eyebrow">
-        DOJ match · United States v. 4,340,000 Tether · {sb.docket} ·{" "}
-        <a href={sb.source_pdf} target="_blank" rel="noreferrer">
-          complaint PDF
-        </a>
-      </p>
       <h1 id="doj-h" className={styles.h1}>
-        Reached the same {s.finals_total} wallets DOJ seized{s.blind ? ", blind" : ""}
+        Found all {s.finals_total} wallets the DOJ seized{s.blind ? ", without being told where to look" : ""}
       </h1>
-      {sb.trace_source === "fixture" && (
-        <p className={styles.warn} role="alert">
-          This score comes from a fixture-data trace, not live chain reads.
-        </p>
-      )}
-
-      <div className={styles.big}>
-        <Stat n={`${s.intermediates_reached}/${s.intermediates_total}`} label="DOJ intermediate wallets reached" />
-        <Stat n={`${s.finals_reached}/${s.finals_total}`} label="final wallets reached (A-7, A-8, A-9)" />
-      </div>
-
-      <ul className={styles.chips} aria-label="Wallets DOJ named">
-        {[...mids, ...finals].map((t) => (
-          <li key={t.label} data-reached={t.reached || undefined} title={t.address}>
-            {t.label}
-          </li>
-        ))}
-      </ul>
-
-      <h2 className={styles.h2}>Victim A.H.&apos;s money in each final wallet: ours vs DOJ (¶ 74)</h2>
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Wallet</th>
-              <th scope="col">DOJ ¶ 74</th>
-              <th scope="col">Hound</th>
-              <th scope="col">Difference</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sb.amount.map((a) => (
-              <tr key={a.label}>
-                <td>
-                  {a.label} <span className="mono">{shortAddr(a.address)}</span>
-                </td>
-                <td className="mono">{usdt(a.doj_ah_para74_usdt)}</td>
-                <td className="mono">{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
-                <td>
-                  <span className={styles.band} data-band={a.band}>
-                    {a.pct_error == null ? "—" : `${a.pct_error}%`}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className={styles.note}>
-        Green ≤ 5%, amber 5–20%, red over 20%. {s.start_disclosure} DOJ also traced 37 other victims and accounts with mixed methods and
-        subpoena data; those totals are context only, never scored.
+      <p className={styles.lede}>
+        {s.intermediates_reached} of {s.intermediates_total} intermediate wallets and {s.finals_reached} of {s.finals_total} final wallets, from the
+        victim&apos;s report alone. United States v. 4,340,000 Tether, {sb.docket} ·{" "}
+        <a href={sb.source_pdf} target="_blank" rel="noreferrer">complaint</a>
       </p>
-      <details className={styles.holdout}>
-        <summary>
-          Holdout: the {hidden.length} DOJ addresses the engine was never given (plus the {given.length} where the
-          victim&apos;s sends start and land, which it had to be given)
-        </summary>
-        <ul className="mono">
+      {sb.trace_source === "fixture" && (
+        <p className={styles.warn} role="alert">This score comes from a fixture-data trace, not live chain reads.</p>
+      )}
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Wallet</th>
+            <th scope="col">DOJ</th>
+            <th scope="col">Hound</th>
+            <th scope="col">Difference</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sb.amount.map((a) => (
+            <tr key={a.label}>
+              <td><b>{a.label}</b> <span className="mono">{shortAddr(a.address)}</span></td>
+              <td>{usdt(a.doj_ah_para74_usdt)}</td>
+              <td>{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
+              <td>
+                <span className={styles.band} data-band={a.band}>{a.pct_error == null ? "—" : `${a.pct_error}%`}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <details className={styles.more}>
+        <summary>How this was scored</summary>
+        <p className={styles.note}>
+          Amounts are victim A.H.&apos;s money in each final wallet, against DOJ ¶ 74. Green within 5%, amber 5 to 20%, red over 20%.{" "}
+          {s.start_disclosure} DOJ also traced 37 other victims and accounts with mixed methods and subpoena data; those totals are
+          context only, never scored. Wallets reached: {[...mids, ...finals].filter((t) => t.reached).map((t) => t.label).join(", ")}.
+        </p>
+        <p className={styles.note}>
+          Never given to the engine ({hidden.length}), plus the {given.length} where her sends start and land, which it had to be given:
+        </p>
+        <ul className={`mono ${styles.addrs}`}>
           {hidden.map((a) => (
             <li key={a}>{a}</li>
           ))}
@@ -129,99 +106,69 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
 }
 
 function BacktestPanel({ bt }: { bt: Backtest }) {
+  const ready = bt.n > 0 && bt.detection_lag_median_h != null;
   return (
     <section className={styles.panel} aria-labelledby="bt-h">
-      <p className="eyebrow">Freeze backtest</p>
       <h2 id="bt-h" className={styles.h2}>
-        How long scam money sat before Tether froze it
+        {ready ? <>Tether took a median of <em>{days(bt.detection_lag_median_h!)}</em> to freeze a scam wallet</> : "Freeze timing: not computed yet"}
       </h2>
-      {bt.n === 0 || bt.detection_lag_median_h == null ? (
-        <p className={styles.empty}>Not computed yet. {bt.method}</p>
-      ) : (
-        <>
-          <div className={styles.big}>
-            <Stat n={days(bt.detection_lag_median_h)} label="median, first stolen dollar in to Tether's freeze" />
-            {bt.p90_h != null && <Stat n={days(bt.p90_h)} label="90th percentile" />}
-            {bt.escape_share_median != null && (
-              <Stat n={`${Math.round(bt.escape_share_median * 100)}%`} label="median share moved out before the freeze" />
-            )}
-          </div>
-          <p className={styles.note}>
-            {bt.n} frozen addresses measured{bt.population ? ` of ${bt.population}` : ""}
-            {bt.n_skipped ? `, ${bt.n_skipped} skipped` : ""}. {bt.method}
-          </p>
-        </>
+      {ready && (
+        <p className={styles.lede}>
+          {bt.escape_share_median != null && <>By then {Math.round(bt.escape_share_median * 100)}% of the money had already left. </>}
+          {bt.p90_h != null && <>The slowest tenth took over {days(bt.p90_h)}.</>}
+        </p>
       )}
+      <details className={styles.more}>
+        <summary>Method</summary>
+        <p className={styles.note}>
+          {bt.n} frozen addresses measured{bt.population ? ` of ${bt.population}` : ""}
+          {bt.n_skipped ? `, ${bt.n_skipped} skipped` : ""}. {bt.method}
+        </p>
+      </details>
     </section>
   );
 }
 
 // AUDIT 24 fields the backend adds per row (hound/proof/scan.py finalize()).
 type ScanRow = Scan["cases"][number] & { capped_usdt?: number; cap_basis?: string; row_label?: string; excluded_reasons?: string[] };
-const SCAN_ROWS_SHOWN = 8;
 
 function ScanPanel({ scan }: { scan: Scan }) {
   const computed = scan.status !== "not_computed" && scan.addresses > 0;
   // Only rows the backend counted in the headline, at their capped amount, so the list adds up to it.
   const amount = (c: ScanRow) => c.capped_usdt ?? c.balance_usdt;
-  // Largest first, whatever order the summary file was written in (review F1).
   const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen).sort((a, b) => amount(b) - amount(a));
-  const shown = rows.slice(0, SCAN_ROWS_SHOWN);
-  const rest = rows.slice(SCAN_ROWS_SHOWN);
   const uncapped = rows.some((c) => c.cap_basis?.startsWith("balance"));
   return (
     <section className={styles.panel} aria-labelledby="scan-h">
-      <p className="eyebrow">This weekend · {scan.label}</p>
       <h2 id="scan-h" className={styles.h2}>
-        Reported scam money not yet frozen
+        {computed ? <><em>{usdt(Math.round(scan.usdt_unfrozen))}</em> reported and not yet frozen</> : "This weekend's scan: not computed yet"}
       </h2>
-      {!computed ? (
-        <p className={styles.empty}>Not computed yet.</p>
-      ) : (
-        <>
-          <div className={styles.big}>
-            <Stat n={usdt(scan.usdt_unfrozen)} label={`in ${scan.addresses_unfrozen} addresses not yet frozen`} />
-          </div>
-          {scan.addresses_unfrozen === 0 && (
-            // The scan fails closed: rows whose transfer counts were not checked are left out of the total.
-            <p className={styles.empty}>
-              Nothing is counted yet: transfer counts for these addresses have not been checked.
-            </p>
-          )}
+      {computed && (
+        <p className={styles.lede}>
+          In {scan.addresses_unfrozen} of the {scan.addresses} reported addresses checked this weekend. Reported, not proven.
+        </p>
+      )}
+      {computed && rows.length > 0 && (
+        <details className={styles.more}>
+          <summary>Show the {rows.length} addresses</summary>
           <ul className={styles.scanList}>
-            {shown.map((c) => (
+            {rows.map((c) => (
               // Live addresses are truncated everywhere public (BRIEF §0).
               <li key={c.address}>
                 <span className="mono">{shortAddr(c.address)}</span>
                 <span>{usdt(amount(c))}</span>
-                {c.category && <span className={styles.cat}>{c.category}</span>}
-                <span className={styles.cat}>{c.row_label ?? scan.label}</span>
+                {c.category && <span className={styles.cat}>{c.category.toLowerCase().replaceAll("_", " ")}</span>}
               </li>
             ))}
-            {rest.length > 0 && (
-              <li key="rest">
-                <span>+{rest.length} more</span>
-                <span>{usdt(rest.reduce((s, c) => s + amount(c), 0))}</span>
-              </li>
-            )}
           </ul>
           <p className={styles.note}>
-            {scan.addresses} reported addresses scanned{scan.scanned_at ? ` on ${scan.scanned_at.slice(0, 10)}` : ""}
-            {scan.already_frozen ? `, ${scan.already_frozen} already frozen` : ""}. Each row counts min(balance, claimed losses)
-            {uncapped ? " (this run stored no claimed-loss figures, so rows count at balance)" : ""}; exchange, service and infra wallets and wallets with over 2,000 transfers are left out. Sent through Chainabuse / IC3 only, never published.
+            {scan.already_frozen ? `${scan.already_frozen} already frozen. ` : ""}Each row counts min(balance, claimed losses)
+            {uncapped ? " (no claimed-loss figures stored, so rows count at balance)" : ""}; exchange, service and infra wallets and wallets
+            with over 2,000 transfers are left out. Sent through Chainabuse / IC3 only, never published.
           </p>
-        </>
+        </details>
       )}
     </section>
-  );
-}
-
-function Stat({ n, label }: { n: string; label: string }) {
-  return (
-    <div className={styles.stat}>
-      <span className={styles.statN}>{n}</span>
-      <span className={styles.statL}>{label}</span>
-    </div>
   );
 }
 

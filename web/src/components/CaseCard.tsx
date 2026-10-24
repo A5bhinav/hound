@@ -49,18 +49,10 @@ export default function CaseCard({
   const replay = trace?.replay ?? c.source === "doj_replay";
 
   return (
-    <aside className={styles.card}>
-      <p className="eyebrow">
-        {replay ? "Replay · historical case" : "Case"} · {c.case_id}
+    <div className={styles.card}>
+      <p className={styles.caseId}>
+        {c.victim?.alias ?? c.case_id} · <span className="mono">{c.case_id}</span>
       </p>
-      <h1 className={styles.alias} data-long={(c.victim?.alias ?? c.case_id).length > 28 || undefined}>
-        {c.victim?.alias ?? c.case_id}
-      </h1>
-      {sendList.length > 0 && (
-        <p className={styles.sent}>
-          {totalText} in {sendList.length} {sendList.length === 1 ? "send" : "sends"}
-        </p>
-      )}
       {replay && (trace?.method.as_of_block || asOf) && (
         // The cutoff is a block just before Tether's last freeze; the report date is only the story date (review web-integration-4).
         <p className={styles.replay}>
@@ -81,7 +73,7 @@ export default function CaseCard({
       )}
       {c.story?.summary && <p className={styles.summary}>{c.story.summary}</p>}
 
-      {sendList.length > 0 && <p className="eyebrow">Sends</p>}
+      {sendList.length > 0 && <h3 className={styles.h3}>Sends · {totalText}</h3>}
       <ul className={`${styles.list} ${styles.sends}`}>
         {sendList.map((s) => (
           <li key={s.tx_hash}>
@@ -99,7 +91,7 @@ export default function CaseCard({
       </ul>
 
       {trace && <Endpoints trace={trace} freezesShown={freezesShown} />}
-    </aside>
+    </div>
   );
 }
 
@@ -131,7 +123,7 @@ function Endpoints({ trace, freezesShown }: { trace: Trace; freezesShown: boolea
   };
   return (
     <>
-      <p className="eyebrow">Where the money stopped</p>
+      <h3 className={styles.h3}>Every endpoint</h3>
       <ul className={styles.list}>
         {trace.endpoints.filter((p) => p.victim_inflow > 0 || (p.victim_remaining ?? 0) > 0).map((p) => {
           const fz = frozenAt(p.address);

@@ -1,8 +1,18 @@
 .card {
-  padding: 1.25rem;
-  background: var(--paper);
-  border-right: 1px solid var(--rule);
-  overflow-y: auto;
+  padding: 0.5rem 0 0.25rem;
+  max-width: 46rem;
+}
+
+.caseId {
+  margin: 0 0 0.75rem;
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+
+.h3 {
+  margin: 1.25rem 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .alias {
@@ -66,18 +76,16 @@
 .list li {
   display: flex;
   flex-direction: column;
-  padding: 0.45rem 0 0.45rem 0.6rem;
+  padding: 0.45rem 0;
   border-top: 1px solid var(--rule);
-  border-left: 3px solid transparent;
 }
 
-.list li[data-reason="exchange"] { border-left-color: var(--exchange); }
-.list li[data-reason="holding"] { border-left-color: var(--hold); }
-.list li[data-freezable] { background: var(--hold-wash); }
-.list li[data-reason="frozen"] { border-left-color: var(--ice); }
+.list li[data-reason="exchange"] > span:first-child { color: var(--exchange); }
+.list li[data-reason="holding"] > span:first-child { color: var(--hold); }
+.list li[data-reason="frozen"] > span:first-child { color: var(--ice-ink); }
 .list li[data-reason="dead_end"],
 .list li[data-reason="dust"],
-.list li[data-reason="max_hops"] { border-left-color: var(--dead); }
+.list li[data-reason="max_hops"] > span:first-child { color: var(--ink-2); }
 
 .meta {
   color: var(--ink-2);

@@ -30,7 +30,7 @@
   min-height: 5rem;
   padding: 1rem 1.25rem;
   font: 600 1.45rem var(--font-b);
-  color: #ffffff;
+  color: var(--on-trace);
   background: var(--trace);
   border: 0;
   border-radius: 12px;
@@ -67,7 +67,7 @@
 }
 
 .error {
-  background: #fbeceb;
+  background: var(--bad-wash);
   border: 2px solid var(--exchange);
 }
 
@@ -99,7 +99,7 @@
   min-height: 3.5rem;
   font: 600 1.25rem var(--font-b);
   color: var(--ink);
-  background: #ffffff;
+  background: var(--paper);
   border: 2px solid var(--ink);
   border-radius: 10px;
   cursor: pointer;
@@ -117,8 +117,8 @@
 .done {
   font-size: 1.3rem;
   padding: 1.25rem;
-  background: #e8f4ec;
-  border: 2px solid #2f7d4f;
+  background: var(--ok-wash);
+  border: 2px solid var(--ok);
   border-radius: 12px;
 }
 
