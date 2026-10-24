@@ -27,17 +27,17 @@ cd web && npm ci && rm -rf .next && HOUND_API_URL=http://localhost:8000 npm run 
 Health check: open http://localhost:8000/health and expect `"ok": true`.
 
 ## Public access + live intake (Cartesia)
-Only needed for the phone call beat and for judges on their own phones. Everything else runs on localhost.
+The public website is **https://houndhelp.vercel.app** (Vercel project ish-c/houndhelp, deployed from `web/`). It never changes on restart. It reaches the laptop's backend through the reserved ngrok domain (`HOUND_API_URL` in the Vercel project), so the laptop, `make demo` and ngrok must be up.
 ```
-# terminal 3: web for phones (cloudflared: no browser interstitial; host changes on every restart)
-cloudflared tunnel --url http://localhost:3000
-# terminal 4: backend for Cartesia's tool call (ngrok reserved domain: stable; free ngrok shows browsers a warning page, APIs are fine)
+# terminal 3: backend for the website and Cartesia's tool calls (stable reserved domain)
 ngrok http 8000 --url=<reserved ngrok domain>
+# redeploy the website after a web/ change:
+cd web && vercel deploy --prod --yes
 ```
-1. Set `PUBLIC_BASE_URL=https://<cloudflared host>` in `.env` and restart the backend (upload links use it).
-2. Register the voice agent's tool: `python scripts/cartesia_agent.py --tool-url https://<ngrok domain>/intake/voice/story` (needs `CARTESIA_API_KEY` and `HOUND_INTAKE_TOKEN` in `.env`). The web host also works (`https://<cloudflared host>/api/intake/voice/story`), but it changes on restart.
-3. Test once before judging: call the agent, hear a case code, open the upload link on a phone on cellular (not venue Wi-Fi), upload a screenshot, and watch **Intake** go to "Send confirmed on chain".
-4. On the operator laptop, click **Approve: I reviewed this send** on the intake card. Only approved intake cases can cause exchange holds.
+1. `.env` has `PUBLIC_BASE_URL=https://houndhelp.vercel.app` and `HOUND_SPOKEN_SITE="hound help dot vercel dot app"` (the agent reads the site out when it can't text). Restart the backend after changing either.
+2. Register the voice agent's tool: `python scripts/cartesia_agent.py --tool-url https://<ngrok domain>/intake/voice/story`.
+3. Test once before judging: call (681) 275-5467, hear the case code and the site, open houndhelp.vercel.app on a phone on cellular, **Check my case**, type the code, send a screenshot, and watch **Report** go to "Send confirmed on chain".
+4. On the operator laptop, click **Approve: I reviewed this send** on the Report page. Only approved cases can cause exchange holds.
 
 Viewers on the public host see live cases with shortened addresses and no story text, and cannot reset the demo. That is by design.
 
@@ -55,6 +55,9 @@ The site has two front doors. **http://localhost:3000** is the victim's: Call us
 6. Before the next judge: **Reset demo** at the bottom of http://localhost:3000/how (click twice). It calls `POST /demo/reset`.
 
 ## A judge who wants to try it as a victim
+Kit and full steps: **docs/demo-kit/README.md**. In short: they call (681) 275-5467 with any story, save **houndhelp.vercel.app/demo/receipt.png** (A.H.'s real 33 ETH payment), upload it on their case page, and see 101,352 USDT followed, all frozen by Tether.
+
+### Typing instead of the screenshot
 On their phone, at the public web URL: **Report online** → answer the questions → **Let me type it instead** and paste A.H.'s first tx hash (`0x39f5…1adc`, full value in `examples/ohnd_replay.case.json`) → "We found your payment" → **See what we found**: where the money went, what to do now, and their own report (unredacted, because they hold the case code).
 
 ## When something breaks

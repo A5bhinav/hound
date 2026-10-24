@@ -8,7 +8,9 @@ Every number below is verified (source in brackets). Don't say anything that isn
 "Americans over 60 lost 4.4 billion dollars to crypto scams last year. [FBI IC3 2025] Hound follows stolen crypto and stops it moving again, in four steps, the ones across the top: a victim reports, Hound follows the money, exchanges stop the next victim, and police get a report. We never touch money and never ask for keys."
 
 **0:15 Step 1, Report (15 s). Screen: Report.**
-"A victim calls this number. Our voice agent takes the story, texts them a link, and walks them through sending a screenshot of the payment. Nobody reads a 64-character hash over the phone." (Live call if a judge wants to try it; otherwise **Next: Follow the money**.)
+"A victim calls this number. Our voice agent takes the story, sends them to hound help dot vercel dot app, and walks them through sending a screenshot of the payment. Nobody reads a 64-character hash over the phone." (Live call if a judge wants to try it; otherwise **Next: Follow the money**.)
+
+**If a judge calls (adds about 60 s; kit in docs/demo-kit).** "Make up any story. The payment has to be real, so you will be A.H., the victim in the DOJ case: save this receipt of her real payment." They upload it. "Hound just checked that payment on the live Ethereum chain. A fake one gets rejected." On their case page: "It followed 101,352 dollars of that one payment, and all of it is in wallets Tether froze. That is one of her six payments; here is the whole case." Then **How Hound works**.
 
 **0:30 Step 2, Follow the money (35 s). Screen: trace.**
 "This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. We start from one victim, A.H., and her six real sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it. Watch her money move: swapped to USDT, through a laundering loop, into a consolidation wallet. Hound reaches all 8 wallets the FBI named in between, and all three wallets the DOJ seized."

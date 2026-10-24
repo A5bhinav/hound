@@ -22,7 +22,7 @@ const FORWARD = ["cf-connecting-ip", "x-forwarded-for", "x-real-ip", "forwarded"
 
 async function viewerHeaders(): Promise<Record<string, string>> {
   const h = await headers();
-  const out: Record<string, string> = {};
+  const out: Record<string, string> = { "ngrok-skip-browser-warning": "1" }; // see src/proxy.ts
   for (const k of FORWARD) {
     const v = h.get(k);
     if (v) out[k] = v;

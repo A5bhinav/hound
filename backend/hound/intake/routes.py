@@ -29,6 +29,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, Response, Upl
 from starlette.concurrency import run_in_threadpool
 
 from hound.chain import CacheMiss, ChainAPIError
+from hound.chain.net import TooManyTransfers
 from hound.intake import sms
 
 log = logging.getLogger("hound.intake")
@@ -121,11 +122,17 @@ def reset() -> None:
         n = len(SESSIONS)
         SESSIONS.clear()
         _ACTIVE.clear()
+        _WEB_RECENT.clear()  # rehearsing the online form must not leave the next judge locked out
+        _MISSES.clear()
+        _ALL_MISSES.clear()
     save_state()
     log.warning("intake reset: %d session(s) cleared", n)
 
 
 # ---------- persistence: a backend restart (tunnel watchdog, crash) must not lose a victim's case ----------
+
+_SAVE_LOCK = threading.Lock()
+
 
 def _state_file():
     from pathlib import Path
@@ -138,11 +145,19 @@ def save_state() -> None:
     Atomic: a temp file in the same folder, then os.replace. Never raises: the request already succeeded."""
     import tempfile
     from hound import api as hound_api
-    with _LOCK:
-        sessions = {c: dict(s) for c, s in SESSIONS.items()}
-        active = list(_ACTIVE)
-    cases = {s["case_id"]: hound_api.CASES[s["case_id"]] for s in sessions.values()
-             if s.get("case_id") and s["case_id"] in hound_api.CASES}
+    # Snapshot and write under one lock, so saves land in the order they were taken: an older snapshot
+    # can never overwrite a newer one (e.g. bring back sessions a /demo/reset just cleared).
+    with _SAVE_LOCK:
+        with _LOCK:
+            sessions = {c: dict(s) for c, s in SESSIONS.items()}
+            active = list(_ACTIVE)
+        cases = {s["case_id"]: hound_api.CASES[s["case_id"]] for s in sessions.values()
+                 if s.get("case_id") and s["case_id"] in hound_api.CASES}
+        _write_state(sessions, active, cases)
+
+
+def _write_state(sessions, active, cases) -> None:
+    import tempfile
     path = _state_file()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -250,6 +265,12 @@ async def voice_story(request: Request):
     texted = await run_in_threadpool(sms.send_link, caller, s["upload_url"], s["case_code"]) if tool_call else False
     if texted:
         say = (f"I have opened case {spoken}. I just sent a text message with a link to the phone you are calling from. "
+               "Stay on the line and I will walk you through it.")
+    elif os.environ.get("HOUND_SPOKEN_SITE"):
+        # e.g. "hound help dot vercel dot app": the site said the way a caller can type it
+        site = os.environ["HOUND_SPOKEN_SITE"].strip()
+        say = (f"I have opened case {spoken}. On your phone or computer, go to {site}, press Check my case, "
+               "and type your case code. Then send a picture of the payment screen, or type in the details. "
                "Stay on the line and I will walk you through it.")
     else:
         say = (f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, "
@@ -416,12 +437,15 @@ async def web_start(request: Request):
     if not isinstance(body, dict):
         raise HTTPException(422, "body must be a JSON object")
     who, now = _client_key(request), time.time()
+    from hound import api as hound_api
+    local = hound_api._is_local(request)  # the operator laptop rehearsing the form is never locked out
     with _LOCK:
         _WEB_RECENT[:] = [(t, k) for t, k in _WEB_RECENT if now - t < 3600]
-        if len(_WEB_RECENT) >= WEB_PER_HOUR or sum(k == who for _, k in _WEB_RECENT) >= WEB_PER_IP_HOUR:
-            log.warning("intake web start: rate limit for a caller (%d this hour)", len(_WEB_RECENT))
-            raise HTTPException(429, "Too many reports from here in the last hour. Please try again later, or call us.")
-        _WEB_RECENT.append((now, who))
+        if not local:
+            if len(_WEB_RECENT) >= WEB_PER_HOUR or sum(k == who for _, k in _WEB_RECENT) >= WEB_PER_IP_HOUR:
+                log.warning("intake web start: rate limit for a caller (%d this hour)", len(_WEB_RECENT))
+                raise HTTPException(429, "Too many reports from here in the last hour. Please try again later, or call us.")
+            _WEB_RECENT.append((now, who))
     clip = lambda v, n: v.strip()[:n] if isinstance(v, str) and v.strip() else None  # noqa: E731
     story = {"summary": clip(body.get("summary"), 1200), "scam_app": clip(body.get("scam_app"), 120),
              "platform": clip(body.get("platform"), 120), "first_contact": clip(body.get("first_contact"), 20)}
@@ -487,6 +511,9 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         case = await run_in_threadpool(validate_and_build_case, s, extracted)  # chain reads block
     except NeedsRetake as e:
         return _retake(s, str(e))
+    except TooManyTransfers:  # a busy wallet (an exchange) can't be searched by amount: the hash finds it directly
+        log.info("intake %s: recipient too busy to search by amount, asking for the hash", code)
+        return _retake(s, BUSY_WALLET_MSG)
     except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault
         log.warning("intake %s: chain unreachable while validating: %s", code, type(e).__name__, exc_info=True)
         return _retake(s, CHAIN_DOWN_MSG)
@@ -643,6 +670,8 @@ def _search_window(ts: Any) -> tuple[str, str]:
     return (when - TIME_WINDOW).strftime(fmt), (when + TIME_WINDOW).strftime(fmt)
 
 
+BUSY_WALLET_MSG = ("That address receives too many payments for us to find yours by the amount. Please send the "
+                   "transaction hash (TxID) from your payment screen instead, or a screenshot that shows it.")
 CHAIN_DOWN_MSG = "We couldn't reach the blockchain right now. Please try again in a minute."
 
 
