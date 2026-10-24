@@ -370,3 +370,4 @@ def test_readonly_falls_through_to_a_cached_source(monkeypatch):
     monkeypatch.setattr(eth, "_transfers_v1", miss)
     with pytest.raises(cache.CacheMiss):
         eth.get_transfers(A7)
+
