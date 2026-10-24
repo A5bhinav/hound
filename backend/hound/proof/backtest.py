@@ -3,8 +3,8 @@
 detection_lag_hours: first USDT inflow -> AddedBlackList, median and p90.
 escape_share: USDT out before the freeze / USDT in before the freeze, per address, median.
 
-Population: every Ethereum USDT AddedBlackList event in 2025 (data/doj/usdt_blacklist_events_2025.json,
-pulled from eth_getLogs). random.seed(13). Addresses with > 5,000 token transfers are skipped
+Population: every Ethereum USDT AddedBlackList event in 2025, from the chain team's public event dump
+data/freezes_eth.json (657 addresses). random.seed(13). Addresses with > 5,000 token transfers are skipped
 (exchange-scale wallets) and counted in n_skipped. OFAC-listed addresses are tagged 'sanctions'
 and excluded from the headline; everything else is "LE/scam/hack, not separated".
 Balance at freeze = archive balanceOf at freeze_block-1 when an archive RPC is set, else the
@@ -30,14 +30,15 @@ from typing import Any
 from hound.proof.ethcall import ADDR_RE
 
 ROOT = Path(__file__).resolve().parents[3]
-EVENTS_PATH = ROOT / "data" / "doj" / "usdt_blacklist_events_2025.json"
-OFAC_PATH = ROOT / "data" / "labels" / "ofac_eth.json"  # Jinka's label DB; optional
+EVENTS_PATH = ROOT / "data" / "freezes_eth.json"  # chain team's public USDT event dump: {"_meta", "events": {addr: [{type, block, time, tx}]}}
+OFAC_PATH = ROOT / "data" / "labels" / "ofac.json"  # label DB: {"ethereum": [...], "tron": [...]}
 RESULT_PATH = ROOT / "data" / "proof" / "backtest.json"
 CACHE_PATH = ROOT / "cache" / "backtest" / "addresses.json"
 USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
 BLOCKSCOUT = "https://eth.blockscout.com/api/v2"
 MAX_TRANSFERS = 5000
 SEED = 13
+YEAR = 2025
 
 
 def _get(url: str, tries: int = 6) -> Any:
@@ -111,7 +112,7 @@ def _ofac() -> set[str]:
     if OFAC_PATH.exists():
         try:
             data = json.load(open(OFAC_PATH))
-            addrs = data if isinstance(data, list) else data.get("addresses", [])
+            addrs = data if isinstance(data, list) else (data.get("ethereum") or data.get("addresses") or [])
             return {a.lower() for a in addrs if isinstance(a, str)}
         except Exception as e:  # noqa: BLE001
             print(f"[backtest] could not read OFAC list: {e}")
@@ -123,11 +124,14 @@ def freeze_backtest(sample: int = 200, seed: int = SEED, events_path: Path = EVE
         return json.load(open(RESULT_PATH))
     if not events_path.exists():
         return {"detection_lag_median_h": None, "p90_h": None, "escape_share_median": None, "n": 0, "n_skipped": 0,
-                "population": 0, "method": f"not computed: {events_path.name} missing (run the event pull)"}
-    events = json.load(open(events_path))["events"]
+                "population": 0, "method": f"not computed: {events_path.name} missing"}
+    raw = json.load(open(events_path))["events"]
+    events = [ev for evs in (raw.values() if isinstance(raw, dict) else [raw]) for ev in (evs if isinstance(evs, list) else [evs])]
     uniq: dict[str, int] = {}
-    for ev in events:  # first freeze per address
+    for ev in events:  # first 2025 freeze per address
         a = ev["address"].lower()
+        if ev.get("type", "added") != "added" or not str(ev.get("time", "")).startswith(str(YEAR)):
+            continue
         if ADDR_RE.match(a) and (a not in uniq or ev["block"] < uniq[a]):
             uniq[a] = ev["block"]
     addrs = sorted(uniq)
