@@ -237,7 +237,8 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             if not rows:
                 stats["empty_results"] += 1
                 audit("empty_result", "no transfers returned; treated as a dead end, check the adapter", addr)
-            no_index = sum(1 for t in rows if t.get("log_index") is None)
+            # Tron rows carry no log_index (the chain has none to give): time order is the best order.
+            no_index = sum(1 for t in rows if t.get("log_index") is None) if chain == "ethereum" else 0
             if no_index:
                 st["status"] = "partial"
                 audit("error", f"{no_index} transfers have no log_index; their order inside a block is a guess", addr)

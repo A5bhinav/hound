@@ -443,3 +443,14 @@ def test_replay_is_blind():
     assert all(i > last_fetch for i, c in enumerate(calls) if c[0] == "freeze"), "freezes read before the trace ended"
     assert "frozen" not in {e["reason"] for e in t["endpoints"]}
     assert not [e for e in t["audit_log"] if e["step"] == "stop" and "froze" in e["detail"]]
+
+
+def test_swap_leg_from_two_sources_counts_once():
+    from hound.engine.swaps import resolve_eth_seeds
+    x = "0xswap"
+    sends = [{"tx_hash": "seed", "from": "0xv", "to": x, "token": "ETH", "amount": 1.0, "seed_id": "s1"}]
+    native = [{"tx_hash": "seed", "from": "0xv", "to": x, "amount_wei": str(10**18), "gas_wei": "0", "block": 1, "tx_index": 0, "time": "2024-01-01T00:00:00Z"},
+              {"tx_hash": "sw", "from": x, "to": "0xrouter", "amount_wei": str(10**18), "gas_wei": "0", "block": 2, "tx_index": 0, "time": "2024-01-02T00:00:00Z"}]
+    leg = {"tx_hash": "sw", "from": "0xpool", "to": x, "amount": 3000.0, "time": "2024-01-02T00:00:00Z", "block": 2}
+    r = resolve_eth_seeds(sends, native, [dict(leg, log_index=7), dict(leg, log_index=None), dict(leg)])
+    assert r["swaps"][0]["usdt_in_base"] == 3000 * 10**6

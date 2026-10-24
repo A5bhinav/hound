@@ -196,9 +196,10 @@
     "source": {
       "enum": [
         "engine",
-        "hand_built"
+        "hand_built",
+        "fixture"
       ],
-      "description": "the scoreboard refuses hand_built traces"
+      "description": "engine = real adapters; fixture = DOJ replay on bundled chain data (API fallback); hand_built = UI fixture. The scoreboard refuses hand_built."
     },
     "seeds": {
       "type": "array",

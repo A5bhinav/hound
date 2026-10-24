@@ -28,7 +28,16 @@ def resolve_eth_seeds(sends, native_txs, usdt_transfers):
     swap_addrs = sorted({s["to"] for s in sends})
     usdt_by_tx = defaultdict(dict)  # deduped: the same leg can come back from several addresses' fetches
     for t in usdt_transfers:
-        usdt_by_tx[t["tx_hash"]][(t.get("log_index"), t["from"], t["to"], to_base(t))] = t
+        legs = usdt_by_tx[t["tx_hash"]]
+        same = (t["from"], t["to"], to_base(t))
+        if t.get("log_index") is None:
+            # a source without log_index: drop it if any source already gave this exact leg
+            if any(k[1:] == same for k in legs):
+                continue
+            legs[(None,) + same] = t
+        else:
+            legs.pop((None,) + same, None)  # an indexed copy replaces an unindexed one
+            legs[(t["log_index"],) + same] = t
     usdt_by_tx = {h: list(v.values()) for h, v in usdt_by_tx.items()}
 
     seeds, swaps, unresolved = {}, [], []
