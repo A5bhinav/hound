@@ -239,3 +239,20 @@ def test_check_route_status_codes_and_no_leaks(monkeypatch):
     monkeypatch.setattr(routes, "check", leaky)
     r = c.get(f"/check?chain=ethereum&address={A1}")
     assert r.status_code == 502 and "SECRETKEY123" not in r.text
+
+
+def test_busy_endpoints_and_contracts_are_never_listed(monkeypatch, not_frozen):
+    t = json.loads(json.dumps(FIXTURE))
+    busy = "0x07964f135f276412b3182a3b2407b8dd45000000"  # real >5k-transfer contract from a live trace
+    t["nodes"].append({"address": busy, "chain": "ethereum", "kind": "holding", "depth": 4})
+    t["edges"].append({"from": HOP3, "to": busy, "token": "USDT", "amount": 500, "attributed_amount": 500,
+                       "tx_hashes": ["0xb"], "first_time": "2024-05-04T00:00:00Z",
+                       "last_time": "2024-05-04T00:00:00Z", "hop": 4, "confidence": 0.95, "method": "direct"})
+    t["endpoints"] = [{"address": busy, "reason": "high_volume"}]
+    w = Watchlist()
+    w.add_trace(t)
+    assert w.lookup("ethereum", busy) is None
+    monkeypatch.setattr(chain, "is_contract", lambda c, a: a == A1)
+    w2 = Watchlist()
+    w2.add_trace(FIXTURE)
+    assert w2.lookup("ethereum", A1) is None and w2.lookup("ethereum", HOP2) is not None

@@ -36,6 +36,7 @@ HOLD_MIN_USDT = 100.0
 STALE_DAYS = 30
 LISTABLE_KINDS = ("entry", "intermediate", "consolidation", "holding", "unknown")
 NEVER_LISTED_LABELS = ("exchange_hot", "exchange_deposit", "service", "infra")
+NEVER_LISTED_ENDPOINTS = ("high_volume", "exchange", "capped")
 DEFAULT_TRACE_DIRS = "examples,data/traces"
 MAX_PATH_HOPS = 4
 
@@ -48,6 +49,14 @@ def _new_entry(ch: str, addr: str) -> dict[str, Any]:
     return {"chain": ch, "address": addr, "cases": set(), "traces": set(), "reports": set(),
             "report_latest_at": None, "direct_hit": False, "confidence": 0.0, "min_depth": None,
             "victim_inflow": 0.0, "last_inflow": None, "replay": False, "path": [], "evidence": []}
+
+
+def _is_contract(ch: str, addr: str) -> bool:
+    try:
+        return chain.is_contract(ch, addr)
+    except (chain.ChainAPIError, chain.CacheMiss) as e:
+        log.info("is_contract unknown for %s (%s); listing it", addr, type(e).__name__)
+        return False
 
 
 def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
@@ -100,17 +109,21 @@ class Watchlist:
         """Add a trace's scam-controlled nodes. Returns how many entries were added or updated."""
         nodes = {n["address"]: n for n in trace.get("nodes", [])}
         victims = {a for a, n in nodes.items() if n.get("kind") == "victim"}
+        # busy endpoints are services, never scam wallets: holding them blocks every user
+        busy = {e["address"] for e in trace.get("endpoints", []) if e.get("reason") in NEVER_LISTED_ENDPOINTS}
         case_id = trace.get("case_id") or trace.get("trace_id") or "unknown-case"
         replay = bool(trace.get("replay"))
         added = 0
         with self._lock:
             for addr, n in nodes.items():
                 ch = n.get("chain", "ethereum")
-                if n.get("kind") not in LISTABLE_KINDS or addr in victims:
+                if n.get("kind") not in LISTABLE_KINDS or addr in victims or addr in busy:
                     continue
                 lb = chain.label(ch, addr)
                 if lb and lb["kind"] in NEVER_LISTED_LABELS:
                     continue
+                if _is_contract(ch, addr):
+                    continue  # routers, aggregators, RFQ desks: never held (REVIEW: false holds)
                 inbound = [e for e in trace.get("edges", []) if e.get("to") == addr]
                 conf = max([e.get("confidence", 0.5) for e in inbound], default=0.5)
                 e = self.entries.setdefault(_key(ch, addr), _new_entry(ch, addr))
