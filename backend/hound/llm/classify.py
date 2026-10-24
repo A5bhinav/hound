@@ -6,10 +6,11 @@ That pattern alone is NOT enough: a scam's collection wallet looks identical (DO
 has 7 senders and sweeps onward within hours). The deciding signal is that a real
 deposit address sweeps into a LABELLED exchange hot wallet, so `rules()` needs the
 label of the sweep destination.
-`features()` is plain code. `classify()` applies deterministic rules, and if
-ANTHROPIC_API_KEY is set, asks Claude to explain / refine the call from the same
-features. Claude can never upgrade a wallet to "exchange" on its own: the rule result
-is the floor for safety (an exchange stop ends the trace, so false exchanges hide money).
+`features()` is plain code. `rules()` is the only thing the engine stops on (BRIEF §0:
+the classifier is an opinion, never a stop). `classify()` is display only: it keeps the
+rule's kind and confidence and, if ANTHROPIC_API_KEY is set, takes Claude's wording of the
+reasons. Claude never changes a kind or a confidence, so reruns stay deterministic and a
+third-party label name in the prompt cannot steer anything.
 """
 import json
 import logging
@@ -82,9 +83,9 @@ def _claude(f, floor):
         "Classify this blockchain address from its USDT transfer behaviour. Kinds: exchange_deposit, exchange_hot, "
         "personal, service, unknown. A deterministic rule said: " + json.dumps(floor) + ". Explain in up to 3 short "
         "reasons that cite the numbers below exactly. Reply with JSON only: {\"kind\":..,\"confidence\":0-1,\"reasons\":[..]}"
-        "\n\nFEATURES:\n" + json.dumps(f)
+        "\n\nFEATURES:\n" + json.dumps({k: v for k, v in f.items() if k not in ("address", "top_recipient")})
     )
-    msg = anthropic.Anthropic().messages.create(model=MODEL, max_tokens=300, messages=[{"role": "user", "content": prompt}])
+    msg = anthropic.Anthropic(timeout=8, max_retries=0).messages.create(model=MODEL, max_tokens=300, messages=[{"role": "user", "content": prompt}])
     text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
     out = json.loads(text[text.index("{"): text.rindex("}") + 1])
     if out.get("kind") not in KINDS:
@@ -92,21 +93,23 @@ def _claude(f, floor):
     return out
 
 
-def classify(f, top_label=None):
-    key = f["address"]
+def classify(f, top_label=None, use_llm=True):
+    """Display opinion. kind and confidence are always the rule's; Claude may only reword reasons."""
+    floor = rules(f, top_label)
+    key = (f["address"], json.dumps(floor, sort_keys=True))
     if key in _cache:
         return _cache[key]
-    floor = rules(f, top_label)
     result = floor
-    if os.environ.get("ANTHROPIC_API_KEY"):
+    if use_llm and os.environ.get("ANTHROPIC_API_KEY"):
         try:
             llm = _claude(f, floor)
-            exchange = {"exchange_deposit", "exchange_hot"}
-            if llm["kind"] in exchange and floor["kind"] not in exchange:
-                log.warning("classifier: Claude said %s for %s but rules did not; keeping rules", llm["kind"], key)
-            else:
-                result = {"kind": llm["kind"], "confidence": float(llm["confidence"]), "reasons": llm["reasons"][:3]}
+            reasons = [str(r) for r in (llm.get("reasons") or [])][:3]
+            if llm["kind"] != floor["kind"]:  # its reasons argue for another kind; keep the rule's
+                log.warning("classifier: Claude said %s for %s, rules said %s; keeping the rules",
+                            llm["kind"], f["address"], floor["kind"])
+            elif reasons:
+                result = {**floor, "reasons": reasons}
         except Exception as e:
-            log.error("classifier Claude call failed for %s, using rules: %s", key, e)
+            log.error("classifier Claude call failed for %s, using rules: %s", f["address"], e)
     _cache[key] = result
     return result

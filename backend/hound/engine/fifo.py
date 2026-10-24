@@ -1,6 +1,6 @@
 """FIFO taint propagation over a set of transfers (BRIEF 4.3, AUDIT issue 7).
 
-One global replay, in chain order (block, tx_index, log_index), over every transfer that
+One global replay, in chain order (block, log_index), over every transfer that
 touches an explored address. Every explored address keeps a FIFO queue of lots
 `[amount_base, seed_id]`; seed_id None means clean money (opening balance or outside
 inflow). A victim send creates a lot tagged with its seed. An outflow takes the oldest
@@ -25,7 +25,11 @@ def from_base(x):
 
 
 def order_key(t):
-    return (t.get("block") or 0, t.get("tx_index") or 0, t.get("log_index") or 0, t["time"], t["tx_hash"])
+    """log_index is unique within an Ethereum block, so (block, log_index) is the chain order on its
+    own. tx_index is left out: some sources omit it, and None sorting as 0 would misorder a block.
+    Rows without log_index sort after the indexed rows of their block (the engine flags them)."""
+    li = t.get("log_index")
+    return (t.get("block") or 0, li is None, li or 0, t["time"], t["tx_hash"])
 
 
 def propagate(transfers, explored, seeds):
@@ -37,6 +41,7 @@ def propagate(transfers, explored, seeds):
     edge_txs = defaultdict(list)
     edge_times = defaultdict(list)
     seeded = defaultdict(int)
+    alloc = {}  # swap key -> {seed_id: base units not yet handed out}; consumed across split-route legs
 
     for t in sorted(transfers, key=order_key):
         src, dst, amt = t["from"], t["to"], to_base(t)
@@ -47,12 +52,17 @@ def propagate(transfers, explored, seeds):
             parts = [(seed, amt)]
             seeded[seed] += amt
         elif seed:  # multi-seed lot from a swap: [(seed_id, base)], remainder is clean
-            parts = [(sid, a) for sid, a in seed if a > 0]
-            for sid, a in parts:
-                seeded[sid] += a
-            rest = amt - sum(a for _, a in parts)
-            if rest < 0:
-                raise ValueError(f"swap seeds exceed the transfer amount in {t['tx_hash']}")
+            # A split-route swap pays the recipient in several legs of one tx, all under this key.
+            # Hand the allocation out across the legs in chain order; never more than a leg carries.
+            left = alloc.setdefault((t["tx_hash"], dst), {sid: a for sid, a in seed if a > 0})
+            parts, rest = [], amt
+            for sid in sorted(left):
+                take = min(left[sid], rest)
+                if take > 0:
+                    parts.append((sid, take))
+                    seeded[sid] += take
+                    left[sid] -= take
+                    rest -= take
             if rest:
                 parts.append((None, rest))
         elif src in explored:

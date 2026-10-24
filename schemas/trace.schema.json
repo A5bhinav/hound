@@ -295,6 +295,7 @@
             "exchange_list",
             "ofac",
             "classifier",
+            "service",
             null
           ]
         },
@@ -330,7 +331,8 @@
           "type": [
             "number",
             "null"
-          ]
+          ],
+          "description": "whole USDT; in a replay, the balance at the data cutoff computed from the fetched history; null if unknown"
         },
         "frozen": {
           "type": [
@@ -363,6 +365,12 @@
         "depth": {
           "type": "integer",
           "minimum": 0
+        },
+        "path_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "best product of edge confidences along any path from a victim (victims 1.0)"
         }
       }
     },
@@ -390,7 +398,11 @@
           "type": "string"
         },
         "token": {
-          "type": "string"
+          "enum": [
+            "USDT",
+            "ETH"
+          ],
+          "description": "unit of amount and attributed_amount; ETH edges are the victim's own sends before the swap"
         },
         "amount": {
           "type": "number",

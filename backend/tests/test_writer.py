@@ -409,6 +409,7 @@ def test_replay_detective_never_prints_placeholder_zero_balance():
 
 def test_live_detective_prints_balance_and_plain_freeze():
     t, c = live()
+    t["endpoints"][0]["balance_usdt"] = 0.0  # the example now carries the cutoff balance; pin a live 0
     out = write_case(t, c, "detective")
     assert "balance 0.00 USDT" in out["text"] and "later frozen" not in out["text"]
     t["endpoints"][0]["balance_usdt"] = None

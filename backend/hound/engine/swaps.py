@@ -26,9 +26,10 @@ def resolve_eth_seeds(sends, native_txs, usdt_transfers):
     """
     by_seed_tx = {(s["tx_hash"], s["to"]): s["seed_id"] for s in sends}
     swap_addrs = sorted({s["to"] for s in sends})
-    usdt_by_tx = defaultdict(list)
+    usdt_by_tx = defaultdict(dict)  # deduped: the same leg can come back from several addresses' fetches
     for t in usdt_transfers:
-        usdt_by_tx[t["tx_hash"]].append(t)
+        usdt_by_tx[t["tx_hash"]][(t.get("log_index"), t["from"], t["to"], to_base(t))] = t
+    usdt_by_tx = {h: list(v.values()) for h, v in usdt_by_tx.items()}
 
     seeds, swaps, unresolved = {}, [], []
     gas = defaultdict(int)
@@ -60,8 +61,13 @@ def resolve_eth_seeds(sends, native_txs, usdt_transfers):
                 unresolved.append({"address": x, "tx_hash": r["tx_hash"], "eth_out_wei": wei,
                                    "by_seed_wei": _sum(seeded)})
                 continue
-            usdt = sum(to_base(t) for t in mine)
-            recipient = max(mine, key=to_base)["to"]
+            # One recipient per swap: the one paid the most in this tx. Only its legs count, so the
+            # seed allocation equals what actually lands under the (tx, recipient) key.
+            per_to = defaultdict(int)
+            for t in mine:
+                per_to[t["to"]] += to_base(t)
+            recipient = max(sorted(per_to), key=per_to.get)
+            usdt = per_to[recipient]
             by_seed_usdt = {sid: usdt * w // wei for sid, w in _sum(seeded).items()}
             key = (r["tx_hash"], recipient)
             seeds[key] = sorted(by_seed_usdt.items())
