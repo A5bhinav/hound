@@ -16,6 +16,8 @@ Exit code 0 only if every required step passes. Known gaps are listed as WARN, n
 """
 import json
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import shutil
 import signal
 import socket
@@ -166,7 +168,8 @@ def intake_flow(api, web):
     code, html = http("GET", f"{web}/c/{cc}", timeout=60)
     step(f"page /c/{{code}} (victim upload page) renders", code == 200 and cc in html, f"{code}")
 
-    when = send["time"][:16].replace("T", " ")
+    # A victim types their own clock time: the backend reads naive times as Los Angeles time.
+    when = datetime.fromisoformat(send["time"].replace("Z", "+00:00")).astimezone(ZoneInfo("America/Los_Angeles")).strftime("%Y-%m-%d %H:%M")
     typed = f"I sent {send['amount']:,.2f} USDT to {send['to']} on {when}"
     body, hdr = multipart({"typed": typed})
     code, b = http("POST", f"{web}/api/intake/{cc}/screenshot", body=body, headers=hdr, timeout=90)
