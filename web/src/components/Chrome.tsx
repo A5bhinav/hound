@@ -51,10 +51,10 @@ export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: 
           Hound
         </Link>
         <nav className="bar-nav" aria-label="Main">
-          <Link href="/how" aria-current={step !== undefined ? "page" : undefined}>How it works</Link>
-          <Link href="/">For victims</Link>
-          <Link href={`/cases/${encodeURIComponent(DEMO_CASE)}/packet`}>For law enforcement</Link>
-          <Link href="/exchange">For exchanges</Link>
+          <Link href="/">For Victims</Link>
+          <Link href={`/cases/${encodeURIComponent(DEMO_CASE)}/packet`}>For Law Enforcement</Link>
+          <Link href="/exchange">For Exchanges</Link>
+          <Link href="/how" aria-current={step !== undefined ? "page" : undefined}>How It Works</Link>
         </nav>
         <Link href="/report" className="btn btn-primary bar-cta">
           Report a scam

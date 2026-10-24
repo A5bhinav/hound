@@ -12,6 +12,47 @@ function formatPhone(p: string) {
   return m ? `(${m[1]}) ${m[2]}-${m[3]}` : p;
 }
 
+const ICON = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+const FEATURES = [
+  {
+    title: "Trace",
+    text: "We follow your money across blockchains, wallet by wallet.",
+    href: "/cases/ohnd-replay-ah",
+    icon: (
+      <svg viewBox="0 0 40 40" {...ICON}>
+        <path d="M17 23l6-6" />
+        <path d="M21 13l2.5-2.5a6 6 0 0 1 8.5 8.5L29.5 21.5" />
+        <path d="M19 27l-2.5 2.5a6 6 0 0 1-8.5-8.5L10.5 18.5" />
+        <circle cx="13" cy="13" r="6.5" />
+        <circle cx="27" cy="27" r="6.5" />
+      </svg>
+    ),
+  },
+  {
+    title: "Warn",
+    text: "We alert exchanges before the same wallets scam again.",
+    href: "/exchange",
+    icon: (
+      <svg viewBox="0 0 40 40" {...ICON}>
+        <path d="M20 6a9 9 0 0 0-9 9v7l-3 5h24l-3-5v-7a9 9 0 0 0-9-9z" />
+        <path d="M16.5 31a3.5 3.5 0 0 0 7 0" />
+      </svg>
+    ),
+  },
+  {
+    title: "Report",
+    text: "You get a clear, one-page report for law enforcement.",
+    href: "/cases/ohnd-replay-ah/packet",
+    icon: (
+      <svg viewBox="0 0 40 40" {...ICON}>
+        <path d="M11 5h13l7 7v23H11z" />
+        <path d="M24 5v7h7M16 20h10M16 25h10M16 30h6" />
+      </svg>
+    ),
+  },
+];
+
 /** The victim's front door: what Hound does in one look, two ways to report, a way back to an open case,
  *  and what Hound will never do. */
 export default async function Home() {
@@ -20,16 +61,18 @@ export default async function Home() {
     <>
       <Bar offline={usingFixtures} />
       <main className={styles.main}>
+        <div className={styles.first}>
         <section className={styles.hero}>
           <div className={styles.copy}>
             <p className={styles.eyebrow}>Trace. Warn. Prevent.</p>
             <h1 className={styles.h1}>
-              Lost money to
-              <br />a crypto scam?
+              Lost money to a
               <br />
-              <span className={styles.quiet}>We help you follow it.</span>
+              crypto scam?
+              <br />
+              <span className={styles.red}>Let&apos;s track it down.</span>
             </h1>
-            <p className={styles.lede}>See where your money went, who can freeze it, and get a report for the police.</p>
+            <p className={styles.lede}>We trace stolen funds, alert exchanges, and prepare a report for police.</p>
             <div className={styles.ctas}>
               <Link href="/report" className={`btn btn-primary btn-lg ${styles.cta}`}>
                 Report a scam
@@ -38,45 +81,33 @@ export default async function Home() {
                 </svg>
               </Link>
               <Link href="/how" className={`btn btn-lg ${styles.cta}`}>
-                How it works
+                See how it works
               </Link>
             </div>
             <Secure />
           </div>
           <HeroMockup />
-          <a href="#what" className={styles.scrollCue}>
-            Scroll
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
-              <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
         </section>
 
         <section id="what" className={styles.features} aria-label="What Hound does">
-          <div>
-            <svg className={styles.fIcon} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="14" cy="14" r="9" />
-              <path d="M21 21l7 7" strokeLinecap="round" />
-            </svg>
-            <h2>Trace your funds</h2>
-            <p>We map where your money went, wallet by wallet, across the blockchain.</p>
-          </div>
-          <div>
-            <svg className={styles.fIcon} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M16 3l11 4v8c0 7-4.7 12.2-11 14-6.3-1.8-11-7-11-14V7z" strokeLinejoin="round" />
-            </svg>
-            <h2>Warn exchanges</h2>
-            <p>Exchanges check our warning list before the same wallets can be used to scam others.</p>
-          </div>
-          <div>
-            <svg className={styles.fIcon} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M8 3h11l6 6v20H8z" strokeLinejoin="round" />
-              <path d="M19 3v6h6M12 16h9M12 21h9" strokeLinecap="round" />
-            </svg>
-            <h2>Get a police report</h2>
-            <p>You receive a clear, one-page report with the key evidence for law enforcement.</p>
-          </div>
+          {FEATURES.map((f, n) => (
+            <Link key={f.title} href={f.href} className={styles.feature}>
+              <span className={styles.num}>{String(n + 1).padStart(2, "0")}</span>
+              <span className={styles.fIcon} aria-hidden="true">
+                {f.icon}
+              </span>
+              <span className={styles.fBody}>
+                <span className={styles.fTitle}>{f.title}</span>
+                <span className={styles.fText}>{f.text}</span>
+              </span>
+              <svg className={styles.fArrow} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                <path d="M4 10h12m0 0l-4.5-4.5M16 10l-4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          ))}
         </section>
+
+        </div>
 
         <section className={styles.ways} aria-label="Ways to get help">
           {phone && (

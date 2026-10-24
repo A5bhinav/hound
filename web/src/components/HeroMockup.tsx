@@ -81,34 +81,45 @@ export default function HeroMockup() {
             </svg>
             <ul className={styles.alerts}>
               <li>
-                <span className={`${styles.ic} ${styles.icRed}`}>
-                  <Icon d="M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zm0 3.5v4.5m0 2.5v.01" />
+                <span className={styles.logo}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <g fill="#F3BA2F" transform="rotate(45 12 12)">
+                      <rect x="9.6" y="9.6" width="4.8" height="4.8" />
+                      <rect x="9.9" y="2.6" width="4.2" height="4.2" />
+                      <rect x="9.9" y="17.2" width="4.2" height="4.2" />
+                      <rect x="2.6" y="9.9" width="4.2" height="4.2" />
+                      <rect x="17.2" y="9.9" width="4.2" height="4.2" />
+                    </g>
+                  </svg>
                 </span>
                 <span>
-                  <b>Sent to exchange</b>
-                  <small>Binance</small>
+                  <b>Binance</b>
+                  <small>0x28c6…1d60</small>
                 </span>
-                <em>Flagged</em>
+                <em className={styles.alerted}>Alerted</em>
               </li>
               <li>
-                <span className={styles.ic}>
+                <span className={styles.logo}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" fill="#1652F0" />
+                    <path d="M15.8 14.6a4.4 4.4 0 1 1 0-5.2" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span>
+                  <b>Coinbase</b>
+                  <small>0x2f1c…8fa4</small>
+                </span>
+                <em>Under review</em>
+              </li>
+              <li>
+                <span className={styles.logo}>
                   <Icon d="M3 8l7-4 7 4M5 8v7m3.3-7v7m3.4-7v7M15 8v7M3 16h14" />
                 </span>
                 <span>
-                  <b>Sent to exchange</b>
-                  <small>Coinbase</small>
+                  <b>Unknown</b>
+                  <small>0x0796…0000</small>
                 </span>
-                <em>Flagged</em>
-              </li>
-              <li>
-                <span className={styles.ic}>
-                  <Icon d="M3 6h5l2 2h7v8H3z" />
-                </span>
-                <span>
-                  <b>Further movement</b>
-                  <small>3 new wallets</small>
-                </span>
-                <i>›</i>
+                <em>Traced</em>
               </li>
             </ul>
           </div>

@@ -171,6 +171,7 @@ h3 {
   flex-wrap: wrap;
   min-height: 92px;
   padding: 1rem var(--gutter);
+  border-bottom: 1px solid #1c1c1f;
 }
 
 /* Once the page scrolls under it, the bar gets a dark glass backing (set by the sticky shadow trick below). */

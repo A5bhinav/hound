@@ -1,7 +1,20 @@
 /* The tilted product card beside the hero. */
 .stage {
+  position: relative;
+  isolation: isolate; /* so the red light (z-index -1) sits behind the card, not behind the page */
   perspective: 1800px;
   perspective-origin: 20% 50%;
+}
+
+/* A soft red light behind the card. */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: -12% -8% -18% 4%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(214, 30, 36, 0.55), rgba(200, 24, 31, 0.18) 55%, rgba(200, 24, 31, 0) 82%);
+  filter: blur(28px);
+  pointer-events: none;
 }
 
 .card {
@@ -168,14 +181,36 @@
 }
 
 .alerts em {
-  align-self: end;
-  padding: 0.2rem 0.45rem;
+  padding: 0.3rem 0.55rem;
   font-style: normal;
-  font-size: 0.6rem;
-  font-weight: 600;
+  font-size: 0.66rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #e6e6e3;
+  background: #26262a;
+  border-radius: 5px;
+}
+
+.alerts em.alerted {
   color: #fff;
-  background: var(--red);
-  border-radius: 4px;
+  background: #d32a2f;
+}
+
+.alerts small {
+  font-family: var(--font-m);
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  color: #d2d2cf;
+}
+
+.logo svg {
+  width: 1.6rem;
+  height: 1.6rem;
 }
 
 .alerts i {

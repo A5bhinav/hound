@@ -16,11 +16,22 @@
   padding: clamp(2.5rem, 6vw, 5.5rem) 0 clamp(2.5rem, 5vw, 4.5rem);
 }
 
-/* On a laptop or projector the hero is the whole first screen (minus the 92 px bar); the rest is a scroll away. */
+/* On a laptop or projector the hero and the three features are exactly the first screen (minus the 92 px bar);
+   the ways to get help are a scroll away. */
+.first {
+  display: flex;
+  flex-direction: column;
+}
+
 @media (min-width: 1101px) and (min-height: 600px) {
-  .hero {
+  .first {
     min-height: calc(100svh - 92px);
-    padding: 1.5rem 0 4.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .first .hero {
+    flex: 1;
+    padding: 1rem 0 2.25rem;
   }
 }
 
@@ -77,16 +88,16 @@
 .h1 {
   margin: 0;
   font-size: clamp(2.5rem, min(4.3vw, 8.6vh), 4.6rem);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.06;
   letter-spacing: -0.03em;
   color: var(--white);
 }
 
-.quiet {
-  white-space: nowrap; /* "We help you follow it." never leaves "it." alone on a line */
-  font-weight: 400;
-  color: var(--ink-hero);
+/* "Let's track it down." in Hound red, same weight, kept on one line. */
+.red {
+  white-space: nowrap;
+  color: #e5302a;
 }
 
 .lede {
@@ -118,30 +129,81 @@
   scroll-margin-top: 100px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2.5rem;
-  padding: 2.75rem 1.5rem 0;
+  padding-top: 2.25rem;
   border-top: 1px solid var(--rule);
 }
 
-.features h2 {
-  margin: 1rem 0 0.75rem;
+/* Each feature: number, red icon, title + line, arrow; thin dividers between columns. */
+.feature {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 1.6rem;
+  padding: 0.25rem 2.2rem 0.5rem 2.6rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-left: 1px solid var(--rule);
+}
+
+.feature:hover {
+  text-decoration: none;
+}
+
+.feature:hover .fArrow {
+  transform: translateX(4px);
+  color: var(--ink);
+}
+
+.num {
+  grid-column: 1 / -1;
+  margin-bottom: 1rem;
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.fIcon {
+  grid-row: 2;
+  width: 3rem;
+  height: 3rem;
+  margin-top: 0.4rem;
+  color: #e5302a;
+}
+
+.fIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fBody {
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.fTitle {
+  font-family: var(--font-d);
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.015em;
 }
 
-.features p {
-  max-width: 24rem;
-  margin: 0;
-  font-size: 1.12rem;
+.fText {
+  max-width: 20rem;
+  font-size: 1.08rem;
   line-height: 1.55;
   color: var(--ink-2);
 }
 
-.fIcon {
-  width: 2.1rem;
-  height: 2.1rem;
-  color: var(--trace);
+.fArrow {
+  grid-row: 2;
+  width: 1.4rem;
+  height: 1.4rem;
+  margin-top: 0.35rem;
+  color: var(--ink-2);
+  transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .ways {
@@ -215,14 +277,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .features {
-    padding-left: 0;
-    padding-right: 0;
+  .feature {
+    padding: 1.25rem 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--rule);
   }
 }
 
 @media (max-width: 640px) {
-  .quiet {
+  .red {
     white-space: normal;
   }
 
