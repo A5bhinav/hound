@@ -433,3 +433,19 @@ def test_scan_route_never_scans_live(monkeypatch, tmp_path):
     monkeypatch.setattr(scan, "weekend_scan", lambda **k: (_ for _ in ()).throw(AssertionError("live scan")))
     r = client.get("/scan/latest")
     assert r.status_code == 200 and r.json()["status"] == "not_computed"
+
+
+def test_client_posted_case_can_trace_but_never_feeds_the_watchlist(monkeypatch):
+    registered = []
+    monkeypatch.setattr(api, "register_trace", lambda trace: registered.append(trace["case_id"]) or 0)
+    victim_like = {"source": "phone", "sends": [{"chain": "ethereum", "tx_hash": "0x" + "ab" * 32,
+                   "from": "0x" + "11" * 20, "to": "0x" + "22" * 20, "token": "USDT", "amount": 5000,
+                   "time": "2024-05-01T00:00:00Z"}]}
+    cid = client.post("/cases", json=victim_like).json()["case_id"]
+    job = client.post(f"/cases/{cid}/trace").json()
+    _poll(job["trace_id"])
+    assert cid not in registered, "an unverified client case must never mint watchlist holds"
+    api.mark_verified(cid)
+    job = client.post(f"/cases/{cid}/trace").json()
+    _poll(job["trace_id"])
+    api.TRUSTED.discard(cid)
