@@ -12,11 +12,39 @@ import json
 import logging
 import os
 import re
+import threading
+import time
+from collections import deque
 import urllib.error
 import urllib.parse
 import urllib.request
 
 log = logging.getLogger("hound.intake.sms")
+
+# Every text costs money and a leaked intake token must not turn into an SMS cannon: one text per number
+# per 10 minutes, and at most 20 an hour in total.
+PER_NUMBER_S = 600
+PER_HOUR = 20
+_LOCK = threading.Lock()
+_LAST: dict[str, float] = {}
+_RECENT: deque[float] = deque()
+
+
+def _allow(to: str) -> bool:
+    now = time.monotonic()
+    with _LOCK:
+        while _RECENT and now - _RECENT[0] > 3600:
+            _RECENT.popleft()
+        if now - _LAST.get(to, -PER_NUMBER_S) < PER_NUMBER_S or len(_RECENT) >= PER_HOUR:
+            return False
+        _LAST[to] = now
+        _RECENT.append(now)
+        return True
+
+
+def _mask(text: str) -> str:
+    """Twilio errors echo the To number; keep phone-length digit runs out of the log."""
+    return re.sub(r"\+?\d[\d\s().-]{6,}\d", "<number>", text)
 
 
 def normalize(number: str | None) -> str | None:
@@ -50,6 +78,9 @@ def send_link(number: str | None, url: str, code: str) -> bool:
     if not to:
         log.warning("sms: no usable caller number for case %s, not texting", code)
         return False
+    if not _allow(to):
+        log.warning("sms: rate limit, not texting case %s to ..%s", code, to[-2:])
+        return False
     sid, token, sender = creds
     body = f"Hound: your case code is {code}. Open this link to send a picture of your payment: {url}"
     req = urllib.request.Request(
@@ -60,11 +91,11 @@ def send_link(number: str | None, url: str, code: str) -> bool:
         with urllib.request.urlopen(req, timeout=10) as r:
             status = json.loads(r.read()).get("status")
     except urllib.error.HTTPError as e:
-        detail = e.read().decode(errors="replace")[:300]
+        detail = _mask(e.read().decode(errors="replace")[:300])
         log.error("sms: Twilio refused case %s to ..%s: HTTP %s %s", code, to[-2:], e.code, detail)
         return False
     except (OSError, ValueError) as e:
-        log.error("sms: Twilio unreachable for case %s to ..%s: %s", code, to[-2:], e)
+        log.error("sms: Twilio unreachable for case %s to ..%s: %s", code, to[-2:], _mask(str(e)))
         return False
     # "queued" means accepted, not delivered: a blocked number (e.g. 30034, unregistered 10DLC) fails later in Twilio's log.
     log.info("sms: case %s link accepted by Twilio for ..%s (status %s)", code, to[-2:], status)

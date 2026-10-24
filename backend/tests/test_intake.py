@@ -185,8 +185,14 @@ def test_voice_say_line_never_promises_a_text_message():
 
 
 def _twilio_env(monkeypatch):
-    for k, v in (("TWILIO_ACCOUNT_SID", "AC1"), ("TWILIO_AUTH_TOKEN", "t"), ("TWILIO_FROM_NUMBER", "+15550001111")):
+    for k, v in (("TWILIO_ACCOUNT_SID", "AC1"), ("TWILIO_AUTH_TOKEN", "t"), ("TWILIO_FROM_NUMBER", "+15550001111"),
+                 ("HOUND_INTAKE_TOKEN", "tok")):
         monkeypatch.setenv(k, v)
+    intake.sms._LAST.clear()
+    intake.sms._RECENT.clear()
+
+
+TOOL = {"X-Hound-Intake-Token": "tok"}
 
 
 def test_voice_texts_the_link_through_twilio(monkeypatch):
@@ -203,8 +209,13 @@ def test_voice_texts_the_link_through_twilio(monkeypatch):
         return Resp()
 
     monkeypatch.setattr(intake.sms.urllib.request, "urlopen", fake_urlopen)
-    r = client.post("/intake/voice/story", json={"story": {}, "victim": {}, "caller_number": "(415) 555-0134"}).json()
+    body = {"story": {}, "victim": {}, "caller_number": "(415) 555-0134"}
+    # local trust alone (no token header) never texts: a page in the operator's browser could forge that
+    assert client.post("/intake/voice/story", json=body).json()["texted"] is False and not sent
+    r = client.post("/intake/voice/story", json=body, headers=TOOL).json()
     assert r["texted"] is True and "walk you through" in r["say"]
+    # the same number again within 10 minutes is not texted twice
+    assert client.post("/intake/voice/story", json=body, headers=TOOL).json()["texted"] is False and len(sent) == 1
     form = sent[0].data.decode()
     assert "To=%2B14155550134" in form and r["case_code"] in form and sent[0].full_url.endswith("/AC1/Messages.json")
     # the number is never kept in the session the web reads
@@ -219,7 +230,7 @@ def test_voice_falls_back_to_spoken_line_without_a_number_or_on_failure(monkeypa
 
     monkeypatch.setattr(intake.sms.urllib.request, "urlopen", refuse)
     for body in ({"story": {}, "victim": {}}, {"story": {}, "victim": {}, "caller_number": "+14155550134"}):
-        r = client.post("/intake/voice/story", json=body).json()
+        r = client.post("/intake/voice/story", json=body, headers=TOOL).json()
         assert r["texted"] is False and "Hound team will help" in r["say"]
 
 
@@ -232,6 +243,18 @@ def test_voice_status_tool_reports_upload_progress():
     assert client.post("/intake/voice/status", json={"case_code": "ZZZZZZ"}).json()["status"] == "unknown"
     remote = TestClient(api.app, client=("203.0.113.9", 1))
     assert remote.post("/intake/voice/status", json={"case_code": code}).status_code == 403
+
+
+def test_sms_errors_never_log_the_number(monkeypatch, caplog):
+    _twilio_env(monkeypatch)
+
+    def refuse(req, timeout):
+        raise intake.sms.urllib.error.HTTPError(req.full_url, 400, "bad", {}, io.BytesIO(
+            b'{"message": "The \'To\' number +14155550134 is not a valid phone number."}'))
+
+    monkeypatch.setattr(intake.sms.urllib.request, "urlopen", refuse)
+    assert intake.sms.send_link("+14155550134", "https://x/c/ABC", "ABC") is False
+    assert "4155550134" not in caplog.text and "<number>" in caplog.text
 
 
 def test_sms_normalize():

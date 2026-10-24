@@ -183,7 +183,11 @@ async def voice_story(request: Request):
     spoken = " ".join(s["case_code"])  # "K 7 M 2 P Q" reads better than "K7M2PQ"
     # Cartesia fills caller_number from system__caller_id (empty in browser test calls).
     caller = _tool_arg(body, "caller_number") or request.headers.get("x-caller-id")
-    texted = await run_in_threadpool(sms.send_link, caller, s["upload_url"], s["case_code"])
+    # Text only on a real token-carrying tool call. Local trust alone is not enough: a web page open on the
+    # operator's laptop could otherwise POST here (no custom header needed) and send texts to any number.
+    from hound import api as hound_api
+    tool_call = hound_api.token_matches(request.headers.get("x-hound-intake-token"), os.environ.get("HOUND_INTAKE_TOKEN"))
+    texted = await run_in_threadpool(sms.send_link, caller, s["upload_url"], s["case_code"]) if tool_call else False
     if texted:
         say = (f"I have opened case {spoken}. I just sent a text message with a link to the phone you are calling from. "
                "Stay on the line and I will walk you through it.")
