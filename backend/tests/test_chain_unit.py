@@ -343,3 +343,30 @@ def test_live_bundle_is_read_after_the_public_snapshot(tmp_path, monkeypatch):
     monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
     assert cache.cached("eth_rpc", {"method": "live"}, lambda: pytest.fail("network"), ttl=None) == {"to": live}
     cache.reload_snapshot()
+
+
+def test_snapshot_never_packs_the_server_cache(monkeypatch):
+    from hound.chain import snapshot
+    with pytest.raises(ValueError, match="server cache"):
+        snapshot.pack(cache_root=cache.REPO_ROOT / "cache", out_dir=cache.REPO_ROOT / "cache" / "_never")
+
+
+def test_readonly_falls_through_to_a_cached_source(monkeypatch):
+    """Snapshot built without an Etherscan key, demo laptop has one: the Etherscan miss must fall
+    back to the cached RPC data instead of failing the trace."""
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "k")
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    row = {"tx_hash": "0x" + "a" * 64, "log_index": 0, "from": A7, "to": eth.USDT, "amount": 1.0,
+           "block": 1, "time": "2024-05-01T00:00:00Z"}
+
+    def miss(*a, **k):
+        raise cache.CacheMiss("not cached")
+
+    monkeypatch.setattr(eth, "_transfers_etherscan_logs", miss)
+    monkeypatch.setattr(eth, "_transfers_rpc", lambda *a, **k: [row])
+    assert eth.get_transfers(A7) == [row]
+    monkeypatch.setattr(eth, "_transfers_rpc", miss)
+    monkeypatch.setattr(eth, "_transfers_v2", miss)
+    monkeypatch.setattr(eth, "_transfers_v1", miss)
+    with pytest.raises(cache.CacheMiss):
+        eth.get_transfers(A7)

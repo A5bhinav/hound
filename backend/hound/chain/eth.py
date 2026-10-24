@@ -370,11 +370,15 @@ def get_transfers(address: str, token: str | None = None, before: str | None = N
         order = [s for s in order if s not in ("etherscan", "etherscan_logs")]
     attempts = [(s, runners[s]) for s in order if s in runners]
 
+    missed: list[cache.CacheMiss] = []
     for name, run in attempts:
         try:
             out = run()
-        except (TooManyTransfers, cache.CacheMiss):
+        except TooManyTransfers:
             raise
+        except cache.CacheMiss as e:
+            missed.append(e)  # readonly: another source may be cached (snapshot built without a key)
+            continue
         except ChainAPIError as e:
             errors.append(f"{name}: {e}")
             log.warning("transfers via %s failed for %s: %s", name, address, e)
@@ -387,6 +391,8 @@ def get_transfers(address: str, token: str | None = None, before: str | None = N
             log.warning("EMPTY transfer list for %s token=%s after=%s before=%s (source %s)",
                         address, token, after, before, name)
         return out
+    if missed:
+        raise missed[0]
     raise ChainAPIError(f"could not get transfers for {address}: {' | '.join(errors)}")
 
 
@@ -778,11 +784,15 @@ def get_native_txs(address: str, as_of: int | str | None = None, after: str | No
     sources = [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources() if s == "etherscan"]
     sources += [("blockscout_v2", lambda: _native_v2(address, lo))]
     sources += [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources() if s != "etherscan"]
+    missed: list[cache.CacheMiss] = []
     for name, run in sources:
         try:
             rows = run()
-        except (TooManyTransfers, cache.CacheMiss):
+        except TooManyTransfers:
             raise
+        except cache.CacheMiss as e:
+            missed.append(e)  # readonly: another source may be cached
+            continue
         except ChainAPIError as e:
             errors.append(f"{name}: {e}")
             log.warning("native txs via %s failed for %s: %s", name, address, e)
@@ -796,6 +806,8 @@ def get_native_txs(address: str, as_of: int | str | None = None, after: str | No
             count_empty()
             log.warning("EMPTY native tx list for %s after=%s as_of=%s (source %s)", address, after, as_of, name)
         return out
+    if missed:
+        raise missed[0]
     raise ChainAPIError(f"could not get native txs for {address}: {' | '.join(errors)}")
 
 

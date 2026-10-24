@@ -1,11 +1,13 @@
 """Pack the local chain cache into the committed snapshot data/fixtures/cache/<namespace>.json.gz.
 
     cd backend
-    HOUND_CACHE_MODE=record .venv/bin/python -m hound.chain.prewarm    # warm from the Cases
-    .venv/bin/python -m hound.chain.snapshot                            # pack + secret check
+    .venv/bin/python -m hound.chain.prewarm     # crawl the curated Cases into cache/warm, then pack
+    .venv/bin/python -m hound.chain.snapshot    # re-pack cache/warm only
 
 Only chain namespaces are packed (public chain data). The pack fails if any value from a
-*KEY / *TOKEN / *SECRET env var appears in it. Freeze the snapshot Sat 10 PM (brief §0).
+*KEY / *TOKEN / *SECRET env var appears in it, or any live-case address. It never packs the
+server's own cache/: through the tunnel that holds lookups for any address a stranger submits
+(REVIEW_TEAM_R2 security-r2-6). Freeze the snapshot Sat 10 PM (brief §0).
 """
 
 from __future__ import annotations
@@ -18,6 +20,7 @@ from pathlib import Path
 from . import cache
 
 NAMESPACES = ("eth_rpc", "eth_v1", "eth_v2", "tron", "blockscout_meta")
+WARM_DIR = cache.REPO_ROOT / "cache" / "warm"  # prewarm's crawl of the curated Cases
 MAX_FILE_MB = 50
 
 
@@ -44,6 +47,9 @@ def pack(cache_root: Path | None = None, out_dir: Path | None = None, merge: boo
         raise ValueError("allow_live is only for data/cases_live/cache (never the public snapshot)")
     root = cache_root or cache.cache_dir()
     out = out_dir or cache.SNAPSHOT_DIR
+    if not allow_live and root.resolve() == (cache.REPO_ROOT / "cache").resolve():
+        raise ValueError("refusing to pack the server cache (cache/): it holds lookups for any address "
+                         "submitted to the API. Pack the prewarm crawl: python -m hound.chain.prewarm")
     out.mkdir(parents=True, exist_ok=True)
     secrets = cache._secret_values()
     live = set() if allow_live else _live_addresses()
@@ -83,5 +89,7 @@ def pack(cache_root: Path | None = None, out_dir: Path | None = None, merge: boo
 
 
 if __name__ == "__main__":
-    print(pack())
+    if not WARM_DIR.is_dir():
+        sys.exit("no cache/warm crawl: run python -m hound.chain.prewarm (it packs automatically)")
+    print(pack(cache_root=WARM_DIR))
     sys.exit(0)
