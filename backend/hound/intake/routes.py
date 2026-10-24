@@ -44,8 +44,9 @@ TX_HASH = re.compile(r"0x[0-9a-fA-F]{64}")
 # Not inside a longer hex run: a 64-hex tx hash starts with a 40-hex run that is not an address.
 ETH_ADDR = re.compile(r"0x[0-9a-fA-F]{40}(?![0-9a-fA-F])")
 TRUNC = re.compile(r"(0x[0-9a-fA-F]{3,12})\s*(?:…|\.\.\.+|\*+)\s*([0-9a-fA-F]{3,12})")
-# (?<![\w.]): digits at the end of a hash or address ("...ab1234 USDT") are not an amount.
-AMOUNT = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(USDT|USDⓈ|Tether|ETH)?", re.I)
+# Hashes and addresses are blanked before the amount scan (extract_from_text), so digits at the end
+# of one ("...ab1234 USDT") are never an amount, while "Amount11,082.48" still reads 11082.48.
+AMOUNT = re.compile(r"(?<![\d.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(USDT|USDⓈ|Tether|ETH)?", re.I)
 PHONE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
 
 
@@ -90,6 +91,15 @@ def _authorised(request: Request) -> bool:
     return hound_api._is_local(request)
 
 
+def reset() -> None:
+    """/demo/reset: forget every intake session, so the next caller never sees the previous one."""
+    with _LOCK:
+        n = len(SESSIONS)
+        SESSIONS.clear()
+        _ACTIVE.clear()
+    log.warning("intake reset: %d session(s) cleared", n)
+
+
 def _expire() -> None:
     cutoff = time.time() - TTL_S
     for code in list(SESSIONS):
@@ -129,7 +139,7 @@ async def voice_story(request: Request):
     s = open_session(body.get("story"), body.get("victim"))
     spoken = " ".join(s["case_code"])  # "K 7 M 2 P Q" reads better than "K7M2PQ"
     return {"case_code": s["case_code"], "upload_url": s["upload_url"],
-            "say": f"I have opened case {spoken}. I am texting you a link; please open it and send a picture of the payment screen, or type in the details."}
+            "say": f"I have opened case {spoken}. Please open the upload link for this case and send a picture of the payment screen, or type in the details."}
 
 
 @router.post("/intake/start")
@@ -202,8 +212,9 @@ async def approve(case_code: str, request: Request):
             raise HTTPException(409, "no validated case to approve")
         if not wanted or wanted != s["case_id"]:
             raise HTTPException(409, f"approve must name the reviewed case_id ({s['case_id']})")
-        hound_api.mark_verified(s["case_id"])
         s["approved"] = True
+    # Outside the intake lock: _register rebuilds the watchlist and writes a file.
+    hound_api.mark_verified(s["case_id"])
     log.info("intake %s approved by operator -> case %s trusted", s["case_code"], s["case_id"])
     return {"status": "approved", "case_id": s["case_id"]}
 
@@ -247,6 +258,7 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
             s["status"] = "needs_retake"
             raise HTTPException(409, "case id collision; retry")
         hound_api.CASES[case["case_id"]] = case
+        hound_api.LIVE_CASES.add(case["case_id"])  # a real victim's addresses: redacted beyond localhost
     # Not mark_verified here: the chain proves the payment exists, not that this caller made it.
     # A stranger's public tx must never put its recipient on the watchlist. POST /intake/{code}/approve
     # (operator only) promotes the case after a human look.
@@ -280,7 +292,8 @@ def extract_from_text(text: str) -> dict[str, Any]:
     if t and not addrs:
         out["to_prefix"], out["to_suffix"] = t.group(1).lower(), t.group(2).lower()
     best = None
-    for am in AMOUNT.finditer(text):
+    scan = TRUNC.sub(" ", ETH_ADDR.sub(" ", TX_HASH.sub(" ", text)))
+    for am in AMOUNT.finditer(scan):
         val = float(am.group(1).replace(",", ""))
         tok = (am.group(2) or "").upper()
         if tok in ("USDT", "TETHER", "USDⓈ"):

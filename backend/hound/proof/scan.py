@@ -58,10 +58,12 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
     """Re-derive every row's verdict and the headline from the rows themselves (AUDIT 24), so the
     headline is always exactly the sum of the freezable rows' capped amounts.
 
-    A row is excluded when it carries an exchange/service/infra/sanctioned label, has more than
-    MAX_LIFETIME_TRANSFERS lifetime transfers, or its transfer count could not be read (fail closed).
-    Each row counts min(balance, claimed losses); when no claimed-loss figure was stored (older
-    summaries), it counts its balance and says so in cap_basis.
+    Fail closed. A row is excluded when it carries an exchange/service/infra/sanctioned label, has
+    more than MAX_LIFETIME_TRANSFERS lifetime transfers, has no transfer count (never measured, or
+    the read failed), or arrived with freezable_now false and is not frozen (the source scan or an
+    earlier finalize excluded it; a row is never promoted here). Each row counts
+    min(balance, claimed losses); when no claimed-loss figure was stored (older summaries), it
+    counts its balance and says so in cap_basis.
     """
     as_of = result.get("scanned_at")
     cases = []
@@ -76,11 +78,17 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
             reasons.append(f">{MAX_LIFETIME_TRANSFERS:,} lifetime transfers")
         if c.get("transfer_count_error"):
             reasons.append("transfer count unavailable")
+        elif tc is None:
+            reasons.append("transfer count not checked")
+        if c.get("freezable_now") is False and not c.get("is_frozen") and not reasons:
+            reasons.append("excluded in source scan")
         claimed = c.get("claimed_losses_usd")
         if claimed is None:
             capped, basis = bal, "balance (no claimed-loss figure stored for this row)"
         else:
             capped, basis = min(bal, float(claimed)), "min(balance, claimed losses)"
+        if not reasons and not c.get("is_frozen") and bal >= min_usdt and capped < min_usdt:
+            print(f"[scan] {_short(c.get('address', ''))}: dropped, claimed-loss cap {capped:.2f} is under {min_usdt}")
         c["capped_usdt"] = round(capped, 2)
         c["cap_basis"] = basis
         c["excluded_reasons"] = reasons
@@ -118,6 +126,10 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
                 cur["report_count"] += r["report_count"]
                 cur["report_ids"] = sorted(set(cur["report_ids"]) | set(r["report_ids"]))
                 cur["confidence"] = max(cur["confidence"], r["confidence"])
+                if cur.get("claimed_losses_usd") is None or r.get("claimed_losses_usd") is None:
+                    cur["claimed_losses_usd"] = cur.get("claimed_losses_usd") or r.get("claimed_losses_usd")
+                else:
+                    cur["claimed_losses_usd"] += r["claimed_losses_usd"]
     cases = []
     for addr, r in reported.items():
         try:

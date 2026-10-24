@@ -605,6 +605,12 @@ def demo_reset(request: Request):
         _PACKET_LOCKS.clear()
         _load_curated()
         watchlist.reset()  # drop wallets registered from the traces just cleared
+    try:  # the next judge must not see the previous caller's intake session
+        from hound.intake import routes as intake_routes
+    except ImportError:
+        intake_routes = None  # no intake module: nothing to clear (logged at startup)
+    if intake_routes is not None:
+        intake_routes.reset()
     log.warning("demo reset: in-memory cases, traces and jobs cleared; %d curated cases reloaded", len(CASES))
     return {"ok": True, "cases": len(CASES)}
 

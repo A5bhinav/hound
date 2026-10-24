@@ -263,6 +263,7 @@ def test_injection_through_exchange_label_is_dropped():
     ("Binance", "Binance"), ("OKX Hot Wallet", "OKX Hot Wallet"), ("Gate-io", "Gate-io"),
     # real Etherscan label names: wallet number and sub-label are dropped, the exchange kept
     ("Binance 14", "Binance"), ("Binance: Hot Wallet 20", "Binance"), ("OKX 7", "OKX"), ("Kraken 55", "Kraken"),
+    ("Coinbase10", "Coinbase"), ("Coinbase 10", "Coinbase"),
     ("Scammer Exchange", None), ("Fraudster desk", None), ("Scam desk 3", None), ("Binance: 0xa1770e", "Binance"),
     ("0xa1770e", None), ("recoverfunds.help", None), ("Wallet 7a", None), ("A" * 31, None), ("", None),
 ])

@@ -382,6 +382,10 @@ def test_path_hop_counts_each_victim_dollar_once(no_chain, not_frozen):
     w.add_trace(t)
     hops = check_mod.check("ethereum", LOOP, watch=w)["evidence"]["path"]
     assert [h["amount"] for h in hops if h["to"] == LOOP] == [1000.0]
+    # the trace graph's figure for the same edge travels with it, and the capped figure says why it differs
+    loop = next(h for h in hops if h["to"] == LOOP)
+    assert loop["edge_amount"] == 2000.0 and loop["amount_basis"] == "victim money counted once"
+    assert all(h["amount_basis"] == "edge amount" for h in hops if h["to"] != LOOP)
 
 
 def test_victim_paying_from_an_exchange_never_fetches_the_exchange(monkeypatch):
