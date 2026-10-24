@@ -83,14 +83,15 @@ async function example<T>(name: string): Promise<T> {
   }
 }
 
-/** The public web host from the backend's PUBLIC_BASE_URL, or null (then the page uses its own origin). */
-export async function getPublicBase(): Promise<string | null> {
-  if (usingFixtures) return null;
+/** From the backend's /health: the public web host (PUBLIC_BASE_URL) and the Hound phone line, or nulls. */
+export async function getPublicInfo(): Promise<{ base: string | null; phone: string | null }> {
+  if (usingFixtures) return { base: null, phone: null };
   try {
-    return (await call<{ public_base_url?: string | null }>("GET", "/health")).public_base_url ?? null;
+    const h = await call<{ public_base_url?: string | null; phone_number?: string | null }>("GET", "/health");
+    return { base: h.public_base_url ?? null, phone: h.phone_number ?? null };
   } catch (err) {
-    console.error("[hound-web] public base from /health:", err);
-    return null;
+    console.error("[hound-web] public info from /health:", err);
+    return { base: null, phone: null };
   }
 }
 

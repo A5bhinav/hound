@@ -2,26 +2,29 @@
 
 Every number below is verified (source in brackets). Don't say anything that isn't here. If a judge asks something not covered, say "I don't know, here's what we measured instead."
 
-## 2-minute version (default, demo first)
+## 2-minute version (default, demo first, in the order of the top bar)
 
-**0:00 Open (10 s).**
-"Americans over 60 lost 4.4 billion dollars to crypto scams last year. Hound starts from one victim's report and follows the money. We never touch money and never ask for keys." [FBI IC3 2025]
+**0:00 Open (15 s). Screen: home.**
+"Americans over 60 lost 4.4 billion dollars to crypto scams last year. [FBI IC3 2025] Hound follows stolen crypto and stops it moving again, in four steps, the ones across the top: a victim reports, Hound follows the money, exchanges stop the next victim, and police get a report. We never touch money and never ask for keys."
 
-**0:10 The replay (50 s). Screen: trace graph.**
-"This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. The DOJ printed the wallets truncated, like 0xa17-dot-dot-dot. We recovered every full address from public chain data.
-We start from one victim, A.H., and her six real ETH sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it.
-Watch it work: her ETH is swapped to USDT in the same transaction at three wallets, then it moves through a laundering loop, then a consolidation wallet.
-Hound reaches all 8 intermediate wallets the FBI named that it wasn't given, and all three wallets the DOJ seized."
+**0:15 Step 1, Report (15 s). Screen: Report.**
+"A victim calls this number. Our voice agent takes the story, texts them a link, and walks them through sending a screenshot of the payment. Nobody reads a 64-character hash over the phone." (Live call if a judge wants to try it; otherwise **Next: Follow the money**.)
+
+**0:30 Step 2, Follow the money (35 s). Screen: trace.**
+"This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. We start from one victim, A.H., and her six real sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it. Watch her money move: swapped to USDT, through a laundering loop, into a consolidation wallet. Hound reaches all 8 wallets the FBI named in between, and all three wallets the DOJ seized."
 [engine test: test_reaches_doj_seized_wallets_blind]
 
-**1:00 The reveal (15 s).** Click reveal.
+**1:05 The reveal (15 s).** Click **Reveal what Tether did**.
 "And here's what Hound didn't know: Tether froze these wallets 16 to 20 days after A.H. reported to the FBI on June 5 [complaint ¶ 38; freezes Jun 21 and 25]. Hound points at them from her report alone."
 
-**1:15 The hold (20 s). Screen: exchange withdrawal.**
-"The save happens at the exchange. A victim tries to send to a wallet in this cluster, and Hound says hold, with the evidence. One report protects the next person."
+**1:20 Step 3, Stop the next victim (15 s). Screen: exchange withdrawal.**
+"Every wallet in this trail goes on a warning list. When the next person tries to withdraw to one of them, the exchange asks Hound first, and the payment is held, with the evidence. One report protects the next person."
 
-**1:35 Proof and honesty (20 s). Screen: proof panel.**
-"Scored against the DOJ's own numbers for A.H.: two of the three seized wallets within about 1 percent, the third within 11. Every victim dollar is accounted for. Every hop has a confidence, every dead end is on screen, and the packet can only cite numbers that are in the trace. Our test suite fails otherwise. If a branch could not be loaded, the packet opens with a partial-trace banner that names it."
+**1:35 Step 4, Police report (10 s). Screen: report.**
+"And the detective gets one page: every transfer, where the money sits, and who to contact, Tether, the exchange and the FBI's IC3. It can only cite numbers that are in the trace."
+
+**1:45 Proof it works (10 s). Screen: proof.**
+"Scored against the DOJ's own numbers: two of the three seized wallets within about 1 percent, the third within 11. Every victim dollar is accounted for."
 
 **1:55 Close (5 s).** "Hound. The 911 call for crypto scam victims."
 

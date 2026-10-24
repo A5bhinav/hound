@@ -41,15 +41,16 @@ ngrok http 8000 --url=<reserved ngrok domain>
 
 Viewers on the public host see live cases with shortened addresses and no story text, and cannot reset the demo. That is by design.
 
-## The 2-minute click path (script: PITCH.md)
-0. (Optional, for the intake beat) **Intake** in the top bar → **Replay intake**: the case card fills in, QR + short link appear, then **Trace this case →**. It is labelled "Replay of a recorded intake".
-1. Open http://localhost:3000, pick the **Victim A.H. (DOJ replay)** card.
-2. The trace starts by itself: the engine's steps stream in, then the hops unfold column by column (about 1 second from the snapshot).
-3. Once the last hop is drawn, click **Reveal what Tether did** (top right of the graph): the view zooms to the last column and A-7, A-8, A-9 turn teal ("Tether froze this"), the banner reads "Tether froze 3 of these wallets 16 to 20 days after the victim's report", and the case card switches to the freeze dates. Below the graph: **other wallets paying in** and the engine audit log.
-4. **Exchange check** in the top bar → **Try: A scam wallet from the DOJ replay** (A-7) → **Withdraw**: expect **Withdrawal held** with evidence (or paste A-1 `0xcf9b…5027`). **Try: An exchange hot wallet** gives **Withdrawal sent** (allow).
-5. Back on the case page, **Open the detective packet**; the toggle switches to the victim's version; **Print or save as PDF** works.
-6. **Proof** in the top bar: 8/8 intermediates, 3/3 seized, A-7 and A-8 green, A-9 amber.
-7. Before the next judge: **Reset demo** at the bottom of the case list (click twice). It calls `POST /demo/reset`.
+## The 2-minute click path, in story order (script: PITCH.md)
+The top bar is the story: **1 Report → 2 Follow the money → 3 Stop the next victim → 4 Police report**, then **Proof it works**. Say the step name as you click it.
+
+0. **Home** (http://localhost:3000): read the one-liner, point at the 4 "How it works" cards. Click **Start: report a scam →**.
+1. **Report.** The page shows the Hound number, (681) 275-5467. Live: a judge calls it, tells a short story, gets a text with a link, and sends the payment screenshot (or types A.H.'s first tx hash). The case card fills in; then **Next: Follow the money →**. No call possible: **Play a sample call** (labelled as a replay), or **Next: Follow the money →** at the bottom.
+2. **Follow the money** (the DOJ case, Victim A.H.). The trace streams in, then the transfers unfold column by column. Once the last one is drawn, click **Reveal what Tether did**: the 3 last wallets turn hatched ("Tether froze it") and the headline reads "Tether froze 3 of these wallets 16 to 20 days after the victim's report". Click **Next: Stop the next victim →**.
+3. **Stop the next victim.** **Try: A wallet from the DOJ case (on the warning list)** → **Withdraw**: **Withdrawal held**, with the evidence. **Try: An exchange hot wallet** gives **Withdrawal sent**. Click **Next: Police report →**.
+4. **Police report.** The detective's copy; **For the victim** switches copy ("writing…" while Claude writes); **Print or save as PDF** works. Click **Next: See the proof on a real DOJ case →**.
+5. **Proof it works:** all 3 seized wallets and 8 of 8 in between, found blind; A-7 and A-8 within about 1%, A-9 within 11%.
+6. Before the next judge: **Reset demo** at the bottom of the home page (click twice). It calls `POST /demo/reset`.
 
 ## When something breaks
 | Symptom | Do this |
@@ -60,7 +61,7 @@ Viewers on the public host see live cases with shortened addresses and no story 
 | No internet at all | Both the DOJ replay (committed snapshot) and the live case (local bundle) run with zero network calls |
 | Claude API down / no key | Packets fall back to the deterministic template (`source: template`) within about 20 seconds; every number is still verified. Wallet explanations keep their rule text. With a key set, each trace also asks Claude to reword those explanations, so a stalled network slows the trace too: unset the key if the venue network is bad |
 | UI shows OFFLINE | `HOUND_DATA=fixture` is set in `web/.env.local`; clear it and rebuild |
-| Intake page says "intake backend isn't running" | The backend is down or was started without the intake routes: `curl localhost:8000/health`, restart `make demo`. Meanwhile use **Replay intake** |
+| Intake page says "intake backend isn't running" | The backend is down or was started without the intake routes: `curl localhost:8000/health`, restart `make demo`. Meanwhile use **Play a sample call** |
 | "Reveal what Tether did" is greyed out | The hops are still unfolding; wait for the last column, or click **Show all hops** |
 
 ## Never on screen

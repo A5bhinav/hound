@@ -23,7 +23,7 @@ const STEPS: { status: IntakeSession["status"][]; label: string }[] = [
 ];
 
 /** Polls GET /intake/active (AUDIT §5). Replay plays the same steps from a curated case, no backend involved. */
-export default function LiveIntake({ replayCase, publicBase }: { replayCase: CaseSummary | null; publicBase?: string | null }) {
+export default function LiveIntake({ replayCase, publicBase, phone }: { replayCase: CaseSummary | null; publicBase?: string | null; phone?: string | null }) {
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
   const replaying = useRef(false);
   const replayTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -133,17 +133,27 @@ export default function LiveIntake({ replayCase, publicBase }: { replayCase: Cas
           </button>
         ) : (
           <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase}>
-            Replay intake
+            Play a sample call
           </button>
         )}
       </div>
 
       {feed.k === "unavailable" && (
         <p className={styles.notice} role="alert">
-          {feed.message} Use Replay intake to show the flow.
+          {feed.message} Use "Play a sample call" to show the flow.
         </p>
       )}
-      {feed.k === "waiting" && <p className={styles.lead}>When someone calls the Hound line, their case appears here as they talk.</p>}
+      {feed.k === "waiting" && (
+        <p className={styles.lead}>
+          {phone ? (
+            <>
+              Call <strong className={styles.phone}>{formatPhone(phone)}</strong> to report a scam. The case appears here as you talk.
+            </>
+          ) : (
+            "When someone calls the Hound line, their case appears here as they talk."
+          )}
+        </p>
+      )}
 
       {s && (
         <div className={styles.grid}>
@@ -222,6 +232,12 @@ function Approve({ code, caseId, approved }: { code: string; caseId: string; app
       {st.k === "error" && <p className={styles.notice} role="alert">{st.message}</p>}
     </>
   );
+}
+
+/** +16812755467 reads as (681) 275-5467; anything else is shown as given. */
+function formatPhone(p: string) {
+  const m = p.replace(/\D/g, "").match(/^1?(\d{3})(\d{3})(\d{4})$/);
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : p;
 }
 
 function Fact({ k, v }: { k: string; v?: string | null }) {

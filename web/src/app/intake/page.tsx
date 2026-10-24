@@ -1,6 +1,6 @@
 import { Bar, DEMO_CASE, NextStep } from "@/components/Chrome";
 import LiveIntake from "@/components/LiveIntake";
-import { getPublicBase, HoundApiError, listCases, usingFixtures } from "@/lib/api";
+import { getPublicInfo, HoundApiError, listCases, usingFixtures } from "@/lib/api";
 import type { CaseSummary } from "@/lib/types";
 
 export default async function IntakePage() {
@@ -12,10 +12,11 @@ export default async function IntakePage() {
     if (!(err instanceof HoundApiError)) throw err;
     console.error("[hound-web] intake page: no replay case:", err.message);
   }
+  const info = await getPublicInfo();
   return (
     <>
       <Bar offline={usingFixtures} step={1} />
-      <LiveIntake replayCase={replayCase} publicBase={await getPublicBase()} />
+      <LiveIntake replayCase={replayCase} publicBase={info.base} phone={info.phone} />
       <div className="page-foot">
         <NextStep href={`/cases/${DEMO_CASE}`} label="Follow the money">
           No call right now? Follow the money in a real 2024 DOJ case instead.

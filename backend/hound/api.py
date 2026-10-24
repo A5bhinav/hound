@@ -863,4 +863,6 @@ def health():
     return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS),
             "example": bool(example("ohnd_replay.trace")), "skipped_cases": [s["file"] for s in SKIPPED_CASES],
             # The web host victims open (upload links, the replay QR); a public URL, not a secret.
-            "public_base_url": os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or None}
+            "public_base_url": os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or None,
+            # The Hound phone line shown on the report page (public, it is the number victims call).
+            "phone_number": os.environ.get("HOUND_PHONE_NUMBER", "").strip() or None}
