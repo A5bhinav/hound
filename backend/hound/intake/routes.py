@@ -180,17 +180,26 @@ def session(case_code: str, request: Request):
 
 
 @router.post("/intake/{case_code}/approve")
-def approve(case_code: str, request: Request):
+async def approve(case_code: str, request: Request):
     """Operator step (localhost or intake token): the on-chain check proves the payment exists, not
-    that the caller made it. Only after a human confirms does the case feed the watchlist."""
+    that the caller made it. Only after a human confirms does the case feed the watchlist.
+    Body {"case_id": "..."} must name the case the operator actually reviewed."""
     if not _authorised(request):
         raise HTTPException(403, "operator only")
-    s = SESSIONS.get(case_code.upper())
-    if not s or s["status"] != "validated" or not s.get("case_id"):
-        raise HTTPException(409, "no validated case to approve")
+    try:
+        body = await request.json()
+    except Exception:  # noqa: BLE001
+        body = {}
+    wanted = (body or {}).get("case_id")
     from hound import api as hound_api
-    hound_api.mark_verified(s["case_id"])
-    s["approved"] = True
+    with _LOCK:
+        s = SESSIONS.get(case_code.upper())
+        if not s or s["status"] != "validated" or not s.get("case_id"):
+            raise HTTPException(409, "no validated case to approve")
+        if not wanted or wanted != s["case_id"]:
+            raise HTTPException(409, f"approve must name the reviewed case_id ({s['case_id']})")
+        hound_api.mark_verified(s["case_id"])
+        s["approved"] = True
     log.info("intake %s approved by operator -> case %s trusted", s["case_code"], s["case_id"])
     return {"status": "approved", "case_id": s["case_id"]}
 
@@ -203,9 +212,12 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         raise HTTPException(404, "unknown case code")
     if not file and not (typed and typed.strip()):
         raise HTTPException(422, "send a screenshot as `file` or the details as `typed`")
-    if s["status"] == "validated":
-        raise HTTPException(409, "this case already has a validated payment")
-    s["status"] = "validating"
+    with _LOCK:  # atomic check-and-set: one upload at a time per session, none after validation
+        if s["status"] == "validated":
+            raise HTTPException(409, "this case already has a validated payment")
+        if s["status"] == "validating":
+            raise HTTPException(409, "an upload for this case is already being checked")
+        s["status"] = "validating"
     try:
         if typed and typed.strip():
             extracted = extract_from_text(typed)
@@ -223,13 +235,15 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         log.exception("intake %s failed", code)
         return _retake(s, "We could not read that. Please try another screenshot, or type the transaction hash.")
     from hound import api as hound_api
-    if case["case_id"] in hound_api.CASES:
-        raise HTTPException(409, "case id collision; retry")
-    hound_api.CASES[case["case_id"]] = case
+    with _LOCK:
+        if case["case_id"] in hound_api.CASES:
+            s["status"] = "needs_retake"
+            raise HTTPException(409, "case id collision; retry")
+        hound_api.CASES[case["case_id"]] = case
     # Not mark_verified here: the chain proves the payment exists, not that this caller made it.
     # A stranger's public tx must never put its recipient on the watchlist. POST /intake/{code}/approve
     # (operator only) promotes the case after a human look.
-    s.update({"status": "validated", "case_id": case["case_id"], "message": None, "_validated_at": time.time()})
+        s.update({"status": "validated", "case_id": case["case_id"], "message": None, "_validated_at": time.time()})
     log.info("intake %s validated -> case %s", code, case["case_id"])
     return {"status": "validated", "case_id": case["case_id"]}
 

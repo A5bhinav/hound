@@ -48,9 +48,10 @@ def test_typed_hash_validates_on_chain_and_marks_verified(monkeypatch):
     # second upload on a validated session is refused, case never overwritten
     assert client.post(f"/intake/{code}/screenshot", data={"typed": TX}).status_code == 409
     # operator approval is what makes it trusted
-    assert client.post(f"/intake/{code}/approve").json()["status"] == "approved" and cid in api.TRUSTED
+    assert client.post(f"/intake/{code}/approve", json={"case_id": "intake-wrong"}).status_code == 409
+    assert client.post(f"/intake/{code}/approve", json={"case_id": cid}).json()["status"] == "approved" and cid in api.TRUSTED
     remote = TestClient(api.app, client=("203.0.113.9", 40000))
-    assert remote.post(f"/intake/{code}/approve").status_code == 403
+    assert remote.post(f"/intake/{code}/approve", json={"case_id": cid}).status_code == 403
 
 
 def test_amount_mismatch_asks_for_retake(monkeypatch):
@@ -94,3 +95,9 @@ def test_remote_viewer_never_sees_case_code_or_link():
 def test_extract_from_text_handles_truncated_address_and_amount():
     ex = intake.extract_from_text("Sent 96,028.85 USDT to 0x2f1c…8fa4 on 2026-10-08 15:45")
     assert ex["amount"] == 96028.85 and ex["token"] == "USDT" and ex["to_prefix"] == "0x2f1c" and ex["to_suffix"] == "8fa4" and ex["time"].startswith("2026-10-08")
+
+
+def test_concurrent_upload_refused_while_validating():
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    intake.SESSIONS[code]["status"] = "validating"
+    assert client.post(f"/intake/{code}/screenshot", data={"typed": TX}).status_code == 409
