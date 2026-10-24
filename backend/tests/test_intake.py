@@ -42,9 +42,15 @@ def test_typed_hash_validates_on_chain_and_marks_verified(monkeypatch):
     r = client.post(f"/intake/{code}/screenshot", data={"typed": f"I sent 11,082.48 USDT, hash {TX}"})
     assert r.status_code == 200 and r.json()["status"] == "validated", r.json()
     cid = r.json()["case_id"]
-    assert cid in api.CASES and cid in api.TRUSTED
+    assert cid in api.CASES and cid not in api.TRUSTED  # chain-confirmed, not yet operator-approved
     assert api.CASES[cid]["sends"][0]["amount"] == 11082.48 and api.CASES[cid]["source"] == "screenshot"
     assert client.get("/intake/active").json()["status"] == "validated"
+    # second upload on a validated session is refused, case never overwritten
+    assert client.post(f"/intake/{code}/screenshot", data={"typed": TX}).status_code == 409
+    # operator approval is what makes it trusted
+    assert client.post(f"/intake/{code}/approve").json()["status"] == "approved" and cid in api.TRUSTED
+    remote = TestClient(api.app, client=("203.0.113.9", 40000))
+    assert remote.post(f"/intake/{code}/approve").status_code == 403
 
 
 def test_amount_mismatch_asks_for_retake(monkeypatch):
@@ -53,7 +59,7 @@ def test_amount_mismatch_asks_for_retake(monkeypatch):
     code = client.post("/intake/start", json={}).json()["case_code"]
     r = client.post(f"/intake/{code}/screenshot", data={"typed": f"sent 500 USDT hash {TX}"})
     assert r.json()["status"] == "needs_retake" and "amount" in r.json()["message"]
-    assert f"intake-{code.lower()}" not in api.TRUSTED
+    assert not any(c.startswith(f"intake-{code.lower()}") for c in api.TRUSTED)
 
 
 def test_bad_hash_is_a_retake_not_a_500(monkeypatch):
@@ -74,6 +80,15 @@ def test_image_without_vision_key_falls_back_to_typing(monkeypatch):
 def test_story_requires_token_or_localhost():
     remote = TestClient(api.app, client=("203.0.113.9", 40000))
     assert remote.post("/intake/voice/story", json={}).status_code == 403
+
+
+def test_remote_viewer_never_sees_case_code_or_link():
+    client.post("/intake/start", json={"story": {"summary": "secret story"}}).json()
+    remote = TestClient(api.app, client=("203.0.113.9", 40000))
+    v = remote.get("/intake/active").json()
+    assert v["case_code"] == "••••••" and v["upload_url"] is None and v["story"] is None and v["status"] == "awaiting_upload"
+    local = client.get("/intake/active").json()
+    assert len(local["case_code"]) == 6 and local["upload_url"].endswith(local["case_code"])
 
 
 def test_extract_from_text_handles_truncated_address_and_amount():

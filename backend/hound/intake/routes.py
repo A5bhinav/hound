@@ -141,28 +141,58 @@ async def start_session(request: Request):
     return _session_view(s)
 
 
+def _public_view(s: dict[str, Any]) -> dict[str, Any]:
+    """What a non-operator sees: progress only. The case code and link are only read out to the
+    caller on the phone and shown on the operator's (localhost) screen, never to a remote viewer."""
+    v = _session_view(s)
+    v["case_code"] = "••••••"
+    v["upload_url"] = None
+    v["story"] = None
+    v["victim"] = None
+    return v
+
+
 @router.get("/intake/active")
-def active():
-    """The most recent live session, or 204 when no call is in progress (web polls this every second)."""
+def active(request: Request):
+    """The most recent live session, or 204 when no call is in progress (web polls this every second).
+    Operator (localhost or intake token) gets the full session; anyone else gets progress only."""
+    full = _authorised(request)
     with _LOCK:
         _expire()
         for code in reversed(_ACTIVE):
             s = SESSIONS.get(code)
             if s and s["status"] != "validated":
-                return _session_view(s)
+                return _session_view(s) if full else _public_view(s)
         for code in reversed(_ACTIVE):  # a just-validated session stays visible for the reveal
             s = SESSIONS.get(code)
             if s and time.time() - s.get("_validated_at", 0) < 120:
-                return _session_view(s)
+                return _session_view(s) if full else _public_view(s)
     return Response(status_code=204)
 
 
 @router.get("/intake/{case_code}")
-def session(case_code: str):
+def session(case_code: str, request: Request):
+    """The upload page knows the code already; it gets status + message only unless the caller is the operator."""
     s = SESSIONS.get(case_code.upper())
     if not s:
         raise HTTPException(404, "unknown case code")
-    return _session_view(s)
+    return _session_view(s) if _authorised(request) else {"case_code": s["case_code"], "status": s["status"], "message": s.get("message")}
+
+
+@router.post("/intake/{case_code}/approve")
+def approve(case_code: str, request: Request):
+    """Operator step (localhost or intake token): the on-chain check proves the payment exists, not
+    that the caller made it. Only after a human confirms does the case feed the watchlist."""
+    if not _authorised(request):
+        raise HTTPException(403, "operator only")
+    s = SESSIONS.get(case_code.upper())
+    if not s or s["status"] != "validated" or not s.get("case_id"):
+        raise HTTPException(409, "no validated case to approve")
+    from hound import api as hound_api
+    hound_api.mark_verified(s["case_id"])
+    s["approved"] = True
+    log.info("intake %s approved by operator -> case %s trusted", s["case_code"], s["case_id"])
+    return {"status": "approved", "case_id": s["case_id"]}
 
 
 @router.post("/intake/{case_code}/screenshot")
@@ -173,6 +203,8 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         raise HTTPException(404, "unknown case code")
     if not file and not (typed and typed.strip()):
         raise HTTPException(422, "send a screenshot as `file` or the details as `typed`")
+    if s["status"] == "validated":
+        raise HTTPException(409, "this case already has a validated payment")
     s["status"] = "validating"
     try:
         if typed and typed.strip():
@@ -191,8 +223,12 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         log.exception("intake %s failed", code)
         return _retake(s, "We could not read that. Please try another screenshot, or type the transaction hash.")
     from hound import api as hound_api
+    if case["case_id"] in hound_api.CASES:
+        raise HTTPException(409, "case id collision; retry")
     hound_api.CASES[case["case_id"]] = case
-    hound_api.mark_verified(case["case_id"])  # verified on chain by the server: may feed the watchlist
+    # Not mark_verified here: the chain proves the payment exists, not that this caller made it.
+    # A stranger's public tx must never put its recipient on the watchlist. POST /intake/{code}/approve
+    # (operator only) promotes the case after a human look.
     s.update({"status": "validated", "case_id": case["case_id"], "message": None, "_validated_at": time.time()})
     log.info("intake %s validated -> case %s", code, case["case_id"])
     return {"status": "validated", "case_id": case["case_id"]}
@@ -317,7 +353,7 @@ def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, 
         raise NeedsRetake("We need the transaction hash, or the address you sent to plus the amount. Please type them in.")
     if not sends:
         raise NeedsRetake("No payment by you was found in that transaction. Please check the hash.")
-    case = {"case_id": f"intake-{s['case_code'].lower()}", "created_at": _now(), "source": "screenshot",
+    case = {"case_id": f"intake-{s['case_code'].lower()}-{secrets.token_hex(3)}", "created_at": _now(), "source": "screenshot",
             "victim": {"alias": (s.get("victim") or {}).get("alias") or f"Caller, case {s['case_code']}",
                        "age_band": (s.get("victim") or {}).get("age_band"), "exchange_used": (s.get("victim") or {}).get("exchange_used")},
             "story": {k: (s.get("story") or {}).get(k) for k in ("scam_app", "platform", "first_contact", "summary")},
