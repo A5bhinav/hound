@@ -26,6 +26,8 @@ from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 
+from hound.chain import CacheMiss, ChainAPIError
+
 log = logging.getLogger("hound.intake")
 router = APIRouter()
 
@@ -39,9 +41,11 @@ AMOUNT_TOL = 0.005  # ±0.5% (AUDIT N7)
 TIME_WINDOW = timedelta(hours=2)
 
 TX_HASH = re.compile(r"0x[0-9a-fA-F]{64}")
-ETH_ADDR = re.compile(r"0x[0-9a-fA-F]{40}")
+# Not inside a longer hex run: a 64-hex tx hash starts with a 40-hex run that is not an address.
+ETH_ADDR = re.compile(r"0x[0-9a-fA-F]{40}(?![0-9a-fA-F])")
 TRUNC = re.compile(r"(0x[0-9a-fA-F]{3,12})\s*(?:…|\.\.\.+|\*+)\s*([0-9a-fA-F]{3,12})")
-AMOUNT = re.compile(r"(?<![\d.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(USDT|USDⓈ|Tether|ETH)?", re.I)
+# (?<![\w.]): digits at the end of a hash or address ("...ab1234 USDT") are not an amount.
+AMOUNT = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(USDT|USDⓈ|Tether|ETH)?", re.I)
 PHONE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
 
 
@@ -231,6 +235,9 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
         case = validate_and_build_case(s, extracted)
     except NeedsRetake as e:
         return _retake(s, str(e))
+    except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault
+        log.warning("intake %s: chain unreachable while validating: %s", code, type(e).__name__)
+        return _retake(s, "We could not reach the blockchain to check that payment just now. Please try again in a minute.")
     except Exception as e:  # noqa: BLE001 - never 500 at the victim; log and ask again
         log.exception("intake %s failed", code)
         return _retake(s, "We could not read that. Please try another screenshot, or type the transaction hash.")

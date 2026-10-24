@@ -108,8 +108,14 @@ _PACKET_LOCKS = {}
 
 
 def mark_verified(case_id):
-    """Called by server-side intake after the send was validated on chain (never by a client)."""
-    TRUSTED.add(case_id)
+    """Called by server-side intake (operator approval), never by a client. If the case was already
+    traced (the operator reviews the trace before approving), that trace is registered with the
+    watchlist now; otherwise the next trace registers itself (_register checks TRUSTED)."""
+    with _LOCK:
+        TRUSTED.add(case_id)
+        trace = TRACES.get(LAST_DONE.get(case_id))
+    if trace is not None:
+        _register(f"approve-{case_id}", trace, trace.get("source") == "fixture")
 
 
 SKIPPED_CASES = []  # invalid curated files: listed in /health instead of crashing startup
