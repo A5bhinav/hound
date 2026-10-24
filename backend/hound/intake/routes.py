@@ -143,7 +143,6 @@ def _state_file():
 def save_state() -> None:
     """Write sessions and the cases they created (victims' stories: chmod 600, gitignored cache/).
     Atomic: a temp file in the same folder, then os.replace. Never raises: the request already succeeded."""
-    import tempfile
     from hound import api as hound_api
     # Snapshot and write under one lock, so saves land in the order they were taken: an older snapshot
     # can never overwrite a newer one (e.g. bring back sessions a /demo/reset just cleared).

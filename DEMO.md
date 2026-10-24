@@ -70,7 +70,7 @@ On their phone, at the public web URL: **Report online** → answer the question
 | Claude API down / no key | Packets fall back to the deterministic template (`source: template`) within about 20 seconds; every number is still verified. Wallet explanations keep their rule text. With a key set, each trace also asks Claude to reword those explanations, so a stalled network slows the trace too: unset the key if the venue network is bad |
 | UI shows OFFLINE | `HOUND_DATA=fixture` is set in `web/.env.local`; clear it and rebuild |
 | Intake page says "intake backend isn't running" | The backend is down or was started without the intake routes: `curl localhost:8000/health`, restart `make demo`. Meanwhile use **Play a sample call** |
-| "Reveal what Tether did" is greyed out | The hops are still unfolding; wait for the last column, or click **Show all hops** |
+| "Reveal what Tether did" is greyed out | The hops are still unfolding; wait for the last column, or click **Skip to the end** |
 
 ## Never on screen
 - A live-case address in full (truncate it), and never call a reported wallet "the scammer" (reported, not proven).
