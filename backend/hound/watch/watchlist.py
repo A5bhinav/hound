@@ -51,6 +51,19 @@ def _new_entry(ch: str, addr: str) -> dict[str, Any]:
             "victim_inflow": 0.0, "last_inflow": None, "replay": False, "path": [], "evidence": []}
 
 
+def _deposit_sweepers(trace: dict, nodes: dict[str, dict]) -> set[str]:
+    """Nodes whose every outflow goes to a labelled exchange hot wallet: an exchange deposit address
+    sweeping into its exchange (AUDIT: a proven sweep into a labelled hot wallet is the exchange stop).
+    Exchange-owned, so never listed. Seen live: a Coinbase deposit address that got 96,028.85 USDT
+    and swept all of it to Coinbase 10 four minutes later."""
+    hot = {a for a, n in nodes.items() if n.get("kind") == "exchange_hot"}
+    outs: dict[str, list[dict]] = {}
+    for e in trace.get("edges", []):
+        outs.setdefault(e.get("from"), []).append(e)
+    return {a for a, es in outs.items() if es and hot and all(e.get("to") in hot for e in es)
+            and len({e.get("to") for e in es}) == 1}
+
+
 def _is_contract(ch: str, addr: str) -> bool:
     try:
         return chain.is_contract(ch, addr)
@@ -111,6 +124,7 @@ class Watchlist:
         victims = {a for a, n in nodes.items() if n.get("kind") == "victim"}
         # busy endpoints are services, never scam wallets: holding them blocks every user
         busy = {e["address"] for e in trace.get("endpoints", []) if e.get("reason") in NEVER_LISTED_ENDPOINTS}
+        busy |= _deposit_sweepers(trace, nodes)
         case_id = trace.get("case_id") or trace.get("trace_id") or "unknown-case"
         replay = bool(trace.get("replay"))
         added = 0

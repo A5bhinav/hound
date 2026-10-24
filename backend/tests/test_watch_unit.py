@@ -256,3 +256,20 @@ def test_busy_endpoints_and_contracts_are_never_listed(monkeypatch, not_frozen):
     w2 = Watchlist()
     w2.add_trace(FIXTURE)
     assert w2.lookup("ethereum", A1) is None and w2.lookup("ethereum", HOP2) is not None
+
+
+def test_deposit_address_sweeping_into_a_hot_wallet_is_never_listed(not_frozen):
+    dep, cb10 = "0x2f1cf3ddb946bcc6746d0612b86cb4beda3d8fa4", "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43"
+    t = {"trace_id": "t-dep", "case_id": "c-dep", "replay": False,
+         "nodes": [{"address": VICTIM, "chain": "ethereum", "kind": "victim", "depth": 0},
+                   {"address": dep, "chain": "ethereum", "kind": "intermediate", "depth": 1},
+                   {"address": cb10, "chain": "ethereum", "kind": "exchange_hot", "depth": 2}],
+         "edges": [{"from": VICTIM, "to": dep, "amount": 96028.85, "attributed_amount": 96028.85, "confidence": 1.0,
+                    "last_time": "2026-10-08T15:45:23Z"},
+                   {"from": dep, "to": cb10, "amount": 96028.85, "attributed_amount": 96028.85, "confidence": 1.0,
+                    "last_time": "2026-10-08T15:49:11Z"}],
+         "endpoints": [{"address": cb10, "reason": "exchange"}]}
+    w = Watchlist()
+    w.add_trace(t)
+    assert w.lookup("ethereum", dep) is None
+    assert check_mod.check("ethereum", dep, watch=w)["decision"] == "allow"
