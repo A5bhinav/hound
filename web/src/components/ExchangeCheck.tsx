@@ -282,38 +282,40 @@ function Result({ r, address, chain, amount }: { r: CheckResult; address: string
             <>
               <p className="label">How victim money reached it</p>
               <div className={styles.pathWrap}>
-                <table className={styles.path}>
-                  <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th scope="col">From → to</th>
-                      <th scope="col" className={styles.num}>Amount</th>
-                      <th scope="col">Confidence</th>
-                      <th scope="col">Transactions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ev.path.map((h, i) => (
-                      <tr key={`${h.from}${h.to}`}>
-                        <td className={styles.hopN}>{i + 1}</td>
-                        <td className="mono">
-                          {shortAddr(h.from)} → {shortAddr(h.to)}
-                        </td>
-                        <td className={styles.num}>{h.token ? tok(h.amount, h.token) : usdt(h.amount)}</td>
-                        <td>
-                          {pct(h.confidence)} · {h.method}
-                        </td>
-                        <td className="mono">
-                          {h.tx_hashes.slice(0, 2).map((t) => (
-                            <a key={t} href={explorerUrl(chain, "tx", t) ?? undefined} target="_blank" rel="noreferrer" className={styles.tx}>
-                              {shortAddr(t)}
-                            </a>
-                          ))}
-                        </td>
+                <div className="table-scroll">
+                  <table className={styles.path}>
+                    <thead>
+                      <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">From → to</th>
+                        <th scope="col" className={styles.num}>Amount</th>
+                        <th scope="col">Confidence</th>
+                        <th scope="col">Transactions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {ev.path.map((h, i) => (
+                        <tr key={`${h.from}${h.to}`}>
+                          <td className={styles.hopN}>{i + 1}</td>
+                          <td className="mono">
+                            {shortAddr(h.from)} → {shortAddr(h.to)}
+                          </td>
+                          <td className={styles.num}>{h.token ? tok(h.amount, h.token) : usdt(h.amount)}</td>
+                          <td>
+                            {pct(h.confidence)} · {h.method}
+                          </td>
+                          <td className="mono">
+                            {h.tx_hashes.slice(0, 2).map((t) => (
+                              <a key={t} href={explorerUrl(chain, "tx", t) ?? undefined} target="_blank" rel="noreferrer" className={styles.tx}>
+                                {shortAddr(t)}
+                              </a>
+                            ))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </>
           )}

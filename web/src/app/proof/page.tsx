@@ -106,30 +106,32 @@ function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
           <h2 id="doj-h">Scoreboard: Hound vs DOJ ¶ 74</h2>
           {s.blind && <span className="badge badge-ok">Blind run</span>}
         </div>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th scope="col">Wallet</th>
-              <th scope="col">Address</th>
-              <th scope="col" className={styles.num}>DOJ</th>
-              <th scope="col" className={styles.num}>Hound</th>
-              <th scope="col" className={styles.num}>Difference</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sb.amount.map((a) => (
-              <tr key={a.label}>
-                <td><b>{a.label}</b></td>
-                <td className="mono">{shortAddr(a.address)}</td>
-                <td className={styles.num}>{usdt(a.doj_ah_para74_usdt)}</td>
-                <td className={styles.num}>{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
-                <td className={styles.num}>
-                  <span className={styles.band} data-band={a.band}>{signedPct(a.ours_attributed_usdt, a.doj_ah_para74_usdt)}</span>
-                </td>
+        <div className="table-scroll">
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Wallet</th>
+                <th scope="col">Address</th>
+                <th scope="col" className={styles.num}>DOJ</th>
+                <th scope="col" className={styles.num}>Hound</th>
+                <th scope="col" className={styles.num}>Difference</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sb.amount.map((a) => (
+                <tr key={a.label}>
+                  <td><b>{a.label}</b></td>
+                  <td className="mono">{shortAddr(a.address)}</td>
+                  <td className={styles.num}>{usdt(a.doj_ah_para74_usdt)}</td>
+                  <td className={styles.num}>{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
+                  <td className={styles.num}>
+                    <span className={styles.band} data-band={a.band}>{signedPct(a.ours_attributed_usdt, a.doj_ah_para74_usdt)}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <details className={styles.more}>
           <summary>How this was scored</summary>
           <ul className={`checks ${styles.detailList}`}>
@@ -252,25 +254,27 @@ function ScanPanel({ scan }: { scan: Scan }) {
       {computed && rows.length > 0 && (
         <details className={styles.more}>
           <summary>Show the {rows.length} addresses</summary>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Address</th>
-                <th scope="col" className={styles.num}>Counted</th>
-                <th scope="col">Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c) => (
-                // Live addresses are truncated everywhere public (BRIEF §0).
-                <tr key={c.address}>
-                  <td className="mono">{shortAddr(c.address)}</td>
-                  <td className={styles.num}>{usdt(amount(c))}</td>
-                  <td className={styles.cat}>{c.category ? c.category.toLowerCase().replaceAll("_", " ") : ""}</td>
+          <div className="table-scroll">
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Address</th>
+                  <th scope="col" className={styles.num}>Counted</th>
+                  <th scope="col">Category</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((c) => (
+                  // Live addresses are truncated everywhere public (BRIEF §0).
+                  <tr key={c.address}>
+                    <td className="mono">{shortAddr(c.address)}</td>
+                    <td className={styles.num}>{usdt(amount(c))}</td>
+                    <td className={styles.cat}>{c.category ? c.category.toLowerCase().replaceAll("_", " ") : ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <ul className={`checks ${styles.detailList}`}>
             {scan.already_frozen ? <li>{scan.already_frozen} already frozen</li> : null}
             <li>

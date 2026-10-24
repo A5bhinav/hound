@@ -40,7 +40,7 @@ export default async function Home() {
             </a>
           )}
           <Link href="/report" className={`box ${styles.way}`}>
-            <p className="label">Report online</p>
+            <p className="label">Online</p>
             <span className={styles.wayTitle}>Report online</span>
             <ul className="checks">
               <li>A few short questions</li>
@@ -58,7 +58,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        <div className="grid g2" style={{ marginTop: "1rem" }}>
+        <div className={`grid g2 ${styles.below}`}>
           <section className="box box-red" aria-labelledby="safe-h">
             <h2 id="safe-h" className={styles.boxTitle}>Hound will never</h2>
             <ul className="checks no">
