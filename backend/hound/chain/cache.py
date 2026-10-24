@@ -35,6 +35,9 @@ log = logging.getLogger("hound.chain.cache")
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SNAPSHOT_DIR = REPO_ROOT / "data" / "fixtures" / "cache"
+# Private bundle for live cases (gitignored with data/cases_live/): AirDrop the folder to the
+# demo laptop. Read after the public snapshot. Built by `warm_live --bundle`.
+LIVE_SNAPSHOT_DIR = REPO_ROOT / "data" / "cases_live" / "cache"
 MODES = ("live", "record", "readonly", "prefer_cache")
 
 # Empty results are suspicious (the kill test's silent zero), so never kept longer than this.
@@ -88,13 +91,21 @@ def _path(namespace: str, parts: dict) -> Path:
     return cache_dir() / namespace / h[:2] / f"{h}.json"
 
 
-@lru_cache(maxsize=16)
-def _snapshot(namespace: str) -> dict[str, dict]:
-    p = SNAPSHOT_DIR / f"{namespace}.json.gz"
+@lru_cache(maxsize=32)
+def _load_gz(path: str) -> dict[str, dict]:
+    p = Path(path)
     if not p.exists():
         return {}
     with gzip.open(p, "rt") as f:
         return json.load(f)
+
+
+def _snapshot(namespace: str) -> dict[str, dict]:
+    return _load_gz(str(SNAPSHOT_DIR / f"{namespace}.json.gz"))
+
+
+def _live_snapshot(namespace: str) -> dict[str, dict]:
+    return _load_gz(str(LIVE_SNAPSHOT_DIR / f"{namespace}.json.gz"))
 
 
 def read(namespace: str, parts: dict) -> dict | None:
@@ -108,7 +119,8 @@ def read(namespace: str, parts: dict) -> dict | None:
             log.warning("corrupt cache file %s (%s); ignoring it", p, e)
     if os.environ.get("HOUND_SNAPSHOT", "1") == "0":
         return None  # warming: the snapshot must not hide what a fresh run fetches
-    return _snapshot(namespace).get(key(parts))
+    k = key(parts)
+    return _snapshot(namespace).get(k) or _live_snapshot(namespace).get(k)
 
 
 def write(namespace: str, parts: dict, value: Any, empty: bool = False) -> None:
@@ -156,4 +168,4 @@ def cached(
 
 
 def reload_snapshot() -> None:
-    _snapshot.cache_clear()
+    _load_gz.cache_clear()

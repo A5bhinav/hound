@@ -65,7 +65,7 @@ def count_empty() -> None:
 # Minimum seconds between requests per host (free tiers).
 MIN_INTERVAL = {
     "eth.blockscout.com": 0.2,
-    "api.etherscan.io": 0.22,  # free key: 5 req/s
+    "api.etherscan.io": 0.4,  # free key: ~2.5 req/s (AUDIT issue 4 token bucket)
     "api.trongrid.io": 0.12,  # keyed: ~15 req/s
 }
 

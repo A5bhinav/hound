@@ -355,24 +355,30 @@ def get_transfers(address: str, token: str | None = None, before: str | None = N
 
     errors = []
     runners: dict[str, Callable[[], list[dict]]] = {
+        "etherscan_logs": lambda: _transfers_etherscan_logs(address, contract),
         "rpc": lambda: _transfers_rpc(address, contract, lo, hi),
         "blockscout_v2": lambda: _transfers_v2(address, contract, lo, hi),
         "etherscan": lambda: _transfers_v1(address, kind, contract, lo, hi, "etherscan"),
         "blockscout": lambda: _transfers_v1(address, kind, contract, lo, hi, "blockscout"),
     }
-    order = [s.strip() for s in os.environ.get("HOUND_ETH_TRANSFER_SOURCES",
-                                               "rpc,blockscout_v2,etherscan,blockscout").split(",")]
+    default = ("etherscan_logs,rpc,blockscout_v2,blockscout" if os.environ.get("ETHERSCAN_API_KEY")
+               else "rpc,blockscout_v2,blockscout")  # brief §0: Etherscan getLogs primary when keyed
+    order = [s.strip() for s in os.environ.get("HOUND_ETH_TRANSFER_SOURCES", default).split(",")]
     if kind == "eth":
         order = [s for s in order if s in ("etherscan", "blockscout")]  # native ETH isn't in logs
     if not os.environ.get("ETHERSCAN_API_KEY"):
-        order = [s for s in order if s != "etherscan"]
+        order = [s for s in order if s not in ("etherscan", "etherscan_logs")]
     attempts = [(s, runners[s]) for s in order if s in runners]
 
+    missed: list[cache.CacheMiss] = []
     for name, run in attempts:
         try:
             out = run()
-        except (TooManyTransfers, cache.CacheMiss):
+        except TooManyTransfers:
             raise
+        except cache.CacheMiss as e:
+            missed.append(e)  # readonly: another source may be cached (snapshot built without a key)
+            continue
         except ChainAPIError as e:
             errors.append(f"{name}: {e}")
             log.warning("transfers via %s failed for %s: %s", name, address, e)
@@ -385,6 +391,8 @@ def get_transfers(address: str, token: str | None = None, before: str | None = N
             log.warning("EMPTY transfer list for %s token=%s after=%s before=%s (source %s)",
                         address, token, after, before, name)
         return out
+    if missed:
+        raise missed[0]
     raise ChainAPIError(f"could not get transfers for {address}: {' | '.join(errors)}")
 
 
@@ -449,6 +457,19 @@ def _transfers_rpc_range(address: str, contract: str | None, from_block: int, to
                 rows.append(r)
         if len(rows) > MAX_TRANSFERS:
             raise TooManyTransfers(address, len(rows), MAX_TRANSFERS)
+    return _logs_to_transfers(rows)
+
+
+def _hx(v: Any) -> int:
+    """Hex or decimal string -> int. Etherscan writes zero as "0x"."""
+    s = str(v).strip()
+    if s in ("", "0x", "0X"):
+        return 0
+    return int(s, 16) if s.lower().startswith("0x") else int(s)
+
+
+def _logs_to_transfers(rows: list[dict]) -> list[dict]:
+    """ERC-20 Transfer logs (RPC or Etherscan getLogs shape) -> Transfer dicts."""
     out = []
     for r in rows:
         if len(r["topics"]) != 3:
@@ -456,8 +477,8 @@ def _transfers_rpc_range(address: str, contract: str | None, from_block: int, to
         c = r["address"].lower()
         sym, dec = _token_meta(c)
         raw = int(r["data"], 16) if r.get("data") not in (None, "0x") else 0
-        bt = r.get("blockTimestamp")
-        ts = int(bt, 16) if bt else block_time(int(r["blockNumber"], 16))
+        bt = r.get("blockTimestamp") or r.get("timeStamp")
+        ts = _hx(bt) if bt else block_time(_hx(r["blockNumber"]))
         out.append({
             "chain": CHAIN,
             "tx_hash": r["transactionHash"].lower(),
@@ -466,14 +487,55 @@ def _transfers_rpc_range(address: str, contract: str | None, from_block: int, to
             "token": sym,
             "amount": _amount(raw, dec),
             "time": iso(ts),
-            "block": int(r["blockNumber"], 16),
-            "log_index": int(r["logIndex"], 16),
-            "tx_index": int(r["transactionIndex"], 16) if r.get("transactionIndex") else None,
+            "block": _hx(r["blockNumber"]),
+            "log_index": _hx(r["logIndex"]),
+            "tx_index": _hx(r["transactionIndex"]) if r.get("transactionIndex") not in (None, "") else None,
             "amount_raw": str(raw),
             "decimals": dec,
             "contract": c,
         })
     return out
+
+
+def _transfers_etherscan_logs(address: str, contract: str | None) -> list[dict]:
+    """Etherscan v2 getLogs on the Transfer topic with topic1 / topic2 = the address (brief §0, AUDIT N3):
+    has logIndex + transactionIndex (tokentx does not). Pages by block window, 1,000 rows per call,
+    deduped on (tx, logIndex)."""
+    if not os.environ.get("ETHERSCAN_API_KEY"):
+        raise ChainAPIError("ETHERSCAN_API_KEY not set")
+    if not contract:
+        raise ChainAPIError("etherscan getLogs needs a token contract; falling back")
+    me = _topic_addr(address)
+    rows: list[dict] = []
+    seen: set[tuple[str, int]] = set()
+    for side in ("topic1", "topic2"):
+        start = USDT_DEPLOY_BLOCK if contract == USDT else 0
+        while True:
+            params = {"module": "logs", "action": "getLogs", "address": contract, "topic0": TRANSFER_TOPIC,
+                      side: me, f"topic0_{side[-1]}_opr": "and", "fromBlock": start, "toBlock": "latest",
+                      "page": 1, "offset": V1_PAGE}
+
+            def ttl(body):
+                got = body.get("result") or []
+                if len(got) >= V1_PAGE and _hx(got[-1]["timeStamp"]) < time.time() - SETTLED_AFTER:
+                    return None  # a full page from a fixed start block can't change
+                return RECENT_TTL
+
+            page = explorer(params, ttl=ttl, sources=["etherscan"])["result"]
+            for r in page:
+                k = (r["transactionHash"].lower(), _hx(r["logIndex"]))
+                if k not in seen:
+                    seen.add(k)
+                    rows.append(r)
+            if len(rows) > MAX_TRANSFERS:
+                raise TooManyTransfers(address, len(rows), MAX_TRANSFERS)
+            if len(page) < V1_PAGE:
+                break
+            last = _hx(page[-1]["blockNumber"])
+            if last == start:
+                raise ChainAPIError(f"{address}: more than {V1_PAGE} logs in block {last}")
+            start = last  # refetch from the last block; dedupe on (tx, logIndex)
+    return _logs_to_transfers(rows)
 
 
 BLOCKSCOUT_PRO = os.environ.get("BLOCKSCOUT_PRO_URL", "https://api.blockscout.com/1")
@@ -719,13 +781,18 @@ def get_native_txs(address: str, as_of: int | str | None = None, after: str | No
     hi_time = parse_time(as_of) if isinstance(as_of, str) else None
     hi_block = as_of if isinstance(as_of, int) else None
     errors = []
-    sources = [("blockscout_v2", lambda: _native_v2(address, lo))]
-    sources += [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources()]
+    sources = [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources() if s == "etherscan"]
+    sources += [("blockscout_v2", lambda: _native_v2(address, lo))]
+    sources += [(s, lambda s=s: _native_v1(address, s)) for s in v1_sources() if s != "etherscan"]
+    missed: list[cache.CacheMiss] = []
     for name, run in sources:
         try:
             rows = run()
-        except (TooManyTransfers, cache.CacheMiss):
+        except TooManyTransfers:
             raise
+        except cache.CacheMiss as e:
+            missed.append(e)  # readonly: another source may be cached
+            continue
         except ChainAPIError as e:
             errors.append(f"{name}: {e}")
             log.warning("native txs via %s failed for %s: %s", name, address, e)
@@ -739,6 +806,8 @@ def get_native_txs(address: str, as_of: int | str | None = None, after: str | No
             count_empty()
             log.warning("EMPTY native tx list for %s after=%s as_of=%s (source %s)", address, after, as_of, name)
         return out
+    if missed:
+        raise missed[0]
     raise ChainAPIError(f"could not get native txs for {address}: {' | '.join(errors)}")
 
 

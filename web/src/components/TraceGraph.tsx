@@ -90,13 +90,24 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
 }
 
 /** asOf: the case's story date (replay: the victim's report), used to say how long after it Tether froze. */
-export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: string | null }) {
+export default function TraceGraph({
+  trace,
+  asOf,
+  onFreezesShown,
+}: {
+  trace: Trace;
+  asOf?: string | null;
+  /** Told whenever freezes are hidden or revealed, so the rest of the page can follow. */
+  onFreezesShown?: (shown: boolean) => void;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [shownHop, setShownHop] = useState(0);
   const maxHop = useMemo(() => Math.max(0, ...trace.edges.map((e) => e.hop)), [trace]);
+  // Loops (DOJ ¶70's circular pattern) give some edges a hop number past the deepest column; label what's drawn.
+  const maxDepth = useMemo(() => Math.max(0, ...trace.nodes.map((n) => n.depth)), [trace]);
   const hideFreezes = trace.method.freeze_visibility === "hidden";
   const [freezesShown, setFreezesShown] = useState(!hideFreezes);
   const frozen = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen && n.frozen.frozen_at), [trace]);
@@ -107,6 +118,10 @@ export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: strin
     const t = setTimeout(() => setFreezesShown(true), FREEZE_REVEAL_MS);
     return () => clearTimeout(t);
   }, [hideFreezes, shownHop, maxHop]);
+
+  useEffect(() => {
+    onFreezesShown?.(freezesShown);
+  }, [freezesShown, onFreezesShown]);
 
   useEffect(() => {
     const cy = cyRef.current;
@@ -258,7 +273,9 @@ export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: strin
     <section className={styles.wrap} aria-label="Money trail">
       <div className={styles.controls}>
         <span className={styles.progress}>
-          {shownHop >= maxHop ? `${maxHop} hops traced` : `Tracing hop ${shownHop} of ${maxHop}…`}
+          {shownHop >= maxHop
+            ? `Traced ${maxDepth} hops deep · ${trace.edges.length} money flows`
+            : `Tracing hop ${shownHop} of ${maxHop}…`}
         </span>
         <button type="button" onClick={play}>Replay trace</button>
         <button type="button" onClick={showAll} disabled={shownHop >= maxHop}>

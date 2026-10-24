@@ -31,11 +31,11 @@ def test_claude_only_rewords_reasons(monkeypatch):
     monkeypatch.setattr(cl, "_cache", {})
     f = {"address": "0xhv", "truncated": True, "n_in": 9000, "n_out": 9000, "distinct_senders": 0,
          "distinct_recipients": 0, "top_recipient_share": 0, "median_hold_hours": None, "top_recipient": None}
-    monkeypatch.setattr(cl, "_claude", lambda f, floor: {"kind": "exchange_hot", "confidence": 0.95, "reasons": ["busy"]})
+    monkeypatch.setattr(cl, "_claude", lambda f, floor, **k: {"kind": "exchange_hot", "confidence": 0.95, "reasons": ["busy"]})
     out = classify(f)
     assert (out["kind"], out["confidence"], out["reasons"]) == ("exchange_hot", 0.6, ["busy"])
     monkeypatch.setattr(cl, "_cache", {})
-    monkeypatch.setattr(cl, "_claude", lambda f, floor: {"kind": "personal", "confidence": 0.9, "reasons": ["mine"]})
+    monkeypatch.setattr(cl, "_claude", lambda f, floor, **k: {"kind": "personal", "confidence": 0.9, "reasons": ["mine"]})
     assert classify(f) == rules(f)
 
 
@@ -59,3 +59,15 @@ def test_prompt_has_no_address(monkeypatch):
     cl._claude(f, rules(f))
     assert "0xsecretaddr" not in sent["messages"][0]["content"]
     assert sent["client"] == {"timeout": 8, "max_retries": 0}
+
+
+def test_rules_wording_when_llm_is_off_even_after_a_cached_rewording(monkeypatch):
+    # A replay passes use_llm=False and must be identical whatever ran earlier in the process.
+    import hound.llm.classify as cl
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setattr(cl, "_cache", {})
+    f = {"address": "0xhv", "truncated": True, "n_in": 9000, "n_out": 9000, "distinct_senders": 0,
+         "distinct_recipients": 0, "top_recipient_share": 0, "median_hold_hours": None, "top_recipient": None}
+    monkeypatch.setattr(cl, "_claude", lambda f, floor, **k: {"kind": "exchange_hot", "confidence": 0.6, "reasons": ["busy"]})
+    assert classify(f)["reasons"] == ["busy"]
+    assert classify(f, use_llm=False) == rules(f)

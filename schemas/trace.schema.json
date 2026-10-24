@@ -485,7 +485,8 @@
             "time_cap",
             "swap_unresolved",
             "tether_destroyed",
-            "infra"
+            "infra",
+            "returned_to_victim"
           ]
         },
         "victim_inflow": {

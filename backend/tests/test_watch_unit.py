@@ -256,3 +256,105 @@ def test_busy_endpoints_and_contracts_are_never_listed(monkeypatch, not_frozen):
     w2 = Watchlist()
     w2.add_trace(FIXTURE)
     assert w2.lookup("ethereum", A1) is None and w2.lookup("ethereum", HOP2) is not None
+
+
+def test_deposit_address_sweeping_into_a_hot_wallet_is_never_listed(not_frozen):
+    dep, cb10 = "0x2f1cf3ddb946bcc6746d0612b86cb4beda3d8fa4", "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43"
+    t = {"trace_id": "t-dep", "case_id": "c-dep", "replay": False,
+         "nodes": [{"address": VICTIM, "chain": "ethereum", "kind": "victim", "depth": 0},
+                   {"address": dep, "chain": "ethereum", "kind": "intermediate", "depth": 1},
+                   {"address": cb10, "chain": "ethereum", "kind": "exchange_hot", "depth": 2}],
+         "edges": [{"from": VICTIM, "to": dep, "amount": 96028.85, "attributed_amount": 96028.85, "confidence": 1.0,
+                    "last_time": "2026-10-08T15:45:23Z"},
+                   {"from": dep, "to": cb10, "amount": 96028.85, "attributed_amount": 96028.85, "confidence": 1.0,
+                    "last_time": "2026-10-08T15:49:11Z"}],
+         "endpoints": [{"address": cb10, "reason": "exchange"}]}
+    w = Watchlist()
+    w.add_trace(t)
+    assert w.lookup("ethereum", dep) is None
+    assert check_mod.check("ethereum", dep, watch=w)["decision"] == "allow"
+
+
+# ---------------------------------------------------------------- REVIEW_TEAM_R2 (watchlist inflow)
+
+V = "0x" + "11" * 20
+E1, E2, LOOP, FIN = ("0x" + c * 40 for c in "abcd")
+
+
+def _r2_trace(case_id="r2-case", trace_id="r2-trace"):
+    """Victim sends ETH to E1 (swapped to 1,000 USDT, seed s1) and 500 USDT to E2 (seed s2).
+    E1 -> LOOP -> E1 is a laundering loop; everything ends at FIN."""
+    def edge(a, b, token, amt, by_seed, conf=1.0):
+        return {"from": a, "to": b, "token": token, "amount": amt, "attributed_amount": amt,
+                "attributed_by_seed": by_seed, "tx_hashes": ["0x" + "e" * 64], "confidence": conf,
+                "last_time": "2024-05-01T00:00:00Z", "method": "fifo"}
+    node = lambda a, kind, pc: {"address": a, "chain": "ethereum", "kind": kind, "depth": 1, "path_confidence": pc}
+    return {"trace_id": trace_id, "case_id": case_id, "replay": True,
+            "seeds": [{"seed_id": "s1", "token": "ETH", "amount": 0.3}, {"seed_id": "s2", "token": "USDT", "amount": 500.0}],
+            "nodes": [node(V, "victim", 1.0), node(E1, "intermediate", 1.0), node(E2, "intermediate", 0.85),
+                      node(LOOP, "intermediate", 0.9), node(FIN, "holding", 1.0)],
+            "edges": [edge(V, E1, "ETH", 0.3, {"s1": 0.3}), edge(V, E2, "USDT", 500.0, {"s2": 500.0}),
+                      edge(E1, LOOP, "USDT", 1000.0, {"s1": 1000.0}), edge(LOOP, E1, "USDT", 1000.0, {"s1": 1000.0}),
+                      edge(E1, FIN, "USDT", 1000.0, {"s1": 1000.0}), edge(E2, FIN, "USDT", 500.0, {"s2": 500.0})],
+            "swaps": {"resolved": [{"address": E1, "recipient": E1, "eth_out": 0.3, "usdt_in": 1000.0,
+                                    "victim_eth": {"s1": 0.3}, "victim_usdt": {"s1": 1000.0}}]},
+            "endpoints": [{"address": FIN, "reason": "holding", "victim_inflow": 1500.0}]}
+
+
+@pytest.fixture
+def no_chain(monkeypatch):
+    monkeypatch.setattr(chain, "label", lambda c, a, **k: None)
+    monkeypatch.setattr(chain, "is_contract", lambda c, a: False)
+
+
+def test_rerunning_a_case_never_inflates_victim_money(no_chain):
+    w = Watchlist()
+    for i in range(3):  # preloaded example + two rehearsals of the same case, new trace ids
+        w.add_trace(_r2_trace(trace_id=f"run-{i}"))
+    assert w.lookup("ethereum", FIN)["victim_inflow"] == pytest.approx(1500.0)
+    w.add_trace(_r2_trace(case_id="other-case"))  # a second victim case does add
+    assert w.lookup("ethereum", FIN)["victim_inflow"] == pytest.approx(3000.0)
+
+
+def test_eth_is_never_summed_as_usdt_and_swaps_count(no_chain):
+    w = Watchlist()
+    w.add_trace(_r2_trace())
+    # E1 got 0.3 ETH from the victim: it counts the 1,000 USDT that ETH swapped into, not "0.3 USDT"
+    # and not the loop's second pass (cap = 1,000 for seed s1)
+    assert w.lookup("ethereum", E1)["victim_inflow"] == pytest.approx(1000.0)
+    assert w.lookup("ethereum", E2)["victim_inflow"] == pytest.approx(500.0)
+    assert w.lookup("ethereum", LOOP)["victim_inflow"] == pytest.approx(1000.0)
+
+
+def test_confidence_is_the_engines_node_path_confidence(no_chain, not_frozen):
+    w = Watchlist()
+    w.add_trace(_r2_trace())
+    r = check_mod.check("ethereum", E2, watch=w)
+    assert r["confidence"] == 0.85 and "path confidence 0.85" in " ".join(r["reasons"])
+
+
+def test_reset_drops_the_saved_watchlist_and_old_files_are_ignored(no_chain, not_frozen, monkeypatch, tmp_path):
+    from hound.watch import watchlist as wl_mod
+    monkeypatch.setenv("HOUND_TRACE_DIRS", str(tmp_path / "none"))
+    wl_mod.reset()
+    wl_mod.register_trace(_r2_trace())
+    assert wl_mod.watchlist_file().exists()
+    assert check_mod.check("ethereum", FIN, watch=wl_mod.default())["decision"] == "hold"
+    wl_mod.reset()
+    assert not wl_mod.watchlist_file().exists()
+    assert check_mod.check("ethereum", FIN, watch=wl_mod.default())["evidence"]["rule_fired"] == "no_data"
+    # a pre-fix file (per-run sums, no format) is ignored rather than trusted
+    wl_mod.watchlist_file().write_text(json.dumps({"entries": [
+        {"chain": "ethereum", "address": FIN, "cases": ["x"], "victim_inflow": 999911.94, "confidence": 1.0}]}))
+    w = Watchlist()
+    assert w.load(wl_mod.watchlist_file()) == 0 and w.lookup("ethereum", FIN) is None
+    wl_mod.reset()
+
+
+def test_path_hops_say_which_token_they_are_in(no_chain, not_frozen):
+    w = Watchlist()
+    w.add_trace(_r2_trace())
+    hops = check_mod.check("ethereum", E1, watch=w)["evidence"]["path"]
+    assert hops[0]["from"] == V and (hops[0]["amount"], hops[0]["token"]) == (0.3, "ETH")
+    hops = check_mod.check("ethereum", FIN, watch=w)["evidence"]["path"]
+    assert hops[-1]["token"] == "USDT"

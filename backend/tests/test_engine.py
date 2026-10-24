@@ -209,10 +209,11 @@ def test_input_limits_cannot_bypass_the_call_budget():
         run_trace(big, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs)
     with pytest.raises(ValueError, match="unknown method"):
         run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_hopz=99)
-    with pytest.raises(RuntimeError, match="budget") as e:
-        run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_api_calls=3)
-    from hound.engine.trace import AdaptersMissing
-    assert not isinstance(e.value, AdaptersMissing), "a budget error must never trigger the fixture fallback"
+    # A budget too small for the swap pass is a partial trace with visible caps, never a crash.
+    t = run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs,
+                  max_api_calls=3)
+    assert t["status"] == "partial" and t["stats"]["api_calls"] <= 3
+    assert "budget" in {e["reason"] for e in t["endpoints"]}
 
 
 def test_adapter_errors_never_leak_into_the_trace():
@@ -375,7 +376,7 @@ def test_classifier_never_stops_without_a_labelled_sweep_target(monkeypatch):
     import hound.llm.classify as cl
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setattr(cl, "_cache", {})
-    monkeypatch.setattr(cl, "_claude", lambda f, floor: {"kind": "exchange_deposit", "confidence": 0.99, "reasons": ["r"]})
+    monkeypatch.setattr(cl, "_claude", lambda f, floor, **k: {"kind": "exchange_deposit", "confidence": 0.99, "reasons": ["r"]})
     dep, hot = "0xdep", "0xhot"
     rows = [_t("t0", V, dep, 1000, 1)]
     for i in range(6):
@@ -466,3 +467,289 @@ def test_infra_addresses_stop_and_keep_their_inflow():
                   get_native_txs=fixture_chain.get_native_txs)
     ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
     assert ends[(A2, "infra")]["victim_inflow"] > 0
+
+
+# ---- round 2 engine fixes ---------------------------------------------------------------
+
+def _total_remaining(t):
+    return round(sum(e["victim_remaining"] for e in t["endpoints"]), 6)
+
+
+def test_dust_and_returned_money_have_endpoints():
+    # engine-r2-03. A: X keeps 50 of 1000 (below min_amount) -> a dust endpoint at X.
+    rows = [_t("t0", V, X, 1000, 1), _t("a", X, Y, 950, 2)]
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}]), get_transfers=_chain(rows))
+    ends = {(e["address"], e["reason"]): e["victim_remaining"] for e in t["endpoints"]}
+    assert ends == {(Y, "holding"): 950.0, (X, "dust"): 50.0}
+    assert _total_remaining(t) == 1000.0
+    # B: a "profit" payout back to the victim -> returned_to_victim.
+    rows = [_t("t0", V, X, 1000, 1), _t("b", X, V, 200, 2), _t("c", X, Y, 800, 3)]
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}]), get_transfers=_chain(rows))
+    ends = {(e["address"], e["reason"]): e["victim_remaining"] for e in t["endpoints"]}
+    assert ends == {(Y, "holding"): 800.0, (V, "returned_to_victim"): 200.0}
+    assert {n["address"]: n["kind"] for n in t["nodes"]}[V] == "victim"
+
+
+def test_conservation_is_exact_for_random_cases():
+    # engine-r2-03: every seeded victim base unit ends at exactly one endpoint, whatever the graph and caps.
+    import random
+    for seed in range(40):
+        rng = random.Random(seed)
+        addrs = [V] + [f"0x{i:02d}" for i in range(12)]
+        rows, block = [], 1
+        n_sends = rng.randint(1, 3)
+        sends = []
+        for i in range(n_sends):
+            to = rng.choice(addrs[1:4])
+            amt = rng.randint(200, 5000)
+            rows.append(_t(f"s{i}", V, to, amt, block)); block += 1
+            sends.append({"tx_hash": f"s{i}", "from": V, "to": to, "amount": amt})
+        for j in range(rng.randint(5, 40)):
+            a, b = rng.sample(addrs, 2)
+            rows.append(_t(f"r{j}", a, b, rng.randint(1, 3000), block)); block += 1
+        method = {"min_amount": rng.choice([1.0, 100.0, 500.0]), "max_branches_per_node": rng.choice([1, 2, 12]),
+                  "max_hops": rng.choice([1, 2, 8]), "max_api_calls": rng.choice([3, 400])}
+        t = run_trace(_case(sends), get_transfers=_chain(rows), **method)
+        seeded = sum(s["amount"] for s in sends)
+        assert abs(_total_remaining(t) - seeded) < 1e-6, (seed, method, _total_remaining(t), seeded, t["endpoints"])
+        by_seed = {}
+        for e in t["endpoints"]:
+            for sid, v in e["attributed_by_seed"].items():
+                by_seed[sid] = round(by_seed.get(sid, 0) + v, 6)
+        assert by_seed == {f"s{i + 1}": float(s["amount"]) for i, s in enumerate(sends)}, (seed, by_seed)
+
+
+def test_replay_conserves_every_seeded_usdt():
+    t = run()
+    seeded = sum(p["usdt_out"] for p in t["swaps"]["per_seed"].values())
+    seeded += sum(s["amount"] for s in t["seeds"] if s["token"] == "USDT")
+    assert abs(_total_remaining(t) - seeded) < 1e-5, (_total_remaining(t), seeded)
+
+
+def test_shared_address_stops_are_never_holding_or_freezable():
+    # A busy service, an exchange or a router always has the balance to "cover" the victim money,
+    # which would make it look freezable. It is never a holding and never freezable.
+    class TooManyTransfers(Exception):
+        pass
+    hv, ex, inf = "0xhv", "0xex", "0xinf"
+    rows = [_t("t0", V, X, 3000, 1), _t("a", X, hv, 1000, 2), _t("b", X, ex, 1000, 3), _t("c", X, inf, 1000, 4)]
+    base = _chain(rows)
+
+    def get(chain, address, after=None, as_of=None):
+        if address == hv:
+            raise TooManyTransfers("too many")
+        return base(chain, address)
+    labels = {ex: {"name": "Binance 14", "kind": "exchange_hot"}, inf: {"name": "Router", "kind": "infra"}}
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 3000}]), get_transfers=get,
+                  label=lambda c, a: labels.get(a), get_balance=lambda c, a: 10 ** 9)
+    ends = {e["address"]: e for e in t["endpoints"]}
+    assert {a: ends[a]["reason"] for a in (hv, ex, inf)} == {hv: "high_volume", ex: "exchange", inf: "infra"}
+    assert not any(e["freezable"] for e in t["endpoints"])
+    kinds = {n["address"]: n["kind"] for n in t["nodes"]}
+    assert "holding" not in {kinds[hv], kinds[ex], kinds[inf]}
+
+
+def test_unresolved_swaps_have_an_endpoint():
+    # engine-r2-08: the 0.0755 ETH of s2 that was never swapped to USDT is visible as an endpoint.
+    t = run()
+    assert t["swaps"]["unresolved"], "the replay has an unresolved ETH out"
+    ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
+    for u in t["swaps"]["unresolved"]:
+        e = ends[(u["address"], "swap_unresolved")]
+        assert (e["victim_remaining"], e["freezable"], e["attributed_by_seed"]) == (0.0, False, {})
+
+
+def test_engine_honours_its_deadline_before_every_adapter_call(monkeypatch):
+    # engine-r2 (g): no adapter call starts after the deadline, including the post-run lookups.
+    import types
+    import hound.engine.trace as tr
+    clock = [0.0]
+    monkeypatch.setattr(tr, "time", types.SimpleNamespace(monotonic=lambda: clock[0]))
+    calls = []
+
+    def tick(name, fn):
+        def wrapped(*a, **k):
+            calls.append((name, clock[0]))
+            clock[0] += 1.0
+            return fn(*a, **k)
+        return wrapped
+    chain_rows = [_t("t0", V, "0xa0", 10000, 1)]
+    for i in range(10):  # a long chain: more hops than the deadline allows
+        chain_rows.append(_t(f"h{i}", f"0xa{i}", f"0xa{i + 1}", 10000 - i, 2 + i))
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": "0xa0", "amount": 10000}]),
+                  get_transfers=tick("get_transfers", _chain(chain_rows)), label=tick("label", lambda c, a: None),
+                  freeze_status=tick("freeze_status", lambda c, a, **k: tr.NO_FREEZE),
+                  get_balance=tick("get_balance", lambda c, a: 1.0), deadline_s=6.5)
+    assert calls and max(at for _, at in calls) <= 6.5, calls
+    assert t["status"] == "partial"
+    assert "time_cap" in {e["reason"] for e in t["endpoints"]}
+    assert abs(_total_remaining(t) - 10000) < 1e-6
+
+
+def _llm_spy(monkeypatch, sleep_s=0.0):
+    import hound.llm.classify as cl
+    import time as _time
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setattr(cl, "_cache", {})
+    got = []
+
+    def fake(f, floor, timeout=8.0):
+        got.append(timeout)
+        _time.sleep(sleep_s)
+        return {**floor, "reasons": ["claude"]}
+    monkeypatch.setattr(cl, "_claude", fake)
+    return got
+
+
+def test_replay_and_cached_runs_never_call_claude(monkeypatch):
+    # engine-r2-06: a replay must be byte-identical across restarts and never wait on Claude.
+    got = _llm_spy(monkeypatch)
+    t = run()
+    assert got == [] and all("claude" not in (n["classifier"] or {}).get("reasons", []) for n in t["nodes"])
+    rows = [_t("t0", V, X, 1000, 1), _t("a", X, Y, 950, 2)]
+    case = _case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}])
+    for mode in ("readonly", "prefer_cache"):
+        monkeypatch.setenv("HOUND_CACHE_MODE", mode)
+        run_trace(case, get_transfers=_chain(rows))
+        assert got == [], mode
+    monkeypatch.setenv("HOUND_CACHE_MODE", "live")
+    run_trace(case, get_transfers=_chain(rows))
+    assert got, "a live run may still reword the reasons"
+
+
+def test_live_claude_rewording_has_a_total_budget(monkeypatch):
+    import hound.engine.trace as tr
+    import time as _time
+    monkeypatch.setenv("HOUND_CACHE_MODE", "live")
+    monkeypatch.setattr(tr, "LLM_BUDGET_S", 0.9)
+    got = _llm_spy(monkeypatch, sleep_s=0.3)
+    rows = [_t("t0", V, "0xa0", 10000, 1)] + [_t(f"h{i}", f"0xa{i}", f"0xa{i + 1}", 10000, 2 + i) for i in range(8)]
+    t0 = _time.monotonic()
+    run_trace(_case([{"tx_hash": "t0", "from": V, "to": "0xa0", "amount": 10000}]), get_transfers=_chain(rows))
+    assert _time.monotonic() - t0 < 1.5
+    assert 1 <= len(got) <= 2 and all(x <= 0.9 for x in got), got
+
+
+class TooManyTransfers(Exception):
+    pass
+
+
+def _stopped_seed_case(how):
+    """V pays X 777 directly, and X is stopped before its history is fetched."""
+    rows = [_t("t0", V, X, 777, 1), _t("a", X, Y, 700, 2)]
+    base = _chain(rows)
+    kw = {}
+
+    def get(chain, address, after=None, as_of=None):
+        if address == X and how == "high_volume":
+            raise TooManyTransfers("too many")
+        if address == X and how == "dead_end":
+            raise ConnectionError("down")
+        return base(chain, address)
+    if how == "exchange":
+        kw["label"] = lambda c, a: {"name": "Binance 14", "kind": "exchange_hot"} if a == X else None
+    if how == "infra":
+        kw["label"] = lambda c, a: {"name": "Router", "kind": "infra"} if a == X else None
+    if how == "time_cap":
+        kw["deadline_s"] = -1
+    if how == "budget":
+        kw["max_api_calls"] = 1
+        kw["label"] = lambda c, a: None
+        rows.insert(0, _t("z", V, "0xa", 500, 0))  # 0xa (first in order) uses the one call; X never gets one
+        kw["_extra"] = {"tx_hash": "z", "from": V, "to": "0xa", "amount": 500}
+    sends = [{"tx_hash": "t0", "from": V, "to": X, "amount": 777}] + ([kw.pop("_extra")] if "_extra" in kw else [])
+    return run_trace(_case(sends), get_transfers=get, **kw)
+
+
+def test_seed_recipient_stopped_before_fetch_still_conserves():
+    # R2 re-review: a victim paying straight into an exchange, a busy address, or a recipient the
+    # deadline or budget never reached keeps the full seed at that recipient's endpoint.
+    for how in ("exchange", "infra", "high_volume", "dead_end", "time_cap", "budget"):
+        t = _stopped_seed_case(how)
+        ends = [e for e in t["endpoints"] if (e["victim_remaining"] or e["victim_inflow"]) and e["address"] == X]
+        assert [(e["address"], e["reason"], e["victim_inflow"], e["victim_remaining"]) for e in ends] == \
+            [(X, how, 777.0, 777.0)], (how, t["endpoints"])
+        assert ends[0]["attributed_by_seed"] == {"s1": 777.0}
+        assert not any("not found on chain" in a["detail"] for a in t["audit_log"]), how
+        assert any(e["from"] == V and e["to"] == X and e["attributed_amount"] == 777.0 for e in t["edges"]), how
+        if how in ("exchange", "infra", "high_volume"):
+            kinds = {n["address"]: n["kind"] for n in t["nodes"]}
+            assert kinds[X] != "holding" and not ends[0]["freezable"], how
+
+
+def test_conservation_fuzz_with_stops_at_any_address():
+    # Seeds may land on labelled, busy, failing or unreached addresses; money may go back to a victim.
+    import random
+    import types
+    import hound.engine.trace as tr
+    W = "0xw"
+    for seed in range(150):
+        rng = random.Random(1000 + seed)
+        addrs = [V, W] + [f"0x{i:02d}" for i in range(10)]
+        roles = {a: rng.choice(["plain"] * 5 + ["exchange", "infra", "hv", "err"]) for a in addrs[2:]}
+        rows, block, sends = [], 1, []
+        for i in range(rng.randint(1, 3)):
+            v, to = rng.choice([V, W]), rng.choice(addrs[2:6])
+            amt = rng.randint(200, 5000)
+            rows.append(_t(f"s{i}", v, to, amt, block)); block += 1
+            sends.append({"tx_hash": f"s{i}", "from": v, "to": to, "amount": amt})
+        for j in range(rng.randint(5, 40)):
+            a, b = rng.sample(addrs, 2)
+            rows.append(_t(f"r{j}", a, b, rng.randint(1, 3000), block)); block += 1
+        base = _chain(rows)
+
+        def get(chain, address, after=None, as_of=None, roles=roles, base=base):
+            if roles.get(address) == "hv":
+                raise TooManyTransfers("x")
+            if roles.get(address) == "err":
+                raise ConnectionError("x")
+            return base(chain, address)
+
+        def label(c, a, roles=roles):
+            return {"exchange": {"name": "Ex", "kind": "exchange_hot"}, "infra": {"name": "R", "kind": "infra"}}.get(
+                roles.get(a))
+        clock, step = [0.0], rng.choice([0.0, 0.0, 1.0])
+        real = tr.time
+
+        def mono(clock=clock, step=step):
+            clock[0] += step
+            return clock[0]
+        tr.time = types.SimpleNamespace(monotonic=mono)
+        try:
+            method = {"min_amount": rng.choice([1.0, 100.0, 500.0]), "max_branches_per_node": rng.choice([1, 2, 12]),
+                      "max_hops": rng.choice([1, 2, 8]), "max_api_calls": rng.choice([1, 3, 400]),
+                      "deadline_s": rng.choice([5, 40, 120])}
+            t = run_trace(_case(sends), get_transfers=get, label=label, **method)
+        finally:
+            tr.time = real
+        seeded = sum(s["amount"] for s in sends)
+        assert abs(_total_remaining(t) - seeded) < 1e-6, (seed, method, roles, t["endpoints"])
+        assert len({(e["address"], e["reason"]) for e in t["endpoints"]}) == len(t["endpoints"]), seed
+
+
+def test_eth_swap_pass_past_the_deadline_is_partial_not_a_crash():
+    calls = []
+
+    def native(chain, address, after=None, as_of=None):
+        calls.append(address)
+        return []
+    case = {"case_id": "t", "source": "victim_report", "sends": [
+        {"chain": "ethereum", "token": "ETH", "tx_hash": "e1", "from": V, "to": X, "amount": 1.0,
+         "time": "2024-01-01T00:00:00Z"}]}
+    t = run_trace(case, get_transfers=lambda *a, **k: calls.append("t") or [], get_native_txs=native, deadline_s=-1)
+    assert calls == [] and t["status"] == "partial"
+    assert any(e["address"] == X and e["reason"] == "time_cap" for e in t["endpoints"])
+    assert any(a["step"] == "cap_hit" and a["address"] == X for a in t["audit_log"])
+
+
+def test_dust_branch_later_followed_is_not_counted_twice():
+    V, A, B, C = "0x" + "a1" * 20, "0x" + "b2" * 20, "0x" + "c3" * 20, "0x" + "d4" * 20
+    rows = [{"chain": "ethereum", "tx_hash": f"t{i}", "log_index": 0, "from": f, "to": t, "token": "USDT",
+             "amount": amt, "time": f"2024-01-0{i + 1}T00:00:00Z", "block": i + 1}
+            for i, (f, t, amt) in enumerate([(V, A, 1000.0), (V, B, 1000.0), (A, C, 10.0), (B, C, 900.0)])]
+    case = {"case_id": "dust-twice", "created_at": "2024-01-01T00:00:00Z", "source": "phone", "status": "intake",
+            "sends": [{"chain": "ethereum", "tx_hash": "t0", "from": V, "to": A, "token": "USDT", "amount": 1000.0, "time": "2024-01-01T00:00:00Z"},
+                      {"chain": "ethereum", "tx_hash": "t1", "from": V, "to": B, "token": "USDT", "amount": 1000.0, "time": "2024-01-02T00:00:00Z"}]}
+    get = lambda chain, address, after=None, as_of=None, **k: [r for r in rows if address in (r["from"], r["to"])]
+    t = run_trace(case, get_transfers=get, label=lambda c, a: None, get_balance=lambda c, a, **k: 0.0, max_hops=1)
+    assert abs(sum(e["victim_remaining"] for e in t["endpoints"]) - 2000.0) < 1e-6

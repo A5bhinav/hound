@@ -1,0 +1,184 @@
+/* The mock exchange is a third party's screen: neutral white UI, so it reads as "not Hound". */
+.page {
+  padding: 2rem 1.25rem 3rem;
+}
+
+.exchange {
+  max-width: 34rem;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgb(21 33 46 / 0.08);
+  overflow: hidden;
+}
+
+.exHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  background: #1d2733;
+  color: #ffffff;
+}
+
+.exName {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.exTag {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1.25rem;
+}
+
+.title {
+  font-family: var(--font-b);
+  font-weight: 600;
+  font-size: 1.35rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.field input,
+.field select {
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.send {
+  font: 600 1rem var(--font-b);
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  background: #1d2733;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+
+.samples button {
+  font: inherit;
+  padding: 0.25rem 0.55rem;
+  border: 1px dashed var(--rule);
+  border-radius: 999px;
+  background: none;
+  color: var(--trace);
+  cursor: pointer;
+}
+
+.result {
+  margin: 0 1.25rem 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  border-left-width: 5px;
+}
+
+.result[data-decision="hold"],
+.result[data-decision="error"] {
+  border-color: var(--exchange);
+  background: #fbeceb;
+}
+
+.result[data-decision="warn"] {
+  border-color: var(--hold);
+  background: var(--hold-wash);
+}
+
+.result[data-decision="allow"] {
+  border-color: #2f7d4f;
+  background: #e8f4ec;
+}
+
+.verdict {
+  margin: 0;
+  font-family: var(--font-d);
+  font-stretch: 80%;
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+.lede {
+  margin: 0.3rem 0 0.6rem;
+}
+
+.reasons {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+}
+
+.evidence summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.evidence dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 1rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.evidence dt {
+  color: var(--ink-2);
+}
+
+.evidence dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.path {
+  margin: 0 0 0.75rem;
+  padding-left: 1.2rem;
+  font-size: 0.82rem;
+}
+
+.path li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.3rem 0;
+}
+
+.fine {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}

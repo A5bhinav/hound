@@ -21,13 +21,13 @@ Hound reaches all 8 intermediate wallets the FBI named that it wasn't given, and
 "The save happens at the exchange. A victim tries to send to a wallet in this cluster, and Hound says hold, with the evidence. One report protects the next person."
 
 **1:35 Proof and honesty (20 s). Screen: proof panel.**
-"Scored against the DOJ's own numbers for A.H.: two of the three seized wallets within 1 percent, the third within 11. Every victim dollar is accounted for. Every hop has a confidence, every dead end is on screen, and the packet can only cite numbers that are in the trace. A test fails the build otherwise."
+"Scored against the DOJ's own numbers for A.H.: two of the three seized wallets within about 1 percent, the third within 11. Every victim dollar is accounted for. Every hop has a confidence, every dead end is on screen, and the packet can only cite numbers that are in the trace. Our test suite fails otherwise. If a branch could not be loaded, the packet opens with a partial-trace banner that names it."
 
 **1:55 Close (5 s).** "Hound. The 911 call for crypto scam victims."
 
 ## 3-minute version: add these
 - **The call (30 s, before the replay).** Play the recorded intake clip (live only for Cartesia judges): the victim tells the story by phone, the agent reads out a case code, she uploads a screenshot, the case card fills in. "Nobody reads a 64-character hash over the phone, so we don't ask them to."
-- **The packet (20 s, after the hold).** One page for a detective: every hop, every transaction, freeze status, which exchange and Tether to contact, "reported, not proven".
+- **The packet (20 s, after the hold).** One page for a detective: every hop with its transaction count and confidence, every endpoint with its freeze status, who to contact (Tether, IC3, the exchange), a banner naming any incomplete branch, "reported, not proven".
 - **Why now (10 s).** "Tether can freeze USDT on one law enforcement request. In 2025 it froze 1.26 billion dollars across 4,163 addresses. The bottleneck is getting a victim's report to that request fast." [BlockSec 2025]
 
 ## Q&A
@@ -35,10 +35,10 @@ Hound reaches all 8 intermediate wallets the FBI named that it wasn't given, and
 "They sell to agencies and exchanges, and TRM launched an AI tracing agent in March. Hound is the front door those tools don't have: it starts from a scared victim, produces a packet a local detective can send, and spreads the warning past the reported address. Chainabuse is an input for us, not a competitor."
 
 **"How did you get the start address? Isn't that cheating?"**
-"The DOJ printed it in paragraph 69, truncated. We resolved it on chain by amount and date. The engine got nothing else: the other 14 DOJ addresses are a holdout, and a test fails the build if any of them appears in engine code or the label database."
+"The DOJ printed it in paragraph 69, truncated. We resolved it on chain by amount and date. The engine got nothing else: the other 11 DOJ addresses are a holdout. Our test suite fails if any of them appears in engine code or the replay case, and a guard keeps them out of the label database."
 
 **"Why is A-9 off by 11 percent?"**
-"We use first-in-first-out, the DOJ's method for its named victims, on public data only. The DOJ also had subpoena data and used other methods for some victims (LIFO, PIFO). We show the gap instead of tuning it away: A-7 is within 0.9 percent and A-8 within 1.0."
+"We use first-in-first-out, the DOJ's method for its named victims, on public data only. The DOJ also had subpoena data and used other methods for some victims (LIFO, PIFO). We show the gap instead of tuning it away: A-7 is within 0.9 percent and A-8 within 1.04."
 
 **"What's FIFO and why that?"**
 "First in, first out: the oldest money in a wallet leaves first. It's the method the DOJ used for its named victims in this case."
@@ -47,7 +47,7 @@ Hound reaches all 8 intermediate wallets the FBI named that it wasn't given, and
 "Exchange wallets are never on the watchlist. A hold needs a Tether freeze or a high-confidence trace from a verified send. Reports alone never hold, low confidence only warns, and nothing is published: findings go to IC3, Chainabuse or the exchange, labelled reported, not proven."
 
 **"Where's the AI?"**
-"Claude does two jobs where code can't: it explains each wallet's behaviour, and it writes the victim's and detective's summaries. It never decides a stop or a hold. The writer can only use placeholders for numbers, and a validator rejects anything it can't verify, including promises of recovery."
+"Claude does two jobs where code can't: it rewords each wallet's rule-based explanation in plain English, and it drafts the victim's and detective's summaries. It never decides a stop or a hold. The writer can only use placeholders for numbers, and a validator rejects anything it can't verify, including promises of recovery. If Claude is down, a fixed template writes the same packet."
 
 **"Would you hire it? For which seat?"** (Hyphenate)
 "An exchange fraud or AML investigator. Read-only access, it can't move money, every step is in an audit log, and it warns instead of holding when it's unsure."

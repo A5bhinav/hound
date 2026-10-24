@@ -1,0 +1,197 @@
+import Link from "next/link";
+import { ApiError, Bar } from "@/components/Chrome";
+import { HoundApiError, getProof, usingFixtures, type Backtest, type Scan, type Scoreboard } from "@/lib/api";
+import { shortAddr, usdt } from "@/lib/format";
+import styles from "./proof.module.css";
+
+export default async function ProofPage() {
+  let data: Awaited<ReturnType<typeof getProof>>;
+  try {
+    data = await getProof();
+  } catch (err) {
+    if (!(err instanceof HoundApiError)) throw err;
+    return (
+      <>
+        <Bar offline={usingFixtures} />
+        <ApiError message={err.message} />
+      </>
+    );
+  }
+  return (
+    <>
+      <Bar offline={usingFixtures}>Proof</Bar>
+      <main className={styles.main}>
+        <ScoreboardPanel sb={data.scoreboard} />
+        <div className={styles.pair}>
+          <BacktestPanel bt={data.backtest} />
+          <ScanPanel scan={data.scan} />
+        </div>
+      </main>
+    </>
+  );
+}
+
+function ScoreboardPanel({ sb }: { sb: Scoreboard }) {
+  const s = sb.summary;
+  if (s.status !== "scored") {
+    return (
+      <section className={styles.panel}>
+        <p className="eyebrow">DOJ match · {sb.docket}</p>
+        <h1 className={styles.h1}>Not scored yet</h1>
+        <p>
+          {s.refused_reason ?? "No finished replay trace."} <Link href={`/cases/${sb.case}`}>Run the DOJ replay</Link>, then reload.
+        </p>
+      </section>
+    );
+  }
+  const finals = sb.targets.filter((t) => t.group === "final");
+  const mids = sb.targets.filter((t) => t.group === "intermediate");
+  return (
+    <section className={styles.panel} aria-labelledby="doj-h">
+      <p className="eyebrow">
+        DOJ match · United States v. 4,340,000 Tether · {sb.docket} ·{" "}
+        <a href={sb.source_pdf} target="_blank" rel="noreferrer">
+          complaint PDF
+        </a>
+      </p>
+      <h1 id="doj-h" className={styles.h1}>
+        Reached the same {s.finals_total} wallets DOJ seized{s.blind ? ", blind" : ""}
+      </h1>
+      {sb.trace_source === "fixture" && (
+        <p className={styles.warn} role="alert">
+          This score comes from a fixture-data trace, not live chain reads.
+        </p>
+      )}
+
+      <div className={styles.big}>
+        <Stat n={`${s.intermediates_reached}/${s.intermediates_total}`} label="DOJ intermediate wallets reached" />
+        <Stat n={`${s.finals_reached}/${s.finals_total}`} label="final wallets reached (A-7, A-8, A-9)" />
+      </div>
+
+      <ul className={styles.chips} aria-label="Wallets DOJ named">
+        {[...mids, ...finals].map((t) => (
+          <li key={t.label} data-reached={t.reached || undefined} title={t.address}>
+            {t.label}
+          </li>
+        ))}
+      </ul>
+
+      <h2 className={styles.h2}>Victim A.H.&apos;s money in each final wallet: ours vs DOJ (¶ 74)</h2>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">Wallet</th>
+              <th scope="col">DOJ ¶ 74</th>
+              <th scope="col">Hound</th>
+              <th scope="col">Difference</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sb.amount.map((a) => (
+              <tr key={a.label}>
+                <td>
+                  {a.label} <span className="mono">{shortAddr(a.address)}</span>
+                </td>
+                <td className="mono">{usdt(a.doj_ah_para74_usdt)}</td>
+                <td className="mono">{a.ours_attributed_usdt == null ? "not reached" : usdt(a.ours_attributed_usdt)}</td>
+                <td>
+                  <span className={styles.band} data-band={a.band}>
+                    {a.pct_error == null ? "—" : `${a.pct_error}%`}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className={styles.note}>
+        Green ≤ 5%, amber 5–20%, red over 20%. {s.start_disclosure} DOJ also traced 37 other victims and accounts with mixed methods and
+        subpoena data; those totals are context only, never scored.
+      </p>
+      <details className={styles.holdout}>
+        <summary>Holdout: the {sb.holdout.length} DOJ addresses the engine was never given</summary>
+        <ul className="mono">
+          {sb.holdout.map((a) => (
+            <li key={a}>{a}</li>
+          ))}
+        </ul>
+      </details>
+    </section>
+  );
+}
+
+function BacktestPanel({ bt }: { bt: Backtest }) {
+  return (
+    <section className={styles.panel} aria-labelledby="bt-h">
+      <p className="eyebrow">Freeze backtest</p>
+      <h2 id="bt-h" className={styles.h2}>
+        How long scam money sat before Tether froze it
+      </h2>
+      {bt.n === 0 || bt.detection_lag_median_h == null ? (
+        <p className={styles.empty}>Not computed yet. {bt.method}</p>
+      ) : (
+        <>
+          <div className={styles.big}>
+            <Stat n={`${Math.round(bt.detection_lag_median_h)} h`} label="median, first inflow to freeze" />
+            {bt.p90_h != null && <Stat n={`${Math.round(bt.p90_h)} h`} label="90th percentile" />}
+            {bt.escape_share_median != null && (
+              <Stat n={`${Math.round(bt.escape_share_median * 100)}%`} label="median share moved out before the freeze" />
+            )}
+          </div>
+          <p className={styles.note}>
+            {bt.n} frozen addresses measured{bt.population ? ` of ${bt.population}` : ""}
+            {bt.n_skipped ? `, ${bt.n_skipped} skipped` : ""}. {bt.method}
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ScanPanel({ scan }: { scan: Scan }) {
+  const computed = scan.status !== "not_computed" && scan.addresses > 0;
+  return (
+    <section className={styles.panel} aria-labelledby="scan-h">
+      <p className="eyebrow">This weekend · {scan.label}</p>
+      <h2 id="scan-h" className={styles.h2}>
+        Reported scam money not yet frozen
+      </h2>
+      {!computed ? (
+        <p className={styles.empty}>Not computed yet. {scan.method}</p>
+      ) : (
+        <>
+          <div className={styles.big}>
+            <Stat n={usdt(scan.usdt_unfrozen)} label={`in ${scan.addresses_unfrozen} addresses not yet frozen`} />
+          </div>
+          <ul className={styles.scanList}>
+            {scan.cases
+              .filter((c) => !c.is_frozen)
+              .slice(0, 8)
+              .map((c) => (
+                // Live addresses are truncated everywhere public (BRIEF §0).
+                <li key={c.address}>
+                  <span className="mono">{shortAddr(c.address)}</span>
+                  <span>{usdt(c.balance_usdt)}</span>
+                  {c.category && <span className={styles.cat}>{c.category}</span>}
+                </li>
+              ))}
+          </ul>
+          <p className={styles.note}>
+            {scan.addresses} reported addresses scanned{scan.scanned_at ? ` on ${scan.scanned_at.slice(0, 10)}` : ""}
+            {scan.already_frozen ? `, ${scan.already_frozen} already frozen` : ""}. Sent through Chainabuse / IC3 only, never published.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function Stat({ n, label }: { n: string; label: string }) {
+  return (
+    <div className={styles.stat}>
+      <span className={styles.statN}>{n}</span>
+      <span className={styles.statL}>{label}</span>
+    </div>
+  );
+}

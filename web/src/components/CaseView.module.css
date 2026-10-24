@@ -13,6 +13,34 @@
   border-bottom: 1px solid var(--rule);
 }
 
+.right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.next {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 2rem;
+  background: var(--paper);
+}
+
+.next a {
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.next a:hover,
+.next .primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
 .panel {
   align-self: start;
   margin: 2rem;

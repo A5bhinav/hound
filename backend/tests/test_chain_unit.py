@@ -283,3 +283,90 @@ def test_rpc_errors_never_include_url_paths(monkeypatch):
     with pytest.raises(net.ChainAPIError) as ei:
         net.request_json("POST", "https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123", retries=0)
     assert "SECRETKEY123" not in str(ei.value)
+
+
+def test_etherscan_getlogs_pages_by_block_window_and_parses_zero(monkeypatch):
+    """1,000-row pages restart at the last block, dedupe on (tx, logIndex); Etherscan writes 0 as "0x"."""
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "k")
+    me = "0x" + A7[2:].rjust(64, "0")
+
+    def row(i, block, frm, to):
+        return {"address": eth.USDT, "topics": [eth.TRANSFER_TOPIC, "0x" + frm[2:].rjust(64, "0"),
+                                                "0x" + to[2:].rjust(64, "0")],
+                "data": hex(10**6), "blockNumber": hex(block), "timeStamp": hex(1716000000 + i),
+                "logIndex": "0x" if i == 0 else hex(i), "transactionIndex": "0x",
+                "transactionHash": "0x" + f"{i:064x}"}
+
+    first = [row(i, 100 + i // 10, SENDER, A7) for i in range(1000)]  # last block 199
+    second = [row(i, 199, SENDER, A7) for i in range(990, 1003)]  # re-fetch of block 199 + 3 new
+    calls = []
+
+    def fake_explorer(params, ttl=None, sources=None):
+        calls.append((params.get("topic1"), params.get("topic2"), params["fromBlock"]))
+        if params.get("topic2") == me:
+            return {"result": first if params["fromBlock"] == eth.USDT_DEPLOY_BLOCK else second}
+        return {"result": []}
+
+    monkeypatch.setattr(eth, "explorer", fake_explorer)
+    out = eth._transfers_etherscan_logs(A7, eth.USDT)
+    assert len(out) == 1003  # 1000 + 3 new, the 10 overlapping rows deduped
+    assert out[0]["log_index"] == 0 and out[0]["tx_index"] == 0
+    assert (None, me, 199) in calls
+
+
+def test_etherscan_is_primary_only_when_keyed(monkeypatch):
+    seen = []
+    monkeypatch.setattr(eth, "_transfers_etherscan_logs", lambda a, c: seen.append("es") or [])
+    monkeypatch.setattr(eth, "_transfers_rpc", lambda *a: seen.append("rpc") or [])
+    monkeypatch.delenv("HOUND_ETH_TRANSFER_SOURCES", raising=False)
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "k")
+    eth.get_transfers(A7, token="USDT")
+    monkeypatch.delenv("ETHERSCAN_API_KEY")
+    eth.get_transfers(A7, token="USDT")
+    assert seen == ["es", "rpc"]
+
+
+def test_live_bundle_is_read_after_the_public_snapshot(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    live = "0x" + "2f1cf3dd" + "0" * 32
+    cache.cached("eth_rpc", {"method": "live"}, lambda: {"to": live}, ttl=None)
+    bundle = tmp_path / "cases_live" / "cache"
+    monkeypatch.setattr(cache, "LIVE_SNAPSHOT_DIR", bundle)
+    (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([live]))
+    with pytest.raises(RuntimeError, match="live-case"):  # never into the public snapshot
+        snapshot.pack(out_dir=tmp_path / "public")
+    assert snapshot.pack(out_dir=bundle, allow_live=True)["eth_rpc"] >= 1
+    with pytest.raises(ValueError):  # allow_live only for the private bundle
+        snapshot.pack(out_dir=tmp_path / "public", allow_live=True)
+    cache.reload_snapshot()
+    monkeypatch.setenv("HOUND_CACHE_DIR", str(tmp_path / "fresh-laptop"))
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    assert cache.cached("eth_rpc", {"method": "live"}, lambda: pytest.fail("network"), ttl=None) == {"to": live}
+    cache.reload_snapshot()
+
+
+def test_snapshot_never_packs_the_server_cache(monkeypatch):
+    from hound.chain import snapshot
+    with pytest.raises(ValueError, match="server cache"):
+        snapshot.pack(cache_root=cache.REPO_ROOT / "cache", out_dir=cache.REPO_ROOT / "cache" / "_never")
+
+
+def test_readonly_falls_through_to_a_cached_source(monkeypatch):
+    """Snapshot built without an Etherscan key, demo laptop has one: the Etherscan miss must fall
+    back to the cached RPC data instead of failing the trace."""
+    monkeypatch.setenv("ETHERSCAN_API_KEY", "k")
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    row = {"tx_hash": "0x" + "a" * 64, "log_index": 0, "from": A7, "to": eth.USDT, "amount": 1.0,
+           "block": 1, "time": "2024-05-01T00:00:00Z"}
+
+    def miss(*a, **k):
+        raise cache.CacheMiss("not cached")
+
+    monkeypatch.setattr(eth, "_transfers_etherscan_logs", miss)
+    monkeypatch.setattr(eth, "_transfers_rpc", lambda *a, **k: [row])
+    assert eth.get_transfers(A7) == [row]
+    monkeypatch.setattr(eth, "_transfers_rpc", miss)
+    monkeypatch.setattr(eth, "_transfers_v2", miss)
+    monkeypatch.setattr(eth, "_transfers_v1", miss)
+    with pytest.raises(cache.CacheMiss):
+        eth.get_transfers(A7)

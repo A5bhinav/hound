@@ -4,7 +4,8 @@ committed snapshot (AUDIT issue 10: crawl from the Cases, never from the holdout
     cd backend && .venv/bin/python -m hound.chain.prewarm [--no-pack] [--merge] [case.json ...]
 
 By default the crawl runs in an empty cache/warm/ with the snapshot ignored, and the snapshot is
-replaced by exactly what it fetched; --merge adds to the existing cache and snapshot instead.
+replaced by exactly what it fetched; --merge keeps cache/warm/ and the snapshot and adds to them.
+Either way it never crawls or packs the server's cache/ (strangers' lookups land there).
 
 Cases: examples/*.case.json and data/cases/*.json (data/cases_live/ is never crawled: live
 addresses must not land in the public snapshot). For each case: run_trace, other payers, and
@@ -35,13 +36,13 @@ def curated_cases(extra: list[str]) -> list[Path]:
 def main(argv: list[str]) -> int:
     os.environ.setdefault("HOUND_CACHE_MODE", "record")
     fresh = "--merge" not in argv
+    warm = REPO_ROOT / "cache" / "warm"
+    os.environ["HOUND_CACHE_DIR"] = str(warm)
     if fresh:
         # crawl into an empty cache with the snapshot switched off, so the new snapshot holds
         # exactly what the curated cases need
         import shutil
-        warm = REPO_ROOT / "cache" / "warm"
         shutil.rmtree(warm, ignore_errors=True)
-        os.environ["HOUND_CACHE_DIR"] = str(warm)
         os.environ["HOUND_SNAPSHOT"] = "0"
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     from . import freeze_events, stats

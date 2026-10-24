@@ -4,6 +4,7 @@ One laptop runs the demo (Ishaan's). Hard deadline for Devpost is **9:00 AM**; b
 
 ## Sun 8 AM checklist
 - [ ] `git pull` on main; `make test` is green.
+- [ ] Repo-root `.env` has `ANTHROPIC_API_KEY`. After `make demo`, run the replay once and GET `/cases/ohnd-replay-ah/packet`: expect `"source": "claude"`. If it says `template`, the key is not loaded; the packet is still correct, but do not say "Claude wrote this".
 - [ ] Phone hotspot is the primary network. Venue Wi-Fi is the backup.
 - [ ] `caffeinate -dims` running (the laptop must not sleep).
 - [ ] Focus / Do Not Disturb on. Close Claude Code and anything holding API keys. Browser zoom 125%.
@@ -34,10 +35,10 @@ Health check: open http://localhost:8000/health and expect `"ok": true`.
 | Symptom | Do this |
 |---|---|
 | Trace never finishes | `curl localhost:8000/health`; if dead, restart `make demo`. If still stuck, play the backup video from the trace step |
-| Trace status `partial` | Say so: "one branch couldn't be fetched, and Hound shows it rather than guessing." Keep going |
+| Trace status `partial` | Say so: "one branch couldn't be fetched, and Hound shows it rather than guessing." Both packets open with a PARTIAL TRACE banner that lists the incomplete branches. Keep going |
 | Judge gives their own tx hash | Create the case (it traces live with a call budget). It will NOT feed the watchlist (unverified cases never cause holds); say that is by design |
 | No internet at all | The replay runs from the committed snapshot with zero network calls. The gold case needs the network for the live balance; show the last "checked h:mm" numbers |
-| Claude API down / no key | Packets fall back to the deterministic template (`source: template`); every number is still verified. Nothing else uses Claude on the demo path |
+| Claude API down / no key | Packets fall back to the deterministic template (`source: template`) within about 20 seconds; every number is still verified. Wallet explanations keep their rule text. With a key set, each trace also asks Claude to reword those explanations, so a stalled network slows the trace too: unset the key if the venue network is bad |
 | UI shows OFFLINE | `HOUND_DATA=fixture` is set in `web/.env.local`; clear it and rebuild |
 
 ## Never on screen
