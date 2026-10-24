@@ -25,6 +25,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from hound.chain import CacheMiss, ChainAPIError
 
@@ -216,7 +217,7 @@ async def approve(case_code: str, request: Request):
             raise HTTPException(409, f"approve must name the reviewed case_id ({s['case_id']})")
         s["approved"] = True
     # Outside the intake lock: _register rebuilds the watchlist and writes a file.
-    hound_api.mark_verified(s["case_id"])
+    await run_in_threadpool(hound_api.mark_verified, s["case_id"])
     log.info("intake %s approved by operator -> case %s trusted", s["case_code"], s["case_id"])
     return {"status": "approved", "case_id": s["case_id"]}
 
@@ -243,9 +244,9 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
             data = await file.read()
             if len(data) > 8 * 1024 * 1024:
                 return _retake(s, "That image is too large. Please send a smaller screenshot, or type the details.")
-            extracted = extract_from_image(data, _image_mime(data, file.content_type))
+            extracted = await run_in_threadpool(extract_from_image, data, _image_mime(data, file.content_type))
             extracted["source"] = "screenshot"
-        case = validate_and_build_case(s, extracted)
+        case = await run_in_threadpool(validate_and_build_case, s, extracted)  # chain reads block
     except NeedsRetake as e:
         return _retake(s, str(e))
     except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault

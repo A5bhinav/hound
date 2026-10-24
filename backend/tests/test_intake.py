@@ -251,6 +251,23 @@ def test_heic_upload_asks_for_png_or_jpeg(monkeypatch):
     assert msgs.calls == []  # never sent to Claude mislabeled as a PNG
 
 
+def test_upload_and_approve_run_blocking_work_off_the_event_loop(monkeypatch):
+    import threading
+    seen = {}
+    real_validate = intake.validate_and_build_case
+    monkeypatch.setattr(intake, "validate_and_build_case",
+                        lambda s, ex: seen.setdefault("validate", threading.current_thread().name) and real_validate(s, ex))
+    monkeypatch.setattr(api, "mark_verified", lambda cid: seen.setdefault("approve", threading.current_thread().name))
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    code = client.post("/intake/start", json={}).json()["case_code"]
+    cid = client.post(f"/intake/{code}/screenshot", data={"typed": f"11,082.48 USDT {TX}"}).json()["case_id"]
+    client.post(f"/intake/{code}/approve", json={"case_id": cid})
+    assert "AnyIO worker" in seen["validate"] and "AnyIO worker" in seen["approve"], seen
+    api.CASES.pop(cid, None)
+    api.LIVE_CASES.discard(cid)
+
+
 def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     msgs = _fake_anthropic(monkeypatch, "{}")
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16
