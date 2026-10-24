@@ -375,7 +375,7 @@ def test_classifier_never_stops_without_a_labelled_sweep_target(monkeypatch):
     import hound.llm.classify as cl
     monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
     monkeypatch.setattr(cl, "_cache", {})
-    monkeypatch.setattr(cl, "_claude", lambda f, floor: {"kind": "exchange_deposit", "confidence": 0.99, "reasons": ["r"]})
+    monkeypatch.setattr(cl, "_claude", lambda f, floor, **k: {"kind": "exchange_deposit", "confidence": 0.99, "reasons": ["r"]})
     dep, hot = "0xdep", "0xhot"
     rows = [_t("t0", V, dep, 1000, 1)]
     for i in range(6):
@@ -466,3 +466,164 @@ def test_infra_addresses_stop_and_keep_their_inflow():
                   get_native_txs=fixture_chain.get_native_txs)
     ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
     assert ends[(A2, "infra")]["victim_inflow"] > 0
+
+
+# ---- round 2 engine fixes ---------------------------------------------------------------
+
+def _total_remaining(t):
+    return round(sum(e["victim_remaining"] for e in t["endpoints"]), 6)
+
+
+def test_dust_and_returned_money_have_endpoints():
+    # engine-r2-03. A: X keeps 50 of 1000 (below min_amount) -> a dust endpoint at X.
+    rows = [_t("t0", V, X, 1000, 1), _t("a", X, Y, 950, 2)]
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}]), get_transfers=_chain(rows))
+    ends = {(e["address"], e["reason"]): e["victim_remaining"] for e in t["endpoints"]}
+    assert ends == {(Y, "holding"): 950.0, (X, "dust"): 50.0}
+    assert _total_remaining(t) == 1000.0
+    # B: a "profit" payout back to the victim -> returned_to_victim.
+    rows = [_t("t0", V, X, 1000, 1), _t("b", X, V, 200, 2), _t("c", X, Y, 800, 3)]
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}]), get_transfers=_chain(rows))
+    ends = {(e["address"], e["reason"]): e["victim_remaining"] for e in t["endpoints"]}
+    assert ends == {(Y, "holding"): 800.0, (V, "returned_to_victim"): 200.0}
+    assert {n["address"]: n["kind"] for n in t["nodes"]}[V] == "victim"
+
+
+def test_conservation_is_exact_for_random_cases():
+    # engine-r2-03: every seeded victim base unit ends at exactly one endpoint, whatever the graph and caps.
+    import random
+    for seed in range(40):
+        rng = random.Random(seed)
+        addrs = [V] + [f"0x{i:02d}" for i in range(12)]
+        rows, block = [], 1
+        n_sends = rng.randint(1, 3)
+        sends = []
+        for i in range(n_sends):
+            to = rng.choice(addrs[1:4])
+            amt = rng.randint(200, 5000)
+            rows.append(_t(f"s{i}", V, to, amt, block)); block += 1
+            sends.append({"tx_hash": f"s{i}", "from": V, "to": to, "amount": amt})
+        for j in range(rng.randint(5, 40)):
+            a, b = rng.sample(addrs, 2)
+            rows.append(_t(f"r{j}", a, b, rng.randint(1, 3000), block)); block += 1
+        method = {"min_amount": rng.choice([1.0, 100.0, 500.0]), "max_branches_per_node": rng.choice([1, 2, 12]),
+                  "max_hops": rng.choice([1, 2, 8]), "max_api_calls": rng.choice([3, 400])}
+        t = run_trace(_case(sends), get_transfers=_chain(rows), **method)
+        seeded = sum(s["amount"] for s in sends)
+        assert abs(_total_remaining(t) - seeded) < 1e-6, (seed, method, _total_remaining(t), seeded, t["endpoints"])
+        by_seed = {}
+        for e in t["endpoints"]:
+            for sid, v in e["attributed_by_seed"].items():
+                by_seed[sid] = round(by_seed.get(sid, 0) + v, 6)
+        assert by_seed == {f"s{i + 1}": float(s["amount"]) for i, s in enumerate(sends)}, (seed, by_seed)
+
+
+def test_replay_conserves_every_seeded_usdt():
+    t = run()
+    seeded = sum(p["usdt_out"] for p in t["swaps"]["per_seed"].values())
+    seeded += sum(s["amount"] for s in t["seeds"] if s["token"] == "USDT")
+    assert abs(_total_remaining(t) - seeded) < 1e-5, (_total_remaining(t), seeded)
+
+
+def test_shared_address_stops_are_never_holding_or_freezable():
+    # A busy service, an exchange or a router always has the balance to "cover" the victim money,
+    # which would make it look freezable. It is never a holding and never freezable.
+    class TooManyTransfers(Exception):
+        pass
+    hv, ex, inf = "0xhv", "0xex", "0xinf"
+    rows = [_t("t0", V, X, 3000, 1), _t("a", X, hv, 1000, 2), _t("b", X, ex, 1000, 3), _t("c", X, inf, 1000, 4)]
+    base = _chain(rows)
+
+    def get(chain, address, after=None, as_of=None):
+        if address == hv:
+            raise TooManyTransfers("too many")
+        return base(chain, address)
+    labels = {ex: {"name": "Binance 14", "kind": "exchange_hot"}, inf: {"name": "Router", "kind": "infra"}}
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": X, "amount": 3000}]), get_transfers=get,
+                  label=lambda c, a: labels.get(a), get_balance=lambda c, a: 10 ** 9)
+    ends = {e["address"]: e for e in t["endpoints"]}
+    assert {a: ends[a]["reason"] for a in (hv, ex, inf)} == {hv: "high_volume", ex: "exchange", inf: "infra"}
+    assert not any(e["freezable"] for e in t["endpoints"])
+    kinds = {n["address"]: n["kind"] for n in t["nodes"]}
+    assert "holding" not in {kinds[hv], kinds[ex], kinds[inf]}
+
+
+def test_unresolved_swaps_have_an_endpoint():
+    # engine-r2-08: the 0.0755 ETH of s2 that was never swapped to USDT is visible as an endpoint.
+    t = run()
+    assert t["swaps"]["unresolved"], "the replay has an unresolved ETH out"
+    ends = {(e["address"], e["reason"]): e for e in t["endpoints"]}
+    for u in t["swaps"]["unresolved"]:
+        e = ends[(u["address"], "swap_unresolved")]
+        assert (e["victim_remaining"], e["freezable"], e["attributed_by_seed"]) == (0.0, False, {})
+
+
+def test_engine_honours_its_deadline_before_every_adapter_call(monkeypatch):
+    # engine-r2 (g): no adapter call starts after the deadline, including the post-run lookups.
+    import types
+    import hound.engine.trace as tr
+    clock = [0.0]
+    monkeypatch.setattr(tr, "time", types.SimpleNamespace(monotonic=lambda: clock[0]))
+    calls = []
+
+    def tick(name, fn):
+        def wrapped(*a, **k):
+            calls.append((name, clock[0]))
+            clock[0] += 1.0
+            return fn(*a, **k)
+        return wrapped
+    chain_rows = [_t("t0", V, "0xa0", 10000, 1)]
+    for i in range(10):  # a long chain: more hops than the deadline allows
+        chain_rows.append(_t(f"h{i}", f"0xa{i}", f"0xa{i + 1}", 10000 - i, 2 + i))
+    t = run_trace(_case([{"tx_hash": "t0", "from": V, "to": "0xa0", "amount": 10000}]),
+                  get_transfers=tick("get_transfers", _chain(chain_rows)), label=tick("label", lambda c, a: None),
+                  freeze_status=tick("freeze_status", lambda c, a, **k: tr.NO_FREEZE),
+                  get_balance=tick("get_balance", lambda c, a: 1.0), deadline_s=6.5)
+    assert calls and max(at for _, at in calls) <= 6.5, calls
+    assert t["status"] == "partial"
+    assert "time_cap" in {e["reason"] for e in t["endpoints"]}
+    assert abs(_total_remaining(t) - 10000) < 1e-6
+
+
+def _llm_spy(monkeypatch, sleep_s=0.0):
+    import hound.llm.classify as cl
+    import time as _time
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "x")
+    monkeypatch.setattr(cl, "_cache", {})
+    got = []
+
+    def fake(f, floor, timeout=8.0):
+        got.append(timeout)
+        _time.sleep(sleep_s)
+        return {**floor, "reasons": ["claude"]}
+    monkeypatch.setattr(cl, "_claude", fake)
+    return got
+
+
+def test_replay_and_cached_runs_never_call_claude(monkeypatch):
+    # engine-r2-06: a replay must be byte-identical across restarts and never wait on Claude.
+    got = _llm_spy(monkeypatch)
+    t = run()
+    assert got == [] and all("claude" not in (n["classifier"] or {}).get("reasons", []) for n in t["nodes"])
+    rows = [_t("t0", V, X, 1000, 1), _t("a", X, Y, 950, 2)]
+    case = _case([{"tx_hash": "t0", "from": V, "to": X, "amount": 1000}])
+    for mode in ("readonly", "prefer_cache"):
+        monkeypatch.setenv("HOUND_CACHE_MODE", mode)
+        run_trace(case, get_transfers=_chain(rows))
+        assert got == [], mode
+    monkeypatch.setenv("HOUND_CACHE_MODE", "live")
+    run_trace(case, get_transfers=_chain(rows))
+    assert got, "a live run may still reword the reasons"
+
+
+def test_live_claude_rewording_has_a_total_budget(monkeypatch):
+    import hound.engine.trace as tr
+    import time as _time
+    monkeypatch.setenv("HOUND_CACHE_MODE", "live")
+    monkeypatch.setattr(tr, "LLM_BUDGET_S", 0.9)
+    got = _llm_spy(monkeypatch, sleep_s=0.3)
+    rows = [_t("t0", V, "0xa0", 10000, 1)] + [_t(f"h{i}", f"0xa{i}", f"0xa{i + 1}", 10000, 2 + i) for i in range(8)]
+    t0 = _time.monotonic()
+    run_trace(_case([{"tx_hash": "t0", "from": V, "to": "0xa0", "amount": 10000}]), get_transfers=_chain(rows))
+    assert _time.monotonic() - t0 < 1.5
+    assert 1 <= len(got) <= 2 and all(x <= 0.9 for x in got), got

@@ -6,6 +6,10 @@ nothing new, a cap, the call budget, the deadline, or `max_hops`.
 
 Every cap is visible: money that isn't followed ends at a `capped` or `dust` endpoint,
 and unexpanded frontier ends at `max_hops` / `budget` / `time_cap` with status "partial".
+Conservation: the endpoints' victim_remaining sum to the victim USDT seeded, for any case
+(money sent back to a victim ends at `returned_to_victim`). ETH that was never swapped to
+USDT ends at a `swap_unresolved` endpoint with 0 USDT. The deadline is checked before
+every adapter call, including the label / freeze / balance lookups after the run.
 
 Replay mode (case.freeze_visibility == "hidden"): freezes are NOT used as stops, because
 that would hand the engine DOJ's own action. They are attached to nodes after the run so
@@ -35,6 +39,10 @@ ENGINE_VERSION = "0.4"
 MAX_SENDS = 50  # a victim report with more sends than this is not a real intake; reject it
 DEFAULTS = {"max_hops": 8, "max_branches_per_node": 12, "min_amount": 100.0, "max_api_calls": 400, "deadline_s": 120}
 EXCHANGE_KINDS = {"exchange_hot", "exchange_deposit"}
+# Stops at shared or custodial addresses: the money there is not one wallet's balance, so the node is
+# never a "holding" and the endpoint is never freezable (a busy service's balance would always cover it).
+NOT_HOLDING_STOPS = {"exchange", "infra", "high_volume"}
+LLM_BUDGET_S = 3.0  # total wall time for the display-only Claude rewording, across all nodes
 CONSOLIDATION_SENDERS = 3
 # Edge confidence = base(method) x completeness. Path confidence = product along the path.
 CONFIDENCE_MODEL = {"base": {"direct": 1.0, "consolidation": 0.9, "swap": 0.9, "peel": 0.85, "bridge_match": 0.6},
@@ -56,6 +64,14 @@ def _now():
 class AdaptersMissing(Exception):
     """hound.chain (or one of the adapters a case needs) is not available. Callers may fall back to
     fixture data on this exception alone; every other error is a real failure and must surface."""
+
+
+def _cache_mode():
+    try:
+        from hound.chain.cache import mode
+    except ImportError:
+        return "live"
+    return mode()
 
 
 def _chain_defaults():
@@ -126,8 +142,18 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     def out_of_time():
         return time.monotonic() - started > m["deadline_s"]
 
+    def late(what, addr):
+        """The deadline is checked before every adapter call. Past it, nothing more is fetched."""
+        if not out_of_time():
+            return False
+        st["status"] = "partial"
+        audit("cap_hit", f"time_cap: {what} lookup skipped, deadline {m['deadline_s']}s passed", addr)
+        return True
+
     def safe(what, fn, addr, default):
         """Label / freeze / balance lookups: a failure is an audit error and a partial trace, never a crash."""
+        if late(what, addr):
+            return default
         try:
             return fn()
         except Exception as e:  # noqa: BLE001 - adapters raise their own types
@@ -214,6 +240,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             if lab and lab.get("kind") == "sanctioned":
                 audit("hop", f"OFAC sanctioned address: {lab.get('name')}; kept in the trace", addr)
             if not hidden:
+                if out_of_time():
+                    stopped.setdefault(addr, "time_cap")
+                    st["status"] = "partial"
+                    audit("cap_hit", "time_cap: not expanded", addr)
+                    continue
                 fz = safe("freeze_status", lambda: (freeze_status(chain, addr, as_of=cutoff) if cutoff is not None
                                                     else freeze_status(chain, addr)), addr, NO_FREEZE) or NO_FREEZE
                 audit("freeze_check", "frozen" if fz.get("is_frozen") else "not frozen", addr)
@@ -223,6 +254,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                     audit("stop", f"Tether froze this address at {fz.get('frozen_at')}", addr)
             # FIFO needs the FULL history up to the cutoff: money that was already sitting here
             # is older than the victim's lots and must leave first (AUDIT issue 7).
+            if out_of_time():
+                stopped.setdefault(addr, "time_cap")
+                st["status"] = "partial"
+                audit("cap_hit", "time_cap: not expanded", addr)
+                continue
             try:
                 rows = get_transfers(chain, addr, after=None, as_of=cutoff)
             except Exception as e:  # noqa: BLE001 - adapters raise their own types
@@ -329,9 +365,15 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 audit("error", f"seed {sid}: only {from_base(seeded.get(sid, 0))} of {from_base(want)} swapped USDT "
                                "was found arriving at the swap recipients")
 
+    # Claude only rewords the display reasons. A replay or a cached run must be byte-identical across
+    # restarts, so it gets the rules' wording; a live run gets a small total budget so the trace is
+    # never held back by the rewording.
+    llm_ok = case.get("source") != "doj_replay" and _cache_mode() not in ("readonly", "prefer_cache")
+    llm_until = time.monotonic() + LLM_BUDGET_S
     for addr in sorted(feats_of):  # display opinion only, after the trace; never a stop
         f, top_lab = feats_of[addr]
-        classes[addr] = classify(f, top_lab, use_llm=not out_of_time())
+        left = min(llm_until, started + m["deadline_s"]) - time.monotonic()
+        classes[addr] = classify(f, top_lab, use_llm=llm_ok and left > 0.5, timeout=min(8.0, max(left, 0.1)))
 
     frozen = {a: safe("freeze_status", lambda: freeze_status(chain, a), a, NO_FREEZE) or NO_FREEZE
               for a in sorted(set(victims) | explored | set(stopped))}
@@ -362,6 +404,11 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                    classes, seed_list, leftovers, hidden, st["status"])
     if swaps is not None:
         trace["swaps"] = _swap_summary(swaps, eth_sends)
+        for u in trace["swaps"]["unresolved"]:
+            # The value is ETH, not USDT, so the USDT fields are 0; the ETH amount is in swaps.unresolved.
+            trace["endpoints"].append({"address": u["address"], "reason": "swap_unresolved", "victim_inflow": 0.0,
+                                       "victim_remaining": 0.0, "attributed_by_seed": {}, "balance_usdt": None,
+                                       "freezable": False, "exchange": None})
         legs = {}
         for s in eth_sends:  # the ETH legs from the victim side, one edge per (from, to)
             legs.setdefault((s["from"], s["to"]), []).append(s)
@@ -483,8 +530,8 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             kind = "victim"
         elif lab and lab.get("kind") in EXCHANGE_KINDS:
             kind = lab["kind"]
-        elif lab and lab.get("kind") in ("service", "infra"):
-            kind = "unknown"  # a router, bridge or processor: not a holder, not sanctioned
+        elif (lab and lab.get("kind") in ("service", "infra")) or stopped.get(addr) in NOT_HOLDING_STOPS:
+            kind = "unknown"  # a router, bridge, processor or busy service: not a holder, not sanctioned
         elif rem_total >= m["min_amount"] * 10 ** 6:
             kind = "holding"
         else:
@@ -498,11 +545,18 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
             "frozen": {"is_frozen": bool(fz.get("is_frozen")), "frozen_at": fz.get("frozen_at"), "freeze_tx": fz.get("freeze_tx")},
             "depth": depth.get(addr, 0),
         })
-        reason = stopped.get(addr) or ("holding" if kind == "holding" else None)
+        # Every victim dollar ends at exactly one endpoint (conservation): money back at a victim is
+        # returned_to_victim, a small remainder at an explored wallet is dust, a large one is holding.
+        if addr in victims:
+            reason = "returned_to_victim" if rem_total > 0 else None
+        else:
+            reason = stopped.get(addr)
+            if not reason and rem_total > 0:
+                reason = "holding" if rem_total >= m["min_amount"] * 10 ** 6 else "dust"
         if reason:
             frozen_now = bool(fz.get("is_frozen"))
-            freezable = (not frozen_now and balance is not None and rem_total > 0
-                         and balance * 10 ** 6 >= rem_total)
+            freezable = (not frozen_now and balance is not None and rem_total > 0 and kind == "holding"
+                         and reason not in NOT_HOLDING_STOPS and balance * 10 ** 6 >= rem_total)
             endpoints.append({
                 "address": addr, "reason": reason,
                 "victim_inflow": from_base(sum(inflow_by.values())),
