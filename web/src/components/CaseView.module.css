@@ -22,9 +22,10 @@
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 2.25rem;
+  align-items: baseline;
+  gap: 0.25rem 0;
   margin: 0;
-  padding: 0.9rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   list-style: none;
   background: var(--white);
   border-bottom: 1px solid var(--rule);
@@ -33,16 +34,25 @@
 .stats li {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.45rem;
+}
+
+/* The strip reads as one sentence left to right: an arrow between steps, not a divider. */
+.stats li + li::before {
+  content: "→";
+  margin: 0 1rem;
+  color: var(--rule);
+  font-size: 1.3rem;
 }
 
 .stats b {
   font-family: var(--font-d);
   font-stretch: 80%;
   font-weight: 800;
-  font-size: 1.7rem;
+  font-size: 1.55rem;
   line-height: 1;
   color: var(--ink);
+  white-space: nowrap;
 }
 
 .stats li[data-tone="frozen"] b {

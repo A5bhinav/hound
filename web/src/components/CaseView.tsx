@@ -34,7 +34,7 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         <CaseCard c={c} trace={trace} freezesShown={freezesShown} />
         {state.phase === "done" && (
           <div className={styles.right}>
-            <StatStrip trace={state.trace} freezesShown={freezesShown} />
+            <StatStrip c={c} trace={state.trace} freezesShown={freezesShown} />
             <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />
             {/* Demo order: the trail first, then the twist (BRIEF §6). */}
             {freezesShown && (
@@ -63,21 +63,27 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
   );
 }
 
-/** The trail in four numbers, readable from the back of the room. Frozen count waits for the reveal. */
-function StatStrip({ trace, freezesShown }: { trace: Trace; freezesShown: boolean }) {
+/** The trail in numbers, readable from the back of the room: what she sent, where it entered, how far it went,
+ *  how much was followed, and (after the reveal) how many of those wallets Tether later froze. */
+function StatStrip({ c, trace, freezesShown }: { c: CaseSummary | Case; trace: Trace; freezesShown: boolean }) {
+  const sends = "sends" in c ? c.sends : [];
+  const byToken = new Map<string, number>();
+  for (const s of sends) byToken.set(s.token, (byToken.get(s.token) ?? 0) + s.amount);
+  const sent = [...byToken].map(([t, a]) => tok0(a, t)).join(" + ");
+  const entry = trace.nodes.filter((n) => n.depth === 1).length;
   const wallets = trace.nodes.filter((n) => n.depth > 0).length;
   const hops = Math.max(0, ...trace.nodes.map((n) => n.depth));
-  // What reached the places it stopped: endpoints count each victim dollar once (loop edges would double count).
+  // Endpoints count each victim dollar once (loop edges would double count).
   const reached = trace.endpoints.reduce((s, e) => s + (e.victim_inflow ?? 0), 0);
-  const ends = trace.endpoints.length;
   const frozen = trace.nodes.filter((n) => n.frozen?.is_frozen).length;
   return (
-    <ul className={styles.stats} aria-label="Trace summary">
-      <li><b>{wallets}</b><span>wallets, {hops} hops</span></li>
-      <li><b>{tok0(reached, "USDT")}</b><span>of the victim&apos;s money followed</span></li>
-      <li><b>{ends}</b><span>places it stopped</span></li>
+    <ol className={styles.stats} aria-label="Trace summary">
+      {sends.length > 0 && <li><b>{sends.length} {sends.length === 1 ? "send" : "sends"}</b><span>{sent}</span></li>}
+      <li><b>{entry}</b><span>entry {entry === 1 ? "wallet" : "wallets"}</span></li>
+      <li><b>{wallets}</b><span>wallets traced, {hops} hops</span></li>
+      <li><b>{tok0(reached, "USDT")}</b><span>followed</span></li>
       {freezesShown && frozen > 0 && <li data-tone="frozen"><b>{frozen}</b><span>frozen by Tether</span></li>}
-    </ul>
+    </ol>
   );
 }
 
