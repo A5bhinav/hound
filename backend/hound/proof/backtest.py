@@ -31,7 +31,7 @@ from hound.proof.ethcall import ADDR_RE
 
 ROOT = Path(__file__).resolve().parents[3]
 EVENTS_PATH = ROOT / "data" / "doj" / "usdt_blacklist_events_2025.json"
-OFAC_PATH = ROOT / "data" / "labels" / "ofac_eth.json"  # Jinka's label DB; optional
+OFAC_PATH = ROOT / "data" / "labels" / "ofac.json"  # label DB: {"ethereum": [...], "tron": [...]}
 RESULT_PATH = ROOT / "data" / "proof" / "backtest.json"
 CACHE_PATH = ROOT / "cache" / "backtest" / "addresses.json"
 USDT = "0xdac17f958d2ee523a2206206994597c13d831ec7"
@@ -111,7 +111,7 @@ def _ofac() -> set[str]:
     if OFAC_PATH.exists():
         try:
             data = json.load(open(OFAC_PATH))
-            addrs = data if isinstance(data, list) else data.get("addresses", [])
+            addrs = data if isinstance(data, list) else (data.get("ethereum") or data.get("addresses") or [])
             return {a.lower() for a in addrs if isinstance(a, str)}
         except Exception as e:  # noqa: BLE001
             print(f"[backtest] could not read OFAC list: {e}")

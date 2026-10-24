@@ -96,6 +96,8 @@ def resolve(holdout: dict[str, Any], transfers: list[dict[str, Any]]) -> dict[st
               and a not in {r["address"] for r in resolved.values()}]
     return {
         "case": holdout["case"], "docket": holdout["docket"],
+        "note": "Full addresses for every wallet in the complaint. Recovered twice independently (on-chain walk from the Tether freeze events with prefix+suffix match and zero-value poison dropped; BigQuery amount+date matching); both sets identical. SCORING ONLY: the engine must never read this file.",
+        "addresses": {lab: r["address"] for lab, r in resolved.items()},
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "min_usdt_for_match": MIN_USDT,
         "resolved": resolved,

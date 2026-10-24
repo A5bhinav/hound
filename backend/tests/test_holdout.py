@@ -15,11 +15,15 @@ CHAIN_FIXTURES = {"examples/ohnd_transfers.json"}
 # Per BRIEF §0 / AUDIT N1 those freezes must be HIDDEN from the engine during the replay
 # (freeze_visibility=hidden) and revealed by the UI afterwards; owner Ishaan. Exempt here as chain data.
 CHAIN_CODE = {"backend/hound/fixture_chain.py"}
+# chain/holdout.py IS the label-DB guard: it reads data/doj/holdout.json to keep those addresses
+# out of labels, and carries the brief's addresses as a floor. Exempt from the leak grep and the
+# data/doj read check; it is not engine logic.
+GUARD_CODE = {"backend/hound/chain/holdout.py"}
 
 
 def _code_files():
     for p in (ROOT / "backend" / "hound").rglob("*.py"):
-        if "proof" in p.parts or str(p.relative_to(ROOT)) in CHAIN_CODE:
+        if "proof" in p.parts or str(p.relative_to(ROOT)) in CHAIN_CODE | GUARD_CODE:
             continue
         yield p
     for p in (ROOT / "examples").glob("*.json"):
@@ -49,7 +53,7 @@ def test_no_holdout_address_in_engine_code_or_replay_fixtures():
 def test_engine_never_imports_proof_or_reads_data_doj():
     bad = []
     for p in (ROOT / "backend" / "hound").rglob("*.py"):
-        if "proof" in p.parts or p.name == "api.py":
+        if "proof" in p.parts or p.name == "api.py" or str(p.relative_to(ROOT)) in GUARD_CODE:
             continue
         txt = p.read_text(errors="ignore")
         if re.search(r"from\s+hound\.proof|import\s+hound\.proof|data/doj|data\\doj", txt):
