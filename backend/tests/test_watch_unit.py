@@ -380,3 +380,25 @@ def test_path_hop_counts_each_victim_dollar_once(no_chain, not_frozen):
     w.add_trace(t)
     hops = check_mod.check("ethereum", LOOP, watch=w)["evidence"]["path"]
     assert [h["amount"] for h in hops if h["to"] == LOOP] == [1000.0]
+
+
+def test_victim_paying_from_an_exchange_never_fetches_the_exchange(monkeypatch):
+    """Intake screenshots are often exchange withdrawals: the 'victim' node is the exchange hot
+    wallet. Its history is every customer's; other payers must not fetch it."""
+    t = json.loads(json.dumps(FIXTURE))
+    for n in t["nodes"]:
+        if n["address"] == VICTIM:
+            n["address"] = COINBASE10
+    for e in t["edges"]:
+        if e["from"] == VICTIM:
+            e["from"] = COINBASE10
+    fetched = []
+
+    def fake_transfers(ch, address, token="USDT", as_of=None, after=None):
+        fetched.append(address)
+        return []
+
+    monkeypatch.setattr(chain, "get_transfers", fake_transfers)
+    monkeypatch.setattr(chain, "get_native_txs", lambda *a, **k: [], raising=False)
+    op_mod.payments(t, window_days=7)
+    assert COINBASE10 not in fetched and A1 in fetched
