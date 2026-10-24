@@ -15,6 +15,7 @@ so a crafted case id or story can not make a number or an address citable.
 Paths address nested values with dots, list items by index: `derived.endpoints.0.address`.
 """
 import logging
+import math
 import re
 
 log = logging.getLogger("hound.facts")
@@ -29,7 +30,7 @@ DISCLAIMERS = {
     "never_charges": "Hound never charges, never asks for keys or seed phrases; anyone offering paid recovery is a scam.",
 }
 
-_ETH_ADDR = re.compile(r"^0x[0-9a-f]{40}$")
+_ETH_ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")  # checksummed or not; normalised to lowercase by _addr
 _TRON_ADDR = re.compile(r"^T[1-9A-HJ-NP-Za-km-z]{33}$")
 _TX = re.compile(r"^(0x)?[0-9a-fA-F]{64}$")
 _ISO = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?Z)?$")
@@ -37,22 +38,38 @@ _ENUM = re.compile(r"^[a-z_]{1,32}$")
 _SAFE_TEXT = re.compile(r"[^A-Za-z0-9 ,.'_-]")
 _TOKEN = re.compile(r"^[A-Z0-9]{2,10}$")
 _SOURCES = {"phone", "screenshot", "chainabuse", "doj_replay", "voice"}
+# letters, spaces, dots, hyphens only: no digits (partial addresses, amounts), at most 30 chars
+_LABEL = re.compile(r"[A-Za-z .-]{1,30}")
+_DOTTED = re.compile(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z0-9])")
+ACCUSE = re.compile(r"\b(scam+ers?|criminals?|fraudsters?|thief|thieves|launderers?|crooks?)\b", re.I)
+
+
+class WriterInputError(ValueError):
+    """The trace, case or audience handed to the writer is unusable. The API maps this to 422."""
 
 
 def sanitize(text, limit=200):
-    """Display-only free text: strip to safe characters, no tags, no braces, no links."""
+    """Display-only free text: strip to safe characters, no tags, no braces, no links.
+
+    A dot between two letters or digits becomes a space, so 'recoverfunds.help' in a story
+    can not reach the model (or the page) as a domain.
+    """
     if text is None:
         return None
-    return " ".join(_SAFE_TEXT.sub(" ", str(text)).split())[:limit]
+    return " ".join(_DOTTED.sub(" ", _SAFE_TEXT.sub(" ", str(text))).split())[:limit]
 
 
-def sanitize_label(text, limit=40):
-    """Exchange labels are shown only in code-written lines: also drop hex and long digit runs."""
-    text = sanitize(text, 200)
+def sanitize_label(text):
+    """Exchange labels are shown only in code-written lines. Allowlisted or dropped, never trimmed:
+    letters, spaces, dots and hyphens, 1 to 30 chars, no accusation word, no domain (so
+    'Crypto.com' is dropped too; the endpoint reason still says exchange)."""
     if text is None:
         return None
-    text = re.sub(r"0x[0-9A-Fa-f]*|\d{3,}", " ", text)
-    return " ".join(text.split())[:limit] or None
+    label = " ".join(str(text).split())
+    if not _LABEL.fullmatch(label) or ACCUSE.search(label) or _DOTTED.search(label):
+        log.warning("facts: dropping exchange label %r (not in the label allowlist)", text)
+        return None
+    return label
 
 
 def short_addr(addr):
@@ -63,10 +80,15 @@ def _is_addr(v):
     return isinstance(v, str) and bool(_ETH_ADDR.match(v) or _TRON_ADDR.match(v))
 
 
+def _norm_addr(v):
+    """0x addresses compare and print lowercase; Tron base58 is case-sensitive and kept."""
+    return v.lower() if isinstance(v, str) and _ETH_ADDR.match(v) else v
+
+
 def _num(v, where):
-    if isinstance(v, bool) or not isinstance(v, (int, float)):
+    if isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v):
         if v is not None:
-            log.warning("facts: dropping non-numeric %s=%r", where, v)
+            log.warning("facts: dropping non-numeric or non-finite %s=%r", where, v)
         return None
     return v
 
@@ -89,7 +111,7 @@ def _enum(v, where):
 
 def _addr(v, where):
     if _is_addr(v):
-        return v
+        return _norm_addr(v)
     if v is not None:
         log.warning("facts: dropping malformed address %s=%r", where, v)
     return None
@@ -104,12 +126,12 @@ def _tx(v, where):
 
 
 def _endpoint_rows(trace):
-    nodes = {n["address"]: n for n in trace.get("nodes", [])}
+    nodes = {_norm_addr(n.get("address")): n for n in trace.get("nodes", [])}
     rows = []
     for i, e in enumerate(trace.get("endpoints", [])):
         addr = _addr(e.get("address"), f"endpoints.{i}.address")
         if addr is None:
-            raise ValueError(f"trace endpoint {i} has malformed address {e.get('address')!r}; refusing to write a packet")
+            raise WriterInputError(f"trace endpoint {i} has malformed address {e.get('address')!r}; refusing to write a packet")
         frozen = (nodes.get(addr) or {}).get("frozen") or {}
         inflow = _num(e.get("victim_inflow"), f"endpoints.{i}.victim_inflow") or 0.0
         remaining = _num(e.get("victim_remaining"), f"endpoints.{i}.victim_remaining")
@@ -133,7 +155,7 @@ def _endpoint_rows(trace):
 def build_facts(trace, case):
     """Facts for one packet. Raises if the trace is unusable; drops (and logs) malformed fields."""
     if not isinstance(trace, dict) or "endpoints" not in trace:
-        raise ValueError("build_facts needs a Trace dict with endpoints")
+        raise WriterInputError("build_facts needs a Trace dict with endpoints")
     case = case or {}
     replay = bool(trace.get("replay")) or case.get("source") == "doj_replay"
     method = trace.get("method") or {}
