@@ -90,6 +90,8 @@ def victim_upstream(trace: dict, start: int, end: int) -> set[str]:
     ch = nodes[0]["chain"] if nodes else "ethereum"
     out: set[str] = set()
     for v in sorted(_victims(trace)):
+        if _skip_fetch(ch, v):
+            continue  # victim paid from an exchange hot wallet / contract: its payers are everyone
         for token in ("USDT", "ETH" if ch == "ethereum" else None):
             if token:
                 out |= {t["from"] for t in _fetch(ch, v, start, end, token) if t["to"] == v}
