@@ -8,6 +8,8 @@ One laptop runs the demo (Ishaan's). Hard deadline for Devpost is **9:00 AM**; b
 - [ ] Phone hotspot is the primary network. Venue Wi-Fi is the backup.
 - [ ] `caffeinate -dims` running (the laptop must not sleep).
 - [ ] Focus / Do Not Disturb on. Close Claude Code and anything holding API keys. Browser zoom 125%.
+- [ ] `data/cases_live/` (AirDropped from Jinka, never committed) is in the repo root.
+- [ ] `cd backend && .venv/bin/python -m hound.chain.preflight --live` ends with `ALL GOOD`. Offline it checks the DOJ replay numbers (317,403.01 / 47,702.92 / 12,077.78), every live case from the bundle, and `/check`, with and without an Etherscan key. `--live` prints each live wallet's USDT balance and Tether freeze status right now, plus the time: say "checked h:mm AM".
 - [ ] Live case `live-mindchain-binance` traces offline from Jinka's bundle (`data/cases_live/`, gitignored, must be on the demo laptop). No gold ending this weekend: CK's hunt found no clean holding wallet.
 - [ ] Charger, power strip, backup video on the desktop.
 
