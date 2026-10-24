@@ -41,7 +41,11 @@ _SOURCES = {"phone", "screenshot", "chainabuse", "doj_replay", "voice"}
 # letters, spaces, dots, hyphens only: no digits (partial addresses, amounts), at most 30 chars
 _LABEL = re.compile(r"[A-Za-z .-]{1,30}")
 _DOTTED = re.compile(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z0-9])")
-ACCUSE = re.compile(r"\b(scam+ers?|criminals?|fraudsters?|thief|thieves|launderers?|crooks?)\b", re.I)
+# a dot between letters or digits, spaced or not ('recoverfunds . help'): sanitize turns it into a space
+_DOTTED_SPACED = re.compile(r"(?<=[A-Za-z0-9])\s*\.\s*(?=[A-Za-z0-9])")
+# Etherscan label names carry a sub-label and a wallet number: 'Binance: Hot Wallet 20', 'OKX 7'
+_LABEL_NUMBER = re.compile(r"\s+\d+$")
+ACCUSE = re.compile(r"\b(scam\w*|criminals?|fraud\w*|thief|thieves|launder\w*|crooks?)\b", re.I)
 
 
 class WriterInputError(ValueError):
@@ -51,21 +55,26 @@ class WriterInputError(ValueError):
 def sanitize(text, limit=200):
     """Display-only free text: strip to safe characters, no tags, no braces, no links.
 
-    A dot between two letters or digits becomes a space, so 'recoverfunds.help' in a story
-    can not reach the model (or the page) as a domain.
+    A dot between two letters or digits becomes a space, spaced or not, so 'recoverfunds.help',
+    'recoverfunds . help' and 'recoverfunds[.]help' in a story can not reach the model (or the
+    page) as a domain. Sentence full stops in the story go too; it is background text only.
     """
     if text is None:
         return None
-    return " ".join(_DOTTED.sub(" ", _SAFE_TEXT.sub(" ", str(text))).split())[:limit]
+    return " ".join(_DOTTED_SPACED.sub(" ", _SAFE_TEXT.sub(" ", str(text))).split())[:limit]
 
 
 def sanitize_label(text):
-    """Exchange labels are shown only in code-written lines. Allowlisted or dropped, never trimmed:
-    letters, spaces, dots and hyphens, 1 to 30 chars, no accusation word, no domain (so
-    'Crypto.com' is dropped too; the endpoint reason still says exchange)."""
+    """Exchange labels are shown only in code-written lines.
+
+    First normalised to the exchange name: the text before ':' with a trailing wallet number
+    dropped ('Binance 14' and 'Binance: Hot Wallet 20' both become 'Binance'). Then allowlisted
+    or dropped, never trimmed: letters, spaces, dots and hyphens, 1 to 30 chars, no accusation
+    word, no domain (so 'Crypto.com' is dropped too; the endpoint reason still says exchange)."""
     if text is None:
         return None
-    label = " ".join(str(text).split())
+    label = " ".join(str(text).split(":", 1)[0].split())
+    label = _LABEL_NUMBER.sub("", label)
     if not _LABEL.fullmatch(label) or ACCUSE.search(label) or _DOTTED.search(label):
         log.warning("facts: dropping exchange label %r (not in the label allowlist)", text)
         return None
@@ -133,8 +142,15 @@ def _endpoint_rows(trace):
         if addr is None:
             raise WriterInputError(f"trace endpoint {i} has malformed address {e.get('address')!r}; refusing to write a packet")
         frozen = (nodes.get(addr) or {}).get("frozen") or {}
-        inflow = _num(e.get("victim_inflow"), f"endpoints.{i}.victim_inflow") or 0.0
+        # an unknown amount is never printed as 0.00: refuse the packet instead
+        inflow = _num(e.get("victim_inflow"), f"endpoints.{i}.victim_inflow")
+        if inflow is None:
+            raise WriterInputError(f"trace endpoint {i} victim_inflow {e.get('victim_inflow')!r} is not a finite number; "
+                                   "refusing to write a packet")
         remaining = _num(e.get("victim_remaining"), f"endpoints.{i}.victim_remaining")
+        if remaining is None and e.get("victim_remaining") is not None:
+            raise WriterInputError(f"trace endpoint {i} victim_remaining {e.get('victim_remaining')!r} is not a finite "
+                                   "number; refusing to write a packet")
         rows.append({
             "address": addr,
             "short": short_addr(addr),
@@ -156,6 +172,8 @@ def build_facts(trace, case):
     """Facts for one packet. Raises if the trace is unusable; drops (and logs) malformed fields."""
     if not isinstance(trace, dict) or "endpoints" not in trace:
         raise WriterInputError("build_facts needs a Trace dict with endpoints")
+    if not trace["endpoints"]:
+        raise WriterInputError("trace has no endpoints yet (nothing traced); refusing to write an empty packet")
     case = case or {}
     replay = bool(trace.get("replay")) or case.get("source") == "doj_replay"
     method = trace.get("method") or {}

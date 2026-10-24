@@ -55,13 +55,20 @@ _BANNED = [
     re.compile(r"\b(?:will|shall|going\s+to)\s+(?:be\s+)?(?:recover|return|refund)(?:ed|s)?\b", re.I),
     re.compile(r"\bwe\s+(?:will|shall|can|are\s+going\s+to)\s+(?:\w+\s+){0,2}(?:recover|return|refund)", re.I),
     re.compile(r"\bget\s+(?:\S+\s+){1,5}back\b", re.I),
+    re.compile(r"\b(?:can|could|will|should|may|might|going\s+to)\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
+    re.compile(r"\b(?:expects?|expected|hopes?|plans?|aims?|likely|able)\s+to\s+(?:\w+\s+){0,2}(?:be\s+)?(?:recover|return|refund)\w*", re.I),
+    re.compile(r"\b(?:will|going\s+to|should)\s+(?:\w+\s+){0,2}come\s+back\b", re.I),
 ]
+# Victim text only: a scared reader takes any mention of a refund or of money returned as a promise.
+_BANNED_VICTIM = [re.compile(r"\brefunds?\b", re.I), re.compile(r"\b(?:returned|recovered)\b", re.I)]
 _VICTIMS = re.compile(r"\bvictims\b", re.I)
 _ACCUSE = ACCUSE
 _ADDRESSY = re.compile(r"\b(address|addresses|wallet|wallets|account|accounts|ADDRREF)\b", re.I)
 _ADDR_OR_HASH = re.compile(r"0x[0-9a-fA-F]{40,64}|T[1-9A-HJ-NP-Za-km-z]{33}")
 # Any word.word token is a possible domain (tether.to, recoverfunds.help): no TLD list.
 _URL = re.compile(r"https?://[^\s<>()]+|\bwww\.[^\s<>()]+|[\w.+-]+@[\w-]+\.[\w.]+|[\w-]+(?:\.[\w-]+)+", re.I)
+# Obfuscated domains: 'recoverfunds[.]help', 'recoverfunds(.)help', 'recoverfunds . help', 'recoverfunds dot help'
+_OBFUSCATED_DOMAIN = re.compile(r"[A-Za-z]{2,}\s*(?:\[\.\]|\(\.\)|\s\.\s|\sdot\s)\s*[A-Za-z]{2,}", re.I)
 _ABBREV = re.compile(r"\b(?:e\.g|i\.e|U\.S|a\.m|p\.m)\.", re.I)
 _SENTENCE = re.compile(r"[^.!?\n]+")
 
@@ -124,11 +131,12 @@ def _lookup(facts, allow_untrusted):
     return table
 
 
-def validate(template_text, facts, allow_untrusted=False):
+def validate(template_text, facts, allow_untrusted=False, audience="victim"):
     """Check one template. Returns the list of citable paths it uses; raises TemplateError.
 
     allow_untrusted is only for code-written templates (e.g. an exchange label in the
     detective list). Model output is always validated with allow_untrusted=False.
+    audience "victim" (the default, the strictest) also bans any refund / returned / recovered.
     """
     if not isinstance(template_text, str):
         raise TemplateError([f"template must be a string, got {type(template_text).__name__}"])
@@ -173,7 +181,7 @@ def validate(template_text, facts, allow_untrusted=False):
         errors.append(f"month name outside a placeholder: {m.group(0)!r}")
     for m in _NUMBER_WORDS.finditer(bare):
         errors.append(f"number word: {m.group(0)!r}")
-    for rx in _BANNED:
+    for rx in _BANNED + (_BANNED_VICTIM if audience != "detective" else []):
         for m in rx.finditer(bare):
             errors.append(f"banned phrase: {m.group(0)!r}")
     if not replay:
@@ -188,21 +196,29 @@ def validate(template_text, facts, allow_untrusted=False):
             return " ADDRREF "
         return " VALREF "
     marked = _PH.sub(_mark, text)
-    for s in _SENTENCE.finditer(marked):
-        sent = s.group(0)
-        if _ACCUSE.search(sent) and _ADDRESSY.search(sent):
-            errors.append(f"accusation attached to an address: {_ACCUSE.search(sent).group(0)!r}")
+    sentences = [s.group(0) for s in _SENTENCE.finditer(marked)]
+    for i, sent in enumerate(sentences):
+        # same sentence: an address word or a cited address; or a pronoun hop to the next
+        # sentence that cites one ('The scammer moved it. It landed at ADDR.')
+        pair = sent + " " + (sentences[i + 1] if i + 1 < len(sentences) else "")
+        hit = _ACCUSE.search(sent) or _ACCUSE.search(pair)
+        if (_ACCUSE.search(sent) and _ADDRESSY.search(sent)) or (hit and "ADDRREF" in pair):
+            errors.append(f"accusation attached to an address: {hit.group(0)!r}")
+            break
     for m in _URL.finditer(_ABBREV.sub(" ", bare)):
         errors.append(f"link or contact not in const.contacts: {m.group(0)!r}")
+    # placeholders become a non-letter mark here, so '{{x|usdt}}. Then' is not read as 'word . word'
+    for m in _OBFUSCATED_DOMAIN.finditer(_PH.sub(" § ", text)):
+        errors.append(f"link or contact not in const.contacts (obfuscated domain): {m.group(0)!r}")
 
     if errors:
         raise TemplateError(errors)
     return cited
 
 
-def render(template_text, facts, allow_untrusted=False):
+def render(template_text, facts, allow_untrusted=False, audience="victim"):
     """Validate, then fill placeholders with the fixed formatters. Returns (text, cited)."""
-    cited = validate(template_text, facts, allow_untrusted)
+    cited = validate(template_text, facts, allow_untrusted, audience)
     table = _lookup(facts, allow_untrusted)
     text = _USDT_DUP.sub(r"\1", template_text)
     return _PH.sub(lambda m: _FORMATTERS[m.group(2)](table[m.group(1)]), text), cited
@@ -328,7 +344,7 @@ Output JSON {"paragraphs": [..]}, at most %d short paragraphs.
 HARD RULES (a validator rejects your draft otherwise):
 - Never type a number, digit, date, month name, amount, address or hash. Every one of them must be a placeholder {{path|fmt}} with a path from FACTS. Formats: usdt (adds the word USDT), short (shortened address), date, int, raw (copies a string exactly).
 - Do not write number words (one, two, ..., twenty, hundred, thousand, million, billion, dozen, several).
-- Never promise or suggest recovery, return or refund (no "will be recovered", no "get it back"). Never use the words scammer, criminal, fraudster, thief or launderer in a sentence that cites an address, wallet, endpoint or send.
+- Never promise or suggest recovery, return or refund (no "can be recovered", no "will come back", no "get it back"; for the victim do not write refund, returned or recovered at all). Never use the words scam, scammer, fraud, criminal, thief or laundered in a sentence that cites an address, wallet, endpoint or send, or in the sentence just before one that does.
 - Do not write links, domains (anything like word.word), emails or phone numbers except {{const.contacts.ic3|raw}} and {{const.contacts.tether|raw}}. Do not start a sentence with "May".
 - Say "victims" only if trace.replay is true; in a live case say "other payers".
 - Do not write the endpoint table, the replay banner or the footer: code adds them.
@@ -394,7 +410,7 @@ def _claude_paragraphs(facts, audience):
             raw = _call_claude(messages)
             paras = _parse(raw)
             for p in paras:
-                validate(p, facts)
+                validate(p, facts, audience=audience)
             return paras
         except TemplateError as e:
             log.warning("writer: Claude template rejected (attempt %d): %s", attempt, "; ".join(e.errors[:5]))
@@ -427,11 +443,11 @@ def write_case(trace, case, audience="victim"):
     blocks, cited = [], []
     try:
         for tpl in _header(facts) + paras:
-            text, c = render(tpl, facts)
+            text, c = render(tpl, facts, audience=audience)
             blocks.append(text)
             cited += c
         if audience == "detective":
-            text, c = render(_endpoint_section(facts), facts, allow_untrusted=True)
+            text, c = render(_endpoint_section(facts), facts, allow_untrusted=True, audience=audience)
             blocks.append(text)
             cited += c
     except TemplateError as e:

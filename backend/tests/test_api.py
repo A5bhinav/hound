@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from hound import api
 from hound.api import app
 
 client = TestClient(app)
@@ -25,3 +26,16 @@ def test_packet_before_trace_is_409():
 
 def test_invalid_case_is_422():
     assert client.post("/cases", json={"source": "fax", "sends": []}).status_code == 422
+
+
+def test_unusable_trace_or_audience_is_422_not_500():
+    r = client.post("/cases", json={"source": "phone", "sends": [{"chain": "ethereum", "tx_hash": "0x1", "from": "0xa", "to": "0xb", "token": "USDT", "amount": 1, "time": "2026-10-24T00:00:00Z"}]})
+    cid = r.json()["case_id"]
+    api.TRACES[f"t-{cid}"] = {"trace_id": f"t-{cid}", "case_id": cid, "nodes": [], "edges": [], "endpoints": []}
+    try:
+        r = client.get(f"/cases/{cid}/packet")
+        assert r.status_code == 422 and "no endpoints" in r.json()["detail"]
+    finally:
+        api.TRACES.pop(f"t-{cid}")
+    client.post("/cases/ohnd-replay-ah/trace")
+    assert client.get("/cases/ohnd-replay-ah/packet?audience=press").status_code == 422

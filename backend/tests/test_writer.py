@@ -259,17 +259,21 @@ def test_injection_through_exchange_label_is_dropped():
     assert not any(p.startswith("case.untrusted") for p in out["cited"])
 
 
-@pytest.mark.parametrize("label,kept", [
-    ("Binance", True), ("OKX Hot Wallet", True), ("Gate-io", True),
-    ("Binance 14", False), ("Scammer Exchange", False), ("Fraudster desk", False),
-    ("0xa1770e", False), ("recoverfunds.help", False), ("A" * 31, False), ("", False),
+@pytest.mark.parametrize("label,expected", [
+    ("Binance", "Binance"), ("OKX Hot Wallet", "OKX Hot Wallet"), ("Gate-io", "Gate-io"),
+    # real Etherscan label names: wallet number and sub-label are dropped, the exchange kept
+    ("Binance 14", "Binance"), ("Binance: Hot Wallet 20", "Binance"), ("OKX 7", "OKX"), ("Kraken 55", "Kraken"),
+    ("Scammer Exchange", None), ("Fraudster desk", None), ("Scam desk 3", None), ("Binance: 0xa1770e", "Binance"),
+    ("0xa1770e", None), ("recoverfunds.help", None), ("Wallet 7a", None), ("A" * 31, None), ("", None),
 ])
-def test_exchange_label_allowlist(label, kept):
-    assert (sanitize_label(label) == label) is kept
+def test_exchange_label_allowlist(label, expected):
+    assert sanitize_label(label) == expected
     t, c = live()
     t["endpoints"][0]["exchange"] = label
     out = write_case(t, c, "detective")
-    assert ("exchange label" in out["text"]) is kept
+    assert ("exchange label" in out["text"]) is (expected is not None)
+    if expected:
+        assert f"exchange label {expected}." in out["text"]
 
 
 # ------------------------------------------------------------ formatters
@@ -294,7 +298,11 @@ def test_flatten_paths():
 # ------------------------------------------------------------ round 1 review fixes
 
 @pytest.mark.parametrize("para", json.loads(fixture("bad_banned_promise.json"))["paragraphs"]
-                         + ["Your money will be returned.", "We can recover it for you.", "You will be refunded."])
+                         + ["Your money will be returned.", "We can recover it for you.", "You will be refunded.",
+                            "Your funds can be recovered.", "The money will come back.",
+                            "Your money is going to come back to you.", "We expect to recover your money.",
+                            "You should get your funds returned soon.", "Refunds are coming.",
+                            "It might be returned to you.", "Funds were recovered last time."])
 def test_every_recovery_promise_is_banned(para):
     with pytest.raises(TemplateError, match="banned phrase"):
         validate(para, build_facts(TRACE, CASE))
@@ -304,10 +312,16 @@ def test_safe_wording_near_banned_phrases_passes():
     f = build_facts(TRACE, CASE)
     validate("Frozen money is not sent back automatically; only law enforcement can ask for it.", f)
     validate("The police may get back to you.", f)
+    # the detective packet may state facts about returns; only victim text bans the words
+    validate("No funds have been returned or recovered so far.", f, audience="detective")
+    with pytest.raises(TemplateError, match="banned phrase"):
+        validate("No funds have been returned or recovered so far.", f)
 
 
 @pytest.mark.parametrize("para", ["Ask tether.to for help.", "Visit recoverfunds.help today.",
-                                  "Write to support.binance.example for a refund form."])
+                                  "Write to support.binance.example for a form.",
+                                  "Visit recoverfunds . help", "Visit recoverfunds[.]help", "Visit recoverfunds(.)help",
+                                  "Visit recoverfunds dot help"])
 def test_any_domain_token_is_rejected(para):
     with pytest.raises(TemplateError, match="link or contact"):
         validate(para, build_facts(TRACE, CASE))
@@ -331,6 +345,12 @@ def test_story_injected_domain_never_reaches_the_model_or_the_page(claude):
     assert out["source"] == "template"
     assert "recoverfunds" not in out["text"] and "tether.to" not in out["text"]
     assert sanitize("v1.2 a.b") == "v1 2 a b"
+    for spaced in ("recoverfunds . help", "recoverfunds[.]help", "recoverfunds (.) help"):
+        assert sanitize(spaced) == "recoverfunds help"
+
+
+def test_sentence_end_before_a_placeholder_is_not_a_domain():
+    validate("We followed {{derived.traced_usdt|usdt}}. Then it moved.", build_facts(TRACE, CASE))
 
 
 @pytest.mark.parametrize("para", [
@@ -339,6 +359,11 @@ def test_story_injected_domain_never_reaches_the_model_or_the_page(claude):
     "The thief kept {{derived.endpoints.0.victim_funds|usdt}}.",
     "{{trace.endpoints.0.address|raw}} is run by a launderer.",
     "The scammers moved it to {{case.sends.0.tx_hash|raw}}.",
+    "The scammer moved the money. It landed at {{derived.endpoints.0.address|short}}.",
+    "It landed at {{derived.endpoints.0.address|short}}. The scammer kept it.",
+    "It is a scam wallet: {{derived.endpoints.0.address|short}}.",
+    "The fraud ring laundered it via {{derived.endpoints.0.address|raw}}.",
+    "It was laundering, via {{case.sends.0.to|raw}}.",
 ])
 def test_accusation_in_a_sentence_citing_an_address_or_endpoint(para):
     with pytest.raises(TemplateError, match="accusation"):
@@ -348,6 +373,10 @@ def test_accusation_in_a_sentence_citing_an_address_or_endpoint(para):
 def test_accusation_word_away_from_addresses_passes():
     f = build_facts(TRACE, CASE)
     validate("Criminals often pose as friends online. We followed {{derived.traced_usdt|usdt}}.", f)
+    # an accusation word two sentences away from an address is not attached to it
+    validate("This was a romance scam. You did nothing wrong. It landed at {{derived.endpoints.0.address|short}}.", f)
+    validate("This was a romance scam. We followed {{derived.traced_usdt|usdt}} through "
+             "{{derived.wallet_count|int}} wallets.", f)
 
 
 def test_checksummed_addresses_are_normalised():
@@ -425,3 +454,32 @@ def test_citation_count_matches_unique_cited(claude):
     for audience in ("victim", "detective"):
         o = write_case(TRACE, CASE, audience)
         assert o["citations_verified"]["total"] == len(o["cited"])
+
+
+# ------------------------------------------------------------ round 2 review fixes
+
+def test_no_endpoints_raises_typed_error():
+    t = copy.deepcopy(TRACE)
+    t["endpoints"] = []
+    for audience in ("victim", "detective"):
+        with pytest.raises(WriterInputError, match="no endpoints"):
+            write_case(t, CASE, audience)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("victim_inflow", float("nan")), ("victim_inflow", float("inf")), ("victim_inflow", None),
+    ("victim_inflow", "12"), ("victim_remaining", float("nan")), ("victim_remaining", float("-inf")),
+])
+def test_non_finite_endpoint_amount_is_refused_never_zero(field, value):
+    t = copy.deepcopy(TRACE)
+    t["endpoints"][0][field] = value
+    with pytest.raises(WriterInputError, match=field):
+        write_case(t, CASE, "detective")
+
+
+def test_missing_remaining_falls_back_to_inflow():
+    t = copy.deepcopy(TRACE)
+    t["endpoints"][0].pop("victim_remaining", None)
+    f = build_facts(t, CASE)
+    row = next(r for r in f["derived"]["endpoints"] if r["address"] == t["endpoints"][0]["address"].lower())
+    assert row["victim_funds"] == row["victim_inflow"]

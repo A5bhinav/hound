@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from hound.contracts import ROOT, example, validate_case
 from hound.engine.trace import run_trace
+from hound.llm.facts import WriterInputError
 from hound.llm.writer import write_case
 from hound.proof.backtest import serve as backtest_serve
 from hound.proof.doj_ohnd import doj_scoreboard
@@ -96,7 +97,11 @@ def packet(case_id: str, audience: str = "detective"):
     trace = next((t for t in TRACES.values() if t["case_id"] == case_id), None)
     if trace is None:
         raise HTTPException(409, f"case {case_id!r} has not been traced yet; POST /cases/{case_id}/trace first")
-    return {"packet": write_case(trace, case, audience), "trace": trace}
+    try:
+        return {"packet": write_case(trace, case, audience), "trace": trace}
+    except WriterInputError as e:
+        log.warning("packet %s: writer refused input: %s", case_id, e)
+        raise HTTPException(422, str(e))
 
 
 @app.get("/check")
