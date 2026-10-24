@@ -153,7 +153,9 @@ def test_other_payers_count_payments_into_the_entry_layer(monkeypatch):
     assert op_mod.summary(rows)["text"] == "3 payments in from 1 exchange into 2 entry addresses"
     schema_rows = op_mod.other_payers(FIXTURE, window_days=7)
     assert len(schema_rows) == 3
-    assert set(schema_rows[0]) == {"address", "amount", "window_days", "source_exchange", "confidence"}
+    assert set(schema_rows[0]) == {"address", "amount", "token", "window_days", "source_exchange", "confidence",
+                                   "tx_hash", "entry_address", "time"}
+    assert schema_rows[0]["token"] == "USDT"
 
 
 def test_live_trace_with_stale_inflow_warns(not_frozen):
