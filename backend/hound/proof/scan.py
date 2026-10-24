@@ -8,6 +8,7 @@ balance; it is written to data/cases/gold_candidates.json for review.
 from __future__ import annotations
 
 import json
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,6 +37,76 @@ ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT / "data" / "cases_live" / "scan_latest.json"  # gitignored: live addresses never public
 SUMMARY = ROOT / "data" / "proof" / "weekend_scan_summary.json"  # committed, redacted: truncated addresses, no report ids
 CATEGORIES = ("PIGBUTCHERING", "ROMANCE", "FAKE_RETURNS", "OTHER_INVESTMENT_SCAM")
+MAX_LIFETIME_TRANSFERS = 2000  # AUDIT 24: above this the wallet is exchange/service sized, never a scam wallet we can claim
+ROW_LABEL = "reported, not proven"
+_FULL_ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")
+
+
+def transfer_count(address: str) -> int:
+    """Lifetime ERC-20 transfers of `address`, counted up to MAX_LIFETIME_TRANSFERS + 1 (one explorer call)."""
+    from hound.chain.eth import explorer
+    params = {"module": "account", "action": "tokentx", "address": address, "startblock": 0, "endblock": 99999999,
+              "page": 1, "offset": MAX_LIFETIME_TRANSFERS + 1, "sort": "asc"}
+    return len(explorer(params)["result"] or [])
+
+
+def _short(address: str) -> str:
+    return f"{address[:6]}\u2026{address[-4:]}" if _FULL_ADDR.match(address or "") else address
+
+
+def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
+    """Re-derive every row's verdict and the headline from the rows themselves (AUDIT 24), so the
+    headline is always exactly the sum of the freezable rows' capped amounts.
+
+    A row is excluded when it carries an exchange/service/infra/sanctioned label, has more than
+    MAX_LIFETIME_TRANSFERS lifetime transfers, or its transfer count could not be read (fail closed).
+    Each row counts min(balance, claimed losses); when no claimed-loss figure was stored (older
+    summaries), it counts its balance and says so in cap_basis.
+    """
+    as_of = result.get("scanned_at")
+    cases = []
+    for c in result.get("cases", []):
+        c = dict(c)
+        bal = float(c.get("balance_usdt") or 0.0)
+        reasons = []
+        if c.get("label") or c.get("excluded_as_exchange_or_infra"):
+            reasons.append("exchange/service/infra label")
+        tc = c.get("transfer_count")
+        if tc is not None and tc > MAX_LIFETIME_TRANSFERS:
+            reasons.append(f">{MAX_LIFETIME_TRANSFERS:,} lifetime transfers")
+        if c.get("transfer_count_error"):
+            reasons.append("transfer count unavailable")
+        claimed = c.get("claimed_losses_usd")
+        if claimed is None:
+            capped, basis = bal, "balance (no claimed-loss figure stored for this row)"
+        else:
+            capped, basis = min(bal, float(claimed)), "min(balance, claimed losses)"
+        c["capped_usdt"] = round(capped, 2)
+        c["cap_basis"] = basis
+        c["excluded_reasons"] = reasons
+        c["freezable_now"] = bool(not c.get("is_frozen") and not reasons and capped >= min_usdt)
+        c["row_label"] = ROW_LABEL
+        c["as_of"] = c.get("as_of") or as_of
+        cases.append(c)
+    cases.sort(key=lambda c: (-c["freezable_now"], -c["capped_usdt"], -float(c.get("balance_usdt") or 0)))
+    unfrozen = [c for c in cases if c["freezable_now"]]
+    return result | {
+        "label": ROW_LABEL,
+        "usdt_unfrozen": round(sum(c["capped_usdt"] for c in unfrozen), 2),
+        "addresses_unfrozen": len(unfrozen),
+        "already_frozen": sum(bool(c.get("is_frozen")) for c in cases),
+        "cases": cases,
+    }
+
+
+def redact(result: dict[str, Any]) -> dict[str, Any]:
+    """Public view: truncated addresses, no report ids (BRIEF section 0)."""
+    cases = []
+    for c in result.get("cases", []):
+        c = {k: v for k, v in c.items() if k != "report_ids"}
+        c["address"] = _short(c.get("address", ""))
+        cases.append(c)
+    return result | {"cases": cases}
 
 
 def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = None, min_usdt: float = 100.0) -> dict[str, Any]:
@@ -56,22 +127,21 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
             print(f"[scan] {addr}: {e}")
             continue
         lab = _labelled(addr)
-        r = r | {"balance_usdt": bal, "is_frozen": frozen, "label": lab,
-                 # AUDIT 20: exchange hot wallets, sanctioned and infra addresses are never gold candidates
-                 "freezable_now": (bal >= min_usdt and not frozen and lab is None)}
+        # AUDIT 20: exchange hot wallets, sanctioned and infra addresses are never gold candidates
+        r = r | {"balance_usdt": bal, "is_frozen": frozen, "label": lab, "transfer_count": None}
+        if bal >= min_usdt and not frozen and lab is None:
+            try:  # AUDIT 24: only candidates pay for the count; a failed count excludes the row in finalize()
+                r["transfer_count"] = transfer_count(addr)
+            except Exception as e:  # noqa: BLE001
+                print(f"[scan] transfer count failed for {addr}: {e}")
+                r["transfer_count_error"] = str(e)[:200]
         cases.append(r)
         time.sleep(0.2)
-    cases.sort(key=lambda c: (-c["freezable_now"], -c["balance_usdt"]))
-    unfrozen = [c for c in cases if c["freezable_now"]]
-    result = {
+    result = finalize({
         "scanned_at": datetime.now(timezone.utc).isoformat(),
-        "label": "reported, not proven",
         "addresses": len(cases),
-        "usdt_unfrozen": round(sum(c["balance_usdt"] for c in unfrozen), 2),
-        "addresses_unfrozen": len(unfrozen),
-        "already_frozen": sum(c["is_frozen"] for c in cases),
         "cases": cases,
-    }
+    }, min_usdt=min_usdt)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     json.dump(result, open(OUT, "w"), indent=1)
     return result
@@ -80,11 +150,9 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
 def serve() -> dict[str, Any]:
     """What GET /scan/latest returns: the last batch result. Never scans live in a request
     (that would spend the Chainabuse quota and make network calls on every UI refresh)."""
-    if OUT.exists():
-        return {"status": "ok", **json.load(open(OUT))}
-    summary = SUMMARY
-    if summary.exists():
-        return {"status": "ok", **json.load(open(summary))}
+    for path in (OUT, SUMMARY):
+        if path.exists():
+            return redact(finalize({"status": "ok", **json.load(open(path))}))
     return {"status": "not_computed", "label": "reported, not proven", "addresses": 0, "usdt_unfrozen": 0.0,
             "addresses_unfrozen": 0, "cases": [], "method": "run `python -m hound.proof.scan` to write the result"}
 
@@ -93,4 +161,4 @@ if __name__ == "__main__":
     res = weekend_scan()
     print(json.dumps({k: v for k, v in res.items() if k != "cases"}, indent=2))
     for c in res["cases"][:10]:
-        print(c["address"], c["category"], "reports", c["report_count"], "bal", round(c["balance_usdt"]), "frozen", c["is_frozen"])
+        print(c["address"], c["category"], "reports", c["report_count"], "bal", round(c["balance_usdt"]), "capped", c["capped_usdt"], "transfers", c.get("transfer_count"), "frozen", c["is_frozen"])

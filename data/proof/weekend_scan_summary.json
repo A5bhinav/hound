@@ -2,36 +2,14 @@
  "status": "ok",
  "scanned_at": "2026-10-24T05:46:26.924010+00:00",
  "label": "reported, not proven",
- "method": "Chainabuse public reports (PIGBUTCHERING, FAKE_RETURNS, OTHER_INVESTMENT_SCAM, ROMANCE; ETH) pulled from the website, each address checked on-chain: USDT balanceOf + isBlackListed; exchange hot wallets, contracts, >2,000-transfer wallets excluded.",
+ "method": "Chainabuse public reports (PIGBUTCHERING, FAKE_RETURNS, OTHER_INVESTMENT_SCAM, ROMANCE; ETH) pulled from the website, each address checked on-chain: USDT balanceOf + isBlackListed. Excluded: exchange hot wallets, contracts, labelled exchange/service/infra addresses, and wallets with >2,000 lifetime transfers. Each row counts min(balance, claimed losses); this run did not store claimed-loss figures or per-row transfer counts, so rows count at balance and only the exchange-sized wallets ruled out by hand carry a transfer count. Re-run `python -m hound.proof.scan` to recompute both.",
  "addresses": 963,
- "usdt_unfrozen": 968897.63,
+ "usdt_unfrozen": 968897.64,
  "addresses_unfrozen": 24,
  "already_frozen": 2,
  "note": "Public summary: addresses truncated, no report ids. The full file lives only on the demo laptop (data/cases_live/scan_latest.json).",
  "redacted": true,
  "cases": [
-  {
-   "address": "0x9642\u20265d4e",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "report_count": 1,
-   "reported_at": "2026-07-16",
-   "balance_usdt": 8956891.82,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false
-  },
-  {
-   "address": "0x4e5b\u2026972f",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "report_count": 1,
-   "reported_at": "2026-09-04",
-   "balance_usdt": 3089426.62,
-   "is_frozen": false,
-   "freezable_now": false,
-   "excluded_as_exchange_or_infra": false
-  },
   {
    "address": "0x7830\u20266f43",
    "chain": "ethereum",
@@ -41,7 +19,11 @@
    "balance_usdt": 853611.7,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 853611.7,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x6f72\u202622a1",
@@ -52,7 +34,11 @@
    "balance_usdt": 55883.15,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 55883.15,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xcf1e\u20263663",
@@ -63,7 +49,11 @@
    "balance_usdt": 10073.11,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 10073.11,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x092b\u2026c590",
@@ -74,7 +64,11 @@
    "balance_usdt": 6000.36,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 6000.36,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xf51a\u202627e3",
@@ -85,7 +79,11 @@
    "balance_usdt": 6000.0,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 6000.0,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x0000\u202605fa",
@@ -96,7 +94,11 @@
    "balance_usdt": 4986.36,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 4986.36,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x2dca\u202668cb",
@@ -107,7 +109,11 @@
    "balance_usdt": 4121.37,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 4121.37,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xc7e7\u20268afd",
@@ -118,7 +124,11 @@
    "balance_usdt": 3735.93,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 3735.93,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xa9ac\u20264573",
@@ -129,7 +139,11 @@
    "balance_usdt": 3579.46,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 3579.46,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x0de7\u2026741b",
@@ -140,7 +154,11 @@
    "balance_usdt": 3403.34,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 3403.34,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x4b23\u2026feb0",
@@ -151,7 +169,11 @@
    "balance_usdt": 3012.48,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 3012.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x1ab4\u20268f23",
@@ -162,7 +184,11 @@
    "balance_usdt": 2843.37,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 2843.37,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x3f69\u2026a1a1",
@@ -173,7 +199,11 @@
    "balance_usdt": 2132.73,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 2132.73,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xed13\u20264820",
@@ -184,7 +214,11 @@
    "balance_usdt": 2003.57,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 2003.57,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xc01d\u20266de6",
@@ -195,7 +229,11 @@
    "balance_usdt": 1627.25,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1627.25,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xc654\u202628d8",
@@ -206,7 +244,11 @@
    "balance_usdt": 1558.37,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1558.37,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xca56\u20265156",
@@ -217,7 +259,11 @@
    "balance_usdt": 1503.1,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1503.1,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x3c49\u20263359",
@@ -228,7 +274,11 @@
    "balance_usdt": 1042.41,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1042.41,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x1481\u2026db70",
@@ -239,7 +289,11 @@
    "balance_usdt": 1000.0,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1000.0,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xea35\u20262b49",
@@ -250,7 +304,11 @@
    "balance_usdt": 252.63,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 252.63,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x50ac\u20264aca",
@@ -261,7 +319,11 @@
    "balance_usdt": 183.48,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 183.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x1550\u2026157a",
@@ -272,7 +334,11 @@
    "balance_usdt": 131.14,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 131.14,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x9277\u20263bee",
@@ -283,7 +349,11 @@
    "balance_usdt": 110.48,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 110.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xec6e\u2026051d",
@@ -294,7 +364,11 @@
    "balance_usdt": 101.85,
    "is_frozen": false,
    "freezable_now": true,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 101.85,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x28c6\u20261d60",
@@ -305,7 +379,13 @@
    "balance_usdt": 640287231.72,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 640287231.72,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x9696\u20266976",
@@ -316,7 +396,13 @@
    "balance_usdt": 79780657.24,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 79780657.24,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x21a3\u20265549",
@@ -327,7 +413,13 @@
    "balance_usdt": 61895750.59,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 61895750.59,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xaa8b\u20263efb",
@@ -338,7 +430,13 @@
    "balance_usdt": 50850343.29,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 50850343.29,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x56ed\u2026b17f",
@@ -349,7 +447,51 @@
    "balance_usdt": 47954372.46,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 47954372.46,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
+  },
+  {
+   "address": "0x9642\u20265d4e",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "report_count": 1,
+   "reported_at": "2026-07-16",
+   "balance_usdt": 8956891.82,
+   "is_frozen": false,
+   "freezable_now": false,
+   "excluded_as_exchange_or_infra": false,
+   "transfer_count": 20000,
+   "transfer_count_is_lower_bound": true,
+   "capped_usdt": 8956891.82,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    ">2,000 lifetime transfers"
+   ],
+   "row_label": "reported, not proven"
+  },
+  {
+   "address": "0x4e5b\u2026972f",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "report_count": 1,
+   "reported_at": "2026-09-04",
+   "balance_usdt": 3089426.62,
+   "is_frozen": false,
+   "freezable_now": false,
+   "excluded_as_exchange_or_infra": false,
+   "transfer_count": 12557,
+   "transfer_count_is_lower_bound": true,
+   "capped_usdt": 3089426.62,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    ">2,000 lifetime transfers"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x8078\u2026ee1a",
@@ -360,7 +502,13 @@
    "balance_usdt": 2226912.82,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 2226912.82,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xdac1\u20261ec7",
@@ -371,7 +519,11 @@
    "balance_usdt": 1178547.12,
    "is_frozen": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 1178547.12,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x1bac\u2026f3da",
@@ -382,7 +534,13 @@
    "balance_usdt": 216142.67,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 216142.67,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0xa0b8\u2026eb48",
@@ -393,7 +551,13 @@
    "balance_usdt": 210927.49,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 210927.49,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x55d3\u20267955",
@@ -404,7 +568,11 @@
    "balance_usdt": 134417.74,
    "is_frozen": true,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": false
+   "excluded_as_exchange_or_infra": false,
+   "capped_usdt": 134417.74,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x4cd0\u2026bc31",
@@ -415,7 +583,13 @@
    "balance_usdt": 45948.32,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 45948.32,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   },
   {
    "address": "0x0796\u20260000",
@@ -426,7 +600,13 @@
    "balance_usdt": 12930.17,
    "is_frozen": false,
    "freezable_now": false,
-   "excluded_as_exchange_or_infra": true
+   "excluded_as_exchange_or_infra": true,
+   "capped_usdt": 12930.17,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "exchange/service/infra label"
+   ],
+   "row_label": "reported, not proven"
   }
  ]
 }

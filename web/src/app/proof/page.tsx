@@ -156,8 +156,18 @@ function BacktestPanel({ bt }: { bt: Backtest }) {
   );
 }
 
+// AUDIT 24 fields the backend adds per row (hound/proof/scan.py finalize()).
+type ScanRow = Scan["cases"][number] & { capped_usdt?: number; cap_basis?: string; row_label?: string; excluded_reasons?: string[] };
+const SCAN_ROWS_SHOWN = 8;
+
 function ScanPanel({ scan }: { scan: Scan }) {
   const computed = scan.status !== "not_computed" && scan.addresses > 0;
+  // Only rows the backend counted in the headline, at their capped amount, so the list adds up to it.
+  const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen);
+  const amount = (c: ScanRow) => c.capped_usdt ?? c.balance_usdt;
+  const shown = rows.slice(0, SCAN_ROWS_SHOWN);
+  const rest = rows.slice(SCAN_ROWS_SHOWN);
+  const uncapped = rows.some((c) => c.cap_basis?.startsWith("balance"));
   return (
     <section className={styles.panel} aria-labelledby="scan-h">
       <p className="eyebrow">This weekend · {scan.label}</p>
@@ -172,21 +182,26 @@ function ScanPanel({ scan }: { scan: Scan }) {
             <Stat n={usdt(scan.usdt_unfrozen)} label={`in ${scan.addresses_unfrozen} addresses not yet frozen`} />
           </div>
           <ul className={styles.scanList}>
-            {scan.cases
-              .filter((c) => !c.is_frozen)
-              .slice(0, 8)
-              .map((c) => (
-                // Live addresses are truncated everywhere public (BRIEF §0).
-                <li key={c.address}>
-                  <span className="mono">{shortAddr(c.address)}</span>
-                  <span>{usdt(c.balance_usdt)}</span>
-                  {c.category && <span className={styles.cat}>{c.category}</span>}
-                </li>
-              ))}
+            {shown.map((c) => (
+              // Live addresses are truncated everywhere public (BRIEF §0).
+              <li key={c.address}>
+                <span className="mono">{shortAddr(c.address)}</span>
+                <span>{usdt(amount(c))}</span>
+                {c.category && <span className={styles.cat}>{c.category}</span>}
+                <span className={styles.cat}>{c.row_label ?? scan.label}</span>
+              </li>
+            ))}
+            {rest.length > 0 && (
+              <li key="rest">
+                <span>+{rest.length} more</span>
+                <span>{usdt(rest.reduce((s, c) => s + amount(c), 0))}</span>
+              </li>
+            )}
           </ul>
           <p className={styles.note}>
             {scan.addresses} reported addresses scanned{scan.scanned_at ? ` on ${scan.scanned_at.slice(0, 10)}` : ""}
-            {scan.already_frozen ? `, ${scan.already_frozen} already frozen` : ""}. Sent through Chainabuse / IC3 only, never published.
+            {scan.already_frozen ? `, ${scan.already_frozen} already frozen` : ""}. Each row counts min(balance, claimed losses)
+            {uncapped ? " (this run stored no claimed-loss figures, so rows count at balance)" : ""}; exchange, service and infra wallets and wallets with over 2,000 transfers are left out. Sent through Chainabuse / IC3 only, never published.
           </p>
         </>
       )}

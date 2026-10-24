@@ -124,3 +124,4 @@ def group_by_address(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for l in r["claimed_losses"]:
             if l.get("asset") == "USD" and l.get("amount"):
                 cur["claimed_losses_usd"] += float(l["amount"])
+    return list(agg.values())
