@@ -13,6 +13,8 @@ One laptop runs the demo (Ishaan's). Hard deadline for Devpost is **9:00 AM**; b
 - [ ] Live case `live-mindchain-binance` traces offline from Jinka's bundle (`data/cases_live/`, gitignored, must be on the demo laptop). No gold ending this weekend: CK's hunt found no clean holding wallet.
 - [ ] Charger, power strip, backup video on the desktop.
 
+- [ ] After `make demo` is up: trace the replay, then open BOTH packets once (victim + detective). Claude takes about 15 s and 25 s; after that they are cached per trace and open instantly. Expect `source: claude`.
+
 ## Start (2 terminals, in this order)
 ```
 # terminal 1, repo root: backend on the committed snapshot
