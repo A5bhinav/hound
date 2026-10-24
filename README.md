@@ -7,10 +7,15 @@ Hound takes one scam victim's report, follows the stolen USDT to where it sits, 
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cp ../.env.example ../.env   # fill in your keys; never commit .env
-.venv/bin/uvicorn hound.api:app --reload --port 8000
-.venv/bin/python -m pytest -q
+cd ..
+make dev             # uvicorn with reload on :8000
+make test            # pytest
+make demo            # HOUND_CACHE_MODE=prefer_cache (AUDIT N5): cache hits served, misses go live; no reload
+make schemas-check   # validate examples/*.case.json and *.trace.json against schemas/
 ```
-Python 3.12 or newer.
+Python 3.12 or newer. The Makefile uses `backend/.venv`; override with `make test PY=/path/to/python`.
+
+Tracing is async: `POST /cases/{id}/trace` returns `{trace_id, case_id, status: "running"}` at once. Poll `GET /traces/{trace_id}` (or `GET /cases/{id}/trace`) every second until `status` is `done` or `partial` (the full Trace) or `error` (with `error`). While running, the poll body is `{trace_id, case_id, status, started_at, elapsed_s, audit_log_so_far}`, where `audit_log_so_far` is the engine's audit log up to now, so the UI can animate hops live. The POST `trace_id` is a job handle: the finished Trace carries the engine's own `trace_id` plus `job_id` (the handle), so key client state on `job_id`. `other_payers` is skipped (empty) when the trace fell back to fixture data, and a failure in it leaves the trace intact with `other_payers: []`. On `error`, `error` holds only the exception type and a fixed message; full detail (secrets redacted) is in the server log. The packet always uses the latest successful trace, so a failed re-trace never takes it away. A running job older than the engine deadline plus 30 s counts as hung and a new POST replaces it. `POST /demo/reset` clears in-memory cases, traces and jobs and reloads the curated cases.
 
 ## Layout
 | Path | What | Owner |

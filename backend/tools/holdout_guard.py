@@ -13,7 +13,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-from .cache import REPO_ROOT
+from hound.chain.cache import REPO_ROOT
 
 HOLDOUT_FILE = REPO_ROOT / "data" / "doj" / "holdout.json"
 

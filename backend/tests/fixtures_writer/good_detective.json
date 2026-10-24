@@ -1,0 +1,7 @@
+{
+ "paragraphs": [
+  "Trace method: {{trace.method.accounting|raw}}, maximum {{trace.method.max_hops|int}} hops, data cut off at block {{trace.method.as_of_block|raw}}.",
+  "Attributed victim funds of {{derived.traced_usdt|usdt}} were followed across {{derived.wallet_count|int}} wallets and {{derived.tx_count|int}} transactions. Endpoint {{derived.endpoints.0.address|raw}} received {{derived.endpoints.0.victim_funds|usdt}} and was frozen on {{derived.endpoints.0.frozen_at|date}}.",
+  "For context only, DOJ case {{doj.case_number|raw}} covered {{doj.victims_context|raw}}. The A-1 and B-1 labels follow the complaint chart (\u00b6 references)."
+ ]
+}

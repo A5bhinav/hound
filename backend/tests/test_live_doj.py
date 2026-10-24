@@ -112,3 +112,14 @@ def test_replay_runs_offline_from_the_committed_snapshot(tmp_path, monkeypatch):
     assert trace["status"] == "done"
     assert {A7, A9} <= {e["address"] for e in trace["endpoints"]}
     assert chain.stats()["api_calls"] == 0
+
+
+def test_no_holdout_address_gets_a_metadata_exchange_label():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+    import holdout_guard
+    full, _ = holdout_guard.load()
+    for a in sorted(full):
+        lb = chain.label("ethereum", a)
+        assert not (lb and lb["kind"] in ("exchange_hot", "exchange_deposit", "infra")), (a, lb)

@@ -51,22 +51,42 @@ def _new_entry(ch: str, addr: str) -> dict[str, Any]:
 
 
 def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
-    """Up to 4 hops back from `addr` toward a victim, following the largest attributed inflow."""
+    """How victim money reached `addr`: the shortest chain of trace edges from a victim (<= 4 hops),
+    preferring larger attributed amounts. Falls back to the largest inflows when no victim is
+    within 4 hops."""
     by_to: dict[str, list[dict]] = {}
     for e in trace.get("edges", []):
         by_to.setdefault(e.get("to"), []).append(e)
+    amt = lambda e: float(e.get("attributed_amount") or e.get("amount") or 0)
+
+    def hop(e):
+        return {"from": e["from"], "to": e["to"], "amount": e.get("attributed_amount", e.get("amount")),
+                "tx_hashes": (e.get("tx_hashes") or [])[:2], "confidence": e.get("confidence"),
+                "method": e.get("method")}
+
+    frontier: list[tuple[str, list[dict]]] = [(addr, [])]
+    seen = {addr}
+    for _ in range(MAX_PATH_HOPS):
+        nxt = []
+        for cur, path in frontier:
+            for e in sorted(by_to.get(cur, []), key=lambda x: -amt(x)):
+                if e["from"] in victims:
+                    return [hop(x) for x in reversed(path + [e])]
+                if e["from"] not in seen:
+                    seen.add(e["from"])
+                    nxt.append((e["from"], path + [e]))
+        frontier = nxt
+    # no victim within reach: largest inflow chain
     path, cur, seen = [], addr, {addr}
-    while cur not in victims and len(path) < MAX_PATH_HOPS:
+    while len(path) < MAX_PATH_HOPS:
         ins = [e for e in by_to.get(cur, []) if e.get("from") not in seen]
         if not ins:
             break
-        e = max(ins, key=lambda x: float(x.get("attributed_amount") or x.get("amount") or 0))
-        path.append({"from": e["from"], "to": e["to"], "amount": e.get("attributed_amount", e.get("amount")),
-                     "tx_hashes": (e.get("tx_hashes") or [])[:2], "confidence": e.get("confidence"),
-                     "method": e.get("method")})
+        e = max(ins, key=amt)
+        path.append(e)
         cur = e["from"]
         seen.add(cur)
-    return list(reversed(path))
+    return [hop(x) for x in reversed(path)]
 
 
 class Watchlist:

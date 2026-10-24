@@ -12,8 +12,8 @@ label(chain, address) -> {"name", "kind", "source", ...extras} | None, first mat
                   exchange_hot | exchange_deposit | service (mixer, bridge, deposit_funder, ...)
 extras: "exchange" (venue name), "category" (for service / infra)
 
-Holdout guard: the static files refuse to load if any DOJ holdout address is in them, and
-holdout addresses never get a metadata label.
+Data files are built by `python backend/tools/build_labels.py` into data/labels/.
+The build and the tests fail if any DOJ holdout address is in them (never checked at runtime).
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import logging
 import os
 from functools import lru_cache
 
-from . import cache, holdout
+from . import cache
 from .cache import REPO_ROOT
 from .net import ChainAPIError, count_cache_hit, request_json
 
@@ -51,7 +51,7 @@ def _load() -> dict[str, dict]:
     if eth_file.exists():
         db["static"]["ethereum"].update(json.loads(eth_file.read_text())["labels"])
     else:
-        log.error("missing %s: run `python -m hound.chain.build_labels`; no static exchange labels", eth_file)
+        log.error("missing %s: run `python backend/tools/build_labels.py`; no exchange labels loaded", eth_file)
     tron_file = LABEL_DIR / "tron.json"
     if tron_file.exists():
         db["static"]["tron"].update(json.loads(tron_file.read_text())["labels"])
@@ -71,19 +71,13 @@ def _load() -> dict[str, dict]:
     for chain, extra in MANUAL.items():
         db["static"][chain].update({_key(chain, a): v for a, v in extra.items()})
 
-    every = set(db["static"]["ethereum"]) | set(db["infra"]["ethereum"]) | db["sanctioned"]["ethereum"]
-    bad = [f"{a} ({holdout.matches(a)})" for a in every if holdout.matches(a)]
-    if bad:
-        raise holdout.HoldoutViolation(
-            f"label DB contains DOJ holdout addresses, the DOJ match would not be blind: {bad[:10]}")
+    # The DOJ holdout is enforced at build time (backend/tools/build_labels.py) and by
+    # tests/test_chain_unit.py, never at runtime: engine-side code must not read the DOJ files.
     return db
 
 
 def _metadata(address: str) -> dict | None:
     """Exchange label from the Blockscout metadata service, or None. Never raises."""
-    if holdout.matches(address):
-        return None
-
     def fetch():
         body = request_json("GET", METADATA_URL, params={"addresses": address, "chainId": 1}, retries=2)
         if not isinstance(body, dict) or "addresses" not in body:
@@ -149,4 +143,3 @@ def all_labels(chain: str) -> dict[str, dict]:
 
 def reload() -> None:
     _load.cache_clear()
-    holdout.load.cache_clear()

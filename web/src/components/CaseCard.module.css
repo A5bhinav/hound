@@ -9,6 +9,10 @@
   font-size: 2rem;
 }
 
+.alias[data-long] {
+  font-size: 1.35rem;
+}
+
 .sent {
   font-family: var(--font-m);
   font-size: 1.05rem;
@@ -23,8 +27,23 @@
   font-size: 0.88rem;
 }
 
+.fact {
+  display: contents;
+}
+
 .facts dt {
   color: var(--ink-2);
+}
+
+.replay {
+  margin: -0.5rem 0 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.sends {
+  max-height: 14rem;
+  overflow-y: auto;
 }
 
 .facts dd {
