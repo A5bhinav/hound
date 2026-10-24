@@ -324,3 +324,22 @@ def test_etherscan_is_primary_only_when_keyed(monkeypatch):
     monkeypatch.delenv("ETHERSCAN_API_KEY")
     eth.get_transfers(A7, token="USDT")
     assert seen == ["es", "rpc"]
+
+
+def test_live_bundle_is_read_after_the_public_snapshot(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    live = "0x" + "2f1cf3dd" + "0" * 32
+    cache.cached("eth_rpc", {"method": "live"}, lambda: {"to": live}, ttl=None)
+    bundle = tmp_path / "cases_live" / "cache"
+    monkeypatch.setattr(cache, "LIVE_SNAPSHOT_DIR", bundle)
+    (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([live]))
+    with pytest.raises(RuntimeError, match="live-case"):  # never into the public snapshot
+        snapshot.pack(out_dir=tmp_path / "public")
+    assert snapshot.pack(out_dir=bundle, allow_live=True)["eth_rpc"] >= 1
+    with pytest.raises(ValueError):  # allow_live only for the private bundle
+        snapshot.pack(out_dir=tmp_path / "public", allow_live=True)
+    cache.reload_snapshot()
+    monkeypatch.setenv("HOUND_CACHE_DIR", str(tmp_path / "fresh-laptop"))
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    assert cache.cached("eth_rpc", {"method": "live"}, lambda: pytest.fail("network"), ttl=None) == {"to": live}
+    cache.reload_snapshot()

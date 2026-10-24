@@ -5,6 +5,9 @@
     .venv/bin/python -m hound.chain.warm_live --name gold1 --to 0xSCAM 0xTX1 0xTX2 ...
     # or re-warm an existing case file
     .venv/bin/python -m hound.chain.warm_live data/cases_live/gold1.case.json
+    # --bundle: crawl into a fresh cache (Etherscan and RPC sources both) and pack it into the
+    # private data/cases_live/cache/ so the demo laptop runs the case offline. AirDrop the whole
+    # data/cases_live/ folder; never commit it.
 
 Writes data/cases_live/<name>.case.json (gitignored), runs the real trace in
 HOUND_CACHE_MODE=record into cache/ (gitignored), prints the ending (holding balances, frozen
@@ -66,8 +69,15 @@ def main(argv: list[str]) -> int:
     ap.add_argument("items", nargs="+", help="tx hashes, or one existing .case.json")
     ap.add_argument("--name", help="case name (required with tx hashes)")
     ap.add_argument("--to", help="keep only sends to this address (the reported scam address)")
+    ap.add_argument("--bundle", action="store_true", help="pack a private offline bundle into data/cases_live/cache/")
     a = ap.parse_args(argv)
     os.environ.setdefault("HOUND_CACHE_MODE", "record")
+    if a.bundle:
+        import shutil
+        warm = REPO_ROOT / "cache" / "live_warm"
+        shutil.rmtree(warm, ignore_errors=True)
+        os.environ["HOUND_CACHE_DIR"] = str(warm)
+        os.environ["HOUND_SNAPSHOT"] = "0"  # a complete crawl: nothing served from snapshots
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
 
     from . import get_balance, stats
@@ -93,6 +103,12 @@ def main(argv: list[str]) -> int:
           f"{sum(s['amount'] for s in case['sends'] if s['token'] == 'ETH'):,.4f} ETH -> saved {path}")
 
     t0 = time.time()
+    if a.bundle and os.environ.get("ETHERSCAN_API_KEY"):
+        # warm the RPC path too, so the bundle works on a laptop with or without an Etherscan key
+        os.environ["HOUND_ETH_TRANSFER_SOURCES"] = "rpc,blockscout_v2,blockscout"
+        tr_rpc = run_trace(case)
+        payments(tr_rpc)
+        os.environ.pop("HOUND_ETH_TRANSFER_SOURCES")
     trace = run_trace(case)
     remember_live({n["address"] for n in trace["nodes"]} | {s["from"] for s in case["sends"]}
                   | {s["to"] for s in case["sends"]})
@@ -118,6 +134,11 @@ def main(argv: list[str]) -> int:
         r = check("ethereum", addr, watch=wl)
         print(f"  check {short(addr)}: {r['decision']} ({r['evidence']['rule_fired']})")
     print("VERDICT:", "gold ending available" if gold else "no unfrozen holding endpoint: fallback ending")
+    if a.bundle:
+        from .cache import LIVE_SNAPSHOT_DIR
+        from .snapshot import pack
+        counts = pack(cache_root=cache_dir(), out_dir=LIVE_SNAPSHOT_DIR, merge=True, allow_live=True)
+        print(f"bundle: {counts} -> {LIVE_SNAPSHOT_DIR} (gitignored). AirDrop data/cases_live/ to the demo laptop.")
     return 0
 
 
