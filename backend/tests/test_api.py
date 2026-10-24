@@ -749,3 +749,14 @@ def test_invalid_curated_case_is_skipped_not_fatal(tmp_path, monkeypatch):
     assert "broken.case.json" in client.get("/health").json()["skipped_cases"]
     monkeypatch.undo()
     api._load_curated()
+
+
+def test_intake_router_is_included_when_present(monkeypatch):
+    import types as _types
+    from fastapi import APIRouter, FastAPI
+    r = APIRouter()
+    r.add_api_route("/intake/active", lambda: {"ok": True}, methods=["GET"])
+    monkeypatch.setitem(sys.modules, "hound.intake.routes", _types.SimpleNamespace(router=r))
+    target = FastAPI()
+    api._include_intake_router(target)
+    assert "/intake/active" in api._route_paths(target.routes)

@@ -639,6 +639,27 @@ def _route_paths(routes):
     return paths
 
 
+def _include_intake_router(target=None):
+    """Include hound.intake.routes.router (CK's /intake/* routes) if the module exists.
+
+    Same contract as the watch router: missing module = no intake routes (logged); a module that
+    exists but is broken or has no APIRouter named router fails loudly at startup.
+    """
+    target = target or app
+    try:
+        mod = importlib.import_module("hound.intake.routes")
+    except ModuleNotFoundError as e:
+        if e.name != "hound.intake.routes":
+            raise
+        log.warning("hound.intake.routes not found: /intake/* routes are not served (web /intake and /c/[code] will 404)")
+        return
+    router = getattr(mod, "router", None)
+    if not isinstance(router, APIRouter):
+        raise RuntimeError("hound.intake.routes exists but has no FastAPI APIRouter named 'router'")
+    target.include_router(router)
+    log.info("included hound.intake.routes.router (%d routes)", len(router.routes))
+
+
 def _include_watch_router(target=None):
     """Include hound.watch.routes.router (Jinka's /check) if it exists; else serve the fallback GET /check.
 
@@ -663,6 +684,7 @@ def _include_watch_router(target=None):
 
 
 _include_watch_router()
+_include_intake_router()
 
 
 @app.get("/proof/scoreboard")
