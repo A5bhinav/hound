@@ -2,6 +2,8 @@
 .main {
   max-width: 1600px;
   margin: 0 auto;
+  /* The tilted card leans past its column; clip it so the page never scrolls sideways (1440, 1536 at 125%). */
+  overflow-x: clip;
   padding: 0 var(--gutter) 5rem;
 }
 

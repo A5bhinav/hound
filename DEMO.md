@@ -44,7 +44,7 @@ Viewers on the public host see live cases with shortened addresses and no story 
 ## The 2-minute click path, in story order (script: PITCH.md)
 The top bar is the story: **1 Report → 2 Follow the money → 3 Stop the next victim → 4 Police report**, then **Proof it works**. Say the step name as you click it.
 
-The site has two front doors. **http://localhost:3000** is the victim's: Call us / Report online / Check my case, plus what Hound will never ask for. Show it first for 5 seconds ("this is what a victim sees"), then click **How Hound works** for the tour.
+The site has two front doors. **http://localhost:3000** is the victim's: the hero (Report a scam / How it works) and, one scroll down, Call us / Report online / Check my case and what Hound will never ask for. Show it for 5 seconds ("this is what a victim sees", scroll once), then click **How it works** in the top bar for the tour.
 
 0. **How Hound works** (http://localhost:3000/how): read the one-liner, point at the 4 "How it works" cards. Click **Walk through it: 1 Report →**.
 1. **Report.** The page shows the Hound number, (681) 275-5467. Live: a judge calls it, tells a short story, gets a text with a link, and sends the payment screenshot (or types A.H.'s first tx hash). The case card fills in; then **Next: Follow the money →**. No call possible: **Play a sample call** (labelled as a replay), or **Next: Follow the money →** at the bottom.

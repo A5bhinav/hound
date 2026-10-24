@@ -28,7 +28,7 @@ export default function HeroMockup() {
               <Icon d="M6 3h6l3 3v11H6zM9 9h4M9 12h4" /> Report
             </li>
             <li>
-              <Icon d="M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm0 3v3l2 2" /> Updates
+              <Icon d="M5 6l2 2 4-4M5 12l2 2 4-4M13 7h3M13 13h3" /> What to do
             </li>
           </ul>
         </aside>
