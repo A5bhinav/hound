@@ -8,11 +8,11 @@ A7 = "0xa1770ead287dc8e91631a7a323390d5b744f0021"
 
 def test_end_to_end_on_stubs():
     cases = client.get("/cases").json()
-    assert any(c["case_id"] == "ohnd-replay-001" for c in cases)
-    trace = client.post("/cases/ohnd-replay-001/trace").json()
+    assert any(c["case_id"] == "ohnd-replay-ah" for c in cases)
+    trace = client.post("/cases/ohnd-replay-ah/trace").json()
     assert {e["address"] for e in trace["endpoints"]} >= {A7}
     assert client.get(f"/traces/{trace['trace_id']}").status_code == 200
-    packet = client.get("/cases/ohnd-replay-001/packet?audience=detective").json()
+    packet = client.get("/cases/ohnd-replay-ah/packet?audience=detective").json()
     assert A7 in packet["packet"]["text"]
     assert client.get(f"/check?chain=ethereum&address={A7}").json()["decision"] == "hold"
 
