@@ -1,0 +1,82 @@
+{
+ "decision": "hold",
+ "reasons": [
+  "part of a scam cluster traced from 1 victim case",
+  "a victim paid straight into this address",
+  "path confidence 1.00, 20,061.62 USDT of victim money attributed"
+ ],
+ "evidence": {
+  "chain": "ethereum",
+  "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+  "watchlist_version": "bd4b16ed4ca5",
+  "rule_fired": "trace_node_high_confidence",
+  "case_ids": [
+   "ohnd-replay-ah"
+  ],
+  "label": null,
+  "path": [
+   {
+    "from": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+    "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "amount": 176676.500801,
+    "tx_hashes": [
+     "0x0b6a66840fd80ae6e6c41f5a98ed5e433eb92dcb179a60fdff2eeb5aabe98190",
+     "0xd627004630fd1cb53538c12ca0fa2d539bcc4ea7376e6452ef8f796aef8c02da"
+    ],
+    "confidence": 0.9,
+    "method": "consolidation"
+   },
+   {
+    "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "to": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+    "amount": 398606.01411,
+    "tx_hashes": [
+     "0x286e45c4a7835270c37e0447ac144226efce5d7f1794cfaa204af2307ebdc42c",
+     "0x892132a90431b6f4be338319a40abdc810b3d96cba9cab7a413d506469449576"
+    ],
+    "confidence": 1.0,
+    "method": "direct"
+   },
+   {
+    "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+    "to": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "amount": 184723.454431,
+    "tx_hashes": [
+     "0x7bcdaa3bce9d98ec26497417919e8fe439f93a737b288b0d4879fe785620bc01",
+     "0x3e56bc58629bedbf1685a17e343e77bff791a61ea44d6bb2053a1a1a22957009"
+    ],
+    "confidence": 1.0,
+    "method": "direct"
+   },
+   {
+    "from": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+    "amount": 20002.0,
+    "tx_hashes": [
+     "0xb3aedf8c67236d516ea9e2b6e2ec02dca19be226dcb1c057da93e0beed58015b",
+     "0x08b64e913ded2575707c40cc408d3c50e18fa36be5ab5781fed492753ae4e941"
+    ],
+    "confidence": 1.0,
+    "method": "direct"
+   }
+  ],
+  "victim_inflow_usdt": 20061.622764,
+  "frozen": {
+   "is_frozen": false,
+   "frozen_at": null,
+   "freeze_tx": null,
+   "status": "none",
+   "frozen_block": null,
+   "checked_onchain": false
+  },
+  "chainabuse": {
+   "report_count": 0,
+   "latest_at": null
+  },
+  "expires_at": "2026-10-25T05:09:39Z",
+  "disclaimer": "reported, not proven",
+  "elapsed_ms": 5.6
+ },
+ "confidence": 1.0,
+ "_note": "GET /check?chain=ethereum&address=0xcf9bbfa762ef5a84ba3d25350de941a6db485027 on the DOJ replay watchlist (examples/ohnd_replay.trace.json)"
+}

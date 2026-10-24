@@ -29,8 +29,13 @@ def _offline_chain(request, tmp_path, monkeypatch):
     import hound.chain as chain
     from hound import fixture_chain as fc
     monkeypatch.setattr(chain, "get_transfers", fc.get_transfers)
-    monkeypatch.setattr(chain, "freeze_status", lambda c, a, as_of=None: fc.freeze_status(c, a))
+    monkeypatch.setattr(chain, "freeze_status", lambda c, a, as_of=None, **k: fc.freeze_status(c, a))
     monkeypatch.setattr(chain, "get_balance", fc.get_balance)
+    monkeypatch.setattr(chain, "get_native_txs", fc.get_native_txs, raising=False)
+    monkeypatch.setattr(chain, "is_contract", lambda c, a: False)
+    from hound.chain import labels
+    real_label = labels.label
+    monkeypatch.setattr(labels, "label", lambda c, a, network=True: real_label(c, a, network=False))
     from hound.watch import watchlist
     watchlist.reset()
     yield

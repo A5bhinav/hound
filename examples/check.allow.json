@@ -1,0 +1,32 @@
+{
+ "decision": "allow",
+ "reasons": [
+  "exchange-owned wallet (Binance 14): exchange wallets are never held"
+ ],
+ "evidence": {
+  "chain": "ethereum",
+  "address": "0x28c6c06298d514db089934071355e5743bf21d60",
+  "watchlist_version": "bd4b16ed4ca5",
+  "rule_fired": "exchange",
+  "case_ids": [],
+  "label": {
+   "name": "Binance 14",
+   "kind": "exchange_hot",
+   "source": "etherscan-labels (brianleect, MIT)",
+   "exchange": "Binance"
+  },
+  "path": [],
+  "victim_inflow_usdt": 0.0,
+  "frozen": null,
+  "chainabuse": {
+   "report_count": 0,
+   "latest_at": null
+  },
+  "expires_at": "2026-10-25T05:09:39Z",
+  "disclaimer": "reported, not proven",
+  "exchange": "Binance",
+  "elapsed_ms": 0.0
+ },
+ "confidence": 0.9,
+ "_note": "GET /check?chain=ethereum&address=0x28c6c06298d514db089934071355e5743bf21d60 on the DOJ replay watchlist (examples/ohnd_replay.trace.json)"
+}

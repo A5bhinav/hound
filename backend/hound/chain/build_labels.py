@@ -99,6 +99,11 @@ def _is_deposit(name: str, slug: str) -> bool:
 
 def _classify(slugs: list[str], name: str) -> tuple[str, str | None, str | None] | None:
     """-> (kind, exchange name, category) or None to skip."""
+    if "deposit funder" in name.lower() or "funder" in name.lower().split(":")[-1]:
+        # pays gas into deposit addresses: an exchange-run service, used only as a feature (AUDIT issue 12)
+        exch = _exchange_from_name(name)
+        if exch or any(s in EXCHANGES for s in slugs):
+            return "service", exch, "deposit_funder"
     for s in slugs:
         if s in EXCHANGES:
             if name:

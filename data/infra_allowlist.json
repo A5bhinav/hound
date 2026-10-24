@@ -1,0 +1,129 @@
+{
+ "_meta": {
+  "rule": "Infrastructure: never held, never expanded by the engine (AUDIT issue 12). Each entry's name was checked against the cited public source.",
+  "built": "2026-10-24"
+ },
+ "ethereum": {
+  "0xdac17f958d2ee523a2206206994597c13d831ec7": {
+   "name": "Tether: USDT contract",
+   "kind": "infra",
+   "category": "token",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x5754284f345afc66a98fbb0a0afe71e0f007b949": {
+   "name": "Tether: Treasury",
+   "kind": "infra",
+   "category": "issuer",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": {
+   "name": "WETH9",
+   "kind": "infra",
+   "category": "token",
+   "source": "Blockscout verified contract name"
+  },
+  "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": {
+   "name": "Uniswap V2: Router 2",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0xe592427a0aece92de3edee1f18e0157c05861564": {
+   "name": "Uniswap V3: Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": {
+   "name": "Uniswap V3: Router 2",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0xef1c6e67703c7bd7107eed8303fbe6ec2554bf6b": {
+   "name": "Uniswap: Old Universal Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad": {
+   "name": "Uniswap: Universal Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x66a9893cc07d91d95644aedd05d03f95e1dba8af": {
+   "name": "Uniswap: Universal Router (v4)",
+   "kind": "infra",
+   "category": "router",
+   "source": "Blockscout verified contract name"
+  },
+  "0x1111111254fb6c44bac0bed2854e76f90643097d": {
+   "name": "1inch v4: Aggregation Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x1111111254eeb25477b68fb85ed929f73a960582": {
+   "name": "1inch v5: Aggregation Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x111111125421ca6dc452d289314280a0f8842a65": {
+   "name": "1inch v6: AggregationRouterV6",
+   "kind": "infra",
+   "category": "router",
+   "source": "Blockscout verified contract name"
+  },
+  "0xdef1c0ded9bec7f1a1670819833240f027b25eff": {
+   "name": "0x: Exchange Proxy",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x881d40237659c251811cec9c364ef91dc08d300c": {
+   "name": "MetaMask: Swap Router",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x6131b5fae19ea4f9d964eac0408e4408b66337b5": {
+   "name": "KyberSwap: Meta Aggregation Router v2",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x9008d19f58aabd9ed0d60971565aa8510560ab41": {
+   "name": "CoW Protocol: GPv2Settlement",
+   "kind": "infra",
+   "category": "router",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x40ec5b33f54e0e8a33a975908c5ba1c14e5bbbdf": {
+   "name": "Polygon (Matic): ERC20 Bridge",
+   "kind": "infra",
+   "category": "bridge",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0xa3a7b6f88361f48403514059f1f16c8e78d60eec": {
+   "name": "Arbitrum One: L1 ERC20 Gateway",
+   "kind": "infra",
+   "category": "bridge",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x99c9fc46f92e8a1c0dec1b1747d010903e884be1": {
+   "name": "Optimism: Gateway (L1StandardBridge)",
+   "kind": "infra",
+   "category": "bridge",
+   "source": "etherscan-labels (brianleect) name"
+  },
+  "0x3154cf16ccdb4c6d922629664174b904d80f2c35": {
+   "name": "Base: L1StandardBridge",
+   "kind": "infra",
+   "category": "bridge",
+   "source": "Blockscout verified contract name (proxy to L1StandardBridge)"
+  }
+ },
+ "tron": {}
+}

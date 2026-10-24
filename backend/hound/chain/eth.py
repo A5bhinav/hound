@@ -178,6 +178,9 @@ def explorer(params: dict, ttl: Any = RECENT_TTL, sources: list[str] | None = No
 
 # ---------------------------------------------------------------- JSON-RPC
 
+TOO_BIG_MARKER = "__hound_range_too_big__"
+
+
 class RangeTooBig(ChainAPIError):
     """An RPC refused a log query for its size; split the block range and retry."""
 
@@ -215,11 +218,15 @@ def rpc(method: str, params: list, ttl: Any = RECENT_TTL, urls: list[str] | None
                 errors.append(str(e))
                 log.warning("rpc %s %s failed: %s", url, method, e)
         if size_errors and size_errors == len(errors):
-            raise RangeTooBig(" | ".join(errors))
+            # remembered, so cached / readonly replays split the range the same way
+            return {TOO_BIG_MARKER: " | ".join(errors)[:300]}
         raise ChainAPIError(f"every RPC failed for {method}: {' | '.join(errors)}")
 
-    return cache.cached("eth_rpc", {"method": method, "params": params}, fetch=fetch, ttl=ttl,
-                        on_hit=count_cache_hit, is_empty=lambda r: r == [])
+    out = cache.cached("eth_rpc", {"method": method, "params": params}, fetch=fetch, ttl=ttl,
+                       on_hit=count_cache_hit, is_empty=lambda r: r == [])
+    if isinstance(out, dict) and TOO_BIG_MARKER in out:
+        raise RangeTooBig(out[TOO_BIG_MARKER])
+    return out
 
 
 def _settled_block(head: int) -> int:
@@ -785,3 +792,9 @@ def _native_v1(address: str, source: str) -> list[dict]:
         out.append(_native_row(r["hash"], int(r["transactionIndex"]) if r.get("transactionIndex") else None,
                                r.get("from"), r.get("to"), r.get("value"), fee, r["blockNumber"], int(r["timeStamp"])))
     return out
+
+
+def is_contract(address: str) -> bool:
+    """True if the address has contract code now (eth_getCode, cached forever)."""
+    code = rpc("eth_getCode", [norm(address), "latest"], ttl=None)
+    return bool(code) and code not in ("0x", "0x0")

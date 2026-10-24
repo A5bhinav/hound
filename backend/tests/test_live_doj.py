@@ -93,3 +93,22 @@ def test_native_txs_include_ah_sends_into_a1():
                          for t in txs)
     assert all(t["block"] <= CUTOFF for t in txs)
     assert any(t["to"] == A1 for t in sends)
+
+
+def test_metadata_labels_crypto_com():
+    lb = chain.label("ethereum", "0x6262998ced04146fa42253a5c0af90ca02dfd2a3")
+    assert lb["kind"] == "exchange_hot" and lb["source"] == "blockscout_metadata"
+
+
+def test_replay_runs_offline_from_the_committed_snapshot(tmp_path, monkeypatch):
+    """A fresh clone (empty cache/) replays the DOJ case with zero network calls."""
+    import json
+    from hound.chain.cache import REPO_ROOT
+    from hound.engine.trace import run_trace
+    monkeypatch.setenv("HOUND_CACHE_DIR", str(tmp_path / "empty"))
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    chain.reset_stats()
+    trace = run_trace(json.loads((REPO_ROOT / "examples" / "ohnd_replay.case.json").read_text()))
+    assert trace["status"] == "done"
+    assert {A7, A9} <= {e["address"] for e in trace["endpoints"]}
+    assert chain.stats()["api_calls"] == 0
