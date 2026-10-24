@@ -625,3 +625,9 @@ def test_saves_land_in_order_so_a_reset_is_never_undone(monkeypatch, tmp_path):
     old.join(5)
     resetter.join(5)
     assert _json.loads((tmp_path / "state.json").read_text())["sessions"] == {}
+
+
+def test_voice_names_the_site_when_no_text_was_sent(monkeypatch):
+    monkeypatch.setenv("HOUND_SPOKEN_SITE", "hound help dot vercel dot app")
+    say = client.post("/intake/voice/story", json={"story": {}, "victim": {}}).json()["say"]
+    assert "go to hound help dot vercel dot app" in say and "Check my case" in say

@@ -262,6 +262,12 @@ async def voice_story(request: Request):
     if texted:
         say = (f"I have opened case {spoken}. I just sent a text message with a link to the phone you are calling from. "
                "Stay on the line and I will walk you through it.")
+    elif os.environ.get("HOUND_SPOKEN_SITE"):
+        # e.g. "hound help dot vercel dot app": the site said the way a caller can type it
+        site = os.environ["HOUND_SPOKEN_SITE"].strip()
+        say = (f"I have opened case {spoken}. On your phone or computer, go to {site}, press Check my case, "
+               "and type your case code. Then send a picture of the payment screen, or type in the details. "
+               "Stay on the line and I will walk you through it.")
     else:
         say = (f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, "
                "where you can add a picture of the payment screen or type in the details.")
