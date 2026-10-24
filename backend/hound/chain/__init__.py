@@ -8,9 +8,33 @@ Empty results are retried once and logged. Counters for Trace.stats: stats() / r
 
 from __future__ import annotations
 
-from . import freezes as _freezes
-from . import labels as _labels
-from .cache import CacheMiss
+import os as _os
+from pathlib import Path as _Path
+
+
+def _load_dotenv() -> None:
+    """Read <repo>/.env into os.environ (real env vars win). Never `source .env` in a shell.
+    Skipped when HOUND_NO_DOTENV=1 (the test suite sets it)."""
+    if _os.environ.get("HOUND_NO_DOTENV") == "1":
+        return
+    p = _Path(__file__).resolve().parents[3] / ".env"
+    if not p.is_file():
+        return
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k, v = k.strip(), v.strip().strip('"').strip("'")
+        if k and v and k not in _os.environ:
+            _os.environ[k] = v
+
+
+_load_dotenv()
+
+from . import freezes as _freezes  # noqa: E402  (after .env so adapters see the keys)
+from . import labels as _labels  # noqa: E402
+from .cache import CacheMiss  # noqa: E402
 from .net import ChainAPIError, RateLimited, TooManyTransfers, reset_stats, stats
 
 CHAINS = ("ethereum", "tron")
@@ -67,6 +91,22 @@ def get_native_txs(chain: str, address: str, as_of: int | str | None = None, aft
     return eth.get_native_txs(address, as_of=as_of, after=after)
 
 
+def tx_sends(chain: str, tx_hash: str, to: str | None = None, sender: str | None = None) -> list[dict]:
+    """Case `sends` (schema shape) from a victim's tx hash: ETH value + USDT transfers by the sender."""
+    if chain != "ethereum":
+        raise ValueError(f"tx_sends is only supported on ethereum, not {chain}")
+    from . import eth
+    return eth.tx_sends(tx_hash, to=to, sender=sender)
+
+
+def is_contract(chain: str, address: str) -> bool:
+    """True if `address` is a smart contract (Ethereum; Tron returns False: not supported yet)."""
+    if chain != "ethereum":
+        return False
+    from . import eth
+    return eth.is_contract(address)
+
+
 def get_balance(chain: str, address: str, token: str = "USDT", block: int | None = None) -> float:
     """Whole-token balance; block=None is latest, a block number reads state then (archive RPC).
     Replays should pass case.data_cutoff_block: today's balances leak DOJ's seizure (AUDIT issue 3)."""
@@ -76,11 +116,11 @@ def get_balance(chain: str, address: str, token: str = "USDT", block: int | None
         _adapter(chain).get_balance(address, token=token, block=block)
 
 
-def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> dict:
+def freeze_status(chain: str, address: str, as_of: int | str | None = None, check_onchain: bool = True) -> dict:
     """{"is_frozen", "frozen_at", "freeze_tx", "status": frozen|unfrozen|destroyed|none} (+ destroyed_usdt etc.).
     as_of (block or ISO time) = state at that point, from the event history only."""
     _adapter(chain)
-    return _freezes.freeze_status(chain, address, as_of=as_of)
+    return _freezes.freeze_status(chain, address, as_of=as_of, check_onchain=check_onchain)
 
 
 def freeze_events(chain: str, after: str | None = None, before: str | None = None) -> list[dict]:
@@ -89,14 +129,15 @@ def freeze_events(chain: str, after: str | None = None, before: str | None = Non
     return _freezes.freeze_events(chain, after=after, before=before)
 
 
-def label(chain: str, address: str) -> dict | None:
-    """{"name","kind": exchange_hot|exchange_deposit|ofac|service,"source"} or None."""
-    return _labels.label(chain, address)
+def label(chain: str, address: str, network: bool = True) -> dict | None:
+    """{"name","kind": sanctioned|infra|exchange_hot|exchange_deposit|service,"source", +extras} or None.
+    network=False: local files only (no Blockscout metadata lookup)."""
+    return _labels.label(chain, address, network=network)
 
 
 def is_exchange(chain: str, address: str) -> bool:
     return _labels.is_exchange(chain, address)
 
 
-__all__ = ["get_transfers", "get_native_txs", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
+__all__ = ["get_transfers", "get_native_txs", "is_contract", "tx_sends", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
            "ChainAPIError", "RateLimited", "CacheMiss", "TooManyTransfers", "stats", "reset_stats", "CHAINS"]

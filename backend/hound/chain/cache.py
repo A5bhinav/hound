@@ -15,6 +15,7 @@ HOUND_CACHE_MODE:
                 (tests and the frozen demo)
   prefer_cache  any cached copy regardless of age; a miss goes live (demo "try your own")
 HOUND_OFFLINE=1 is an alias for readonly. HOUND_CACHE_DIR overrides <repo>/cache.
+HOUND_SNAPSHOT=0 ignores the committed snapshot (used while warming it).
 """
 
 from __future__ import annotations
@@ -105,6 +106,8 @@ def read(namespace: str, parts: dict) -> dict | None:
             return json.loads(p.read_text())
         except (OSError, ValueError) as e:
             log.warning("corrupt cache file %s (%s); ignoring it", p, e)
+    if os.environ.get("HOUND_SNAPSHOT", "1") == "0":
+        return None  # warming: the snapshot must not hide what a fresh run fetches
     return _snapshot(namespace).get(key(parts))
 
 

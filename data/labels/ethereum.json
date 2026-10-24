@@ -1,6 +1,6 @@
 {
 "_meta":{
-"built_at":"2026-10-24T04:54:28Z",
+"built_at":"2026-10-24T05:06:03Z",
 "sources":{
 "brianleect":"https://raw.githubusercontent.com/brianleect/etherscan-labels/main/data/etherscan/combined/combinedAccountLabels.json",
 "ofac_eth":"https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.json",
@@ -50,9 +50,10 @@
 },
 "0x0113a6b755fbad36b4249fd63002e2035e401143":{
 "name":"HitBTC: Deposit Funder 3",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HitBTC"
+"exchange":"HitBTC",
+"category":"deposit_funder"
 },
 "0x013ff63e21e8556c1a04aff005ec0912aa955d6a":{
 "name":"Crypto.com: CDCNFT 2",
@@ -110,9 +111,10 @@
 },
 "0x03599a2429871e6be1b154fb9c24691f9d301865":{
 "name":"Bithumb: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Bithumb"
+"exchange":"Bithumb",
+"category":"deposit_funder"
 },
 "0x039b5649a59967e3e936d7471f9c3700100ee1ab":{
 "name":"KuCoin: Old KCS Token",
@@ -182,9 +184,10 @@
 },
 "0x061f7937b7b2bc7596539959804f86538b6368dc":{
 "name":"KuCoin: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"KuCoin"
+"exchange":"KuCoin",
+"category":"deposit_funder"
 },
 "0x062448f804191128d71fc72e10a1d13bd7308e7e":{
 "name":"Deribit 3",
@@ -224,9 +227,10 @@
 },
 "0x07ef60deca209ea0f3f3f08c1ad21a6db5ef9d33":{
 "name":"Huobi: Deposit Funder 5",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HTX (Huobi)"
+"exchange":"HTX (Huobi)",
+"category":"deposit_funder"
 },
 "0x0836222f2b2b24a3f36f98668ed8f0b38d1a872f":{
 "name":"Tornado.Cash: 1,000 USDT",
@@ -242,9 +246,10 @@
 },
 "0x09344477fdc71748216a7b8bbe7f2013b893def8":{
 "name":"AscendEX: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"AscendEX"
+"exchange":"AscendEX",
+"category":"deposit_funder"
 },
 "0x0a869d79a7052c7f1b55a8ebabbea3420f0d1e13":{
 "name":"Kraken 2",
@@ -464,9 +469,10 @@
 },
 "0x15ece0d7de25436bcfcf3d62a9085ddc7838aee9":{
 "name":"Binance: Deposit Funder 3",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Binance"
+"exchange":"Binance",
+"category":"deposit_funder"
 },
 "0x1633d66ca91ce4d81f63ea047b7b19beb92df7f3":{
 "name":"Multichain: Router V7",
@@ -530,9 +536,10 @@
 },
 "0x18916e1a2933cb349145a280473a5de8eb6630cb":{
 "name":"Huobi: Deposit Funder 2",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HTX (Huobi)"
+"exchange":"HTX (Huobi)",
+"category":"deposit_funder"
 },
 "0x19184ab45c40c2920b0e0e31413b9434abd243ed":{
 "name":"Binance 39",
@@ -1118,9 +1125,10 @@
 },
 "0x354e9fa5c6ee7e6092158a8c1b203ccac932d66d":{
 "name":"Nexo: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Nexo"
+"exchange":"Nexo",
+"category":"deposit_funder"
 },
 "0x35da6abcb08f2b6164fe380bb6c47bd8f2304d55":{
 "name":"Coinone: Old Address 1",
@@ -2042,9 +2050,10 @@
 },
 "0x6596da8b65995d5feacff8c2936f0b7a2051b0d0":{
 "name":"Gate.io: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Gate.io"
+"exchange":"Gate.io",
+"category":"deposit_funder"
 },
 "0x659a00c33263d9254fed382de81349426c795bb6":{
 "name":"StarkNet: StarkGate DAI Bridge",
@@ -2354,9 +2363,10 @@
 },
 "0x734ac651dd95a339c633cded410228515f97faff":{
 "name":"ZB.com: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"ZB.com"
+"exchange":"ZB.com",
+"category":"deposit_funder"
 },
 "0x7355efc63ae731f584380a9838292c7046c1e433":{
 "name":"Across Protocol: WETH Bridge Pool",
@@ -2510,9 +2520,10 @@
 },
 "0x7a1ba53c0e2d218df39e76e4efbf0455978cc23e":{
 "name":"Coinone: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Coinone"
+"exchange":"Coinone",
+"category":"deposit_funder"
 },
 "0x7abe0ce388281d2acf297cb089caef3819b13448":{
 "name":"FTX US",
@@ -2768,9 +2779,10 @@
 },
 "0x89fd00b8d2dcee0f40d8699970115bb861241a54":{
 "name":"OKX: Deposit Funder 3",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"OKX"
+"exchange":"OKX",
+"category":"deposit_funder"
 },
 "0x8aabba0077f1565df73e9d15dd3784a2b0033dad":{
 "name":"Huobi: Old Address 22",
@@ -2840,9 +2852,10 @@
 },
 "0x8f80c66c70cbc52009babb04c1cadf9b40109289":{
 "name":"Binance: Deposit Funder 2",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Binance"
+"exchange":"Binance",
+"category":"deposit_funder"
 },
 "0x8f92e7353b180937895e0c5937d616e8ea1a2bb9":{
 "name":"Phala Network: Main Bridge Contract",
@@ -2930,9 +2943,10 @@
 },
 "0x9430801ebaf509ad49202aabc5f5bc6fd8a3daf8":{
 "name":"Binance: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Binance"
+"exchange":"Binance",
+"category":"deposit_funder"
 },
 "0x94a1b5cdb22c43faab4abeb5c74999895464ddaf":{
 "name":"Tornado.Cash: Mixer 1",
@@ -3284,9 +3298,10 @@
 },
 "0xaad8ad7dfa05bc354e011890dd61636842c2cb96":{
 "name":"OKX: Deposit Funder 4",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"OKX"
+"exchange":"OKX",
+"category":"deposit_funder"
 },
 "0xab11204cfeaccffa63c2d23aef2ea9accdb0a0d5":{
 "name":"Poloniex: REP",
@@ -3326,9 +3341,10 @@
 },
 "0xad68942a95fdd56594aa5cf862b358790e37834c":{
 "name":"HitBTC: Deposit Funder 2",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HitBTC"
+"exchange":"HitBTC",
+"category":"deposit_funder"
 },
 "0xadb2b42f6bd96f5c65920b9ac88619dce4166f94":{
 "name":"Huobi 7",
@@ -3356,9 +3372,10 @@
 },
 "0xae45a8240147e6179ec7c9f92c5a18f9a97b3fca":{
 "name":"Crypto.com: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"Crypto.com"
+"exchange":"Crypto.com",
+"category":"deposit_funder"
 },
 "0xae6dc7fed207fb7bf3f406fc197f70607cea618a":{
 "name":"Hop Protocol: Polygon HOP Wrapper",
@@ -3746,9 +3763,10 @@
 },
 "0xc5a93444cc4da6efb9e6fc6e5d3cb55a53b52396":{
 "name":"OKX: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"OKX"
+"exchange":"OKX",
+"category":"deposit_funder"
 },
 "0xc5b611f502a0dcf6c3188fd494061ae29b2baa4f":{
 "name":"Bitstamp 6",
@@ -4112,9 +4130,10 @@
 },
 "0xdb0e89a9b003a28a4055ef772e345e8089987bfd":{
 "name":"Huobi: Deposit Funder 3",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HTX (Huobi)"
+"exchange":"HTX (Huobi)",
+"category":"deposit_funder"
 },
 "0xdb2cad4f306b47c9b35541988c7656f1bb092e15":{
 "name":"Liquid 3",
@@ -4484,9 +4503,10 @@
 },
 "0xf0458aaaf6d49192d3b4711960635d5fa2114e71":{
 "name":"Huobi: Deposit Funder 4",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HTX (Huobi)"
+"exchange":"HTX (Huobi)",
+"category":"deposit_funder"
 },
 "0xf056f435ba0cc4fcd2f1b17e3766549ffc404b94":{
 "name":"Huobi 23",
@@ -4700,9 +4720,10 @@
 },
 "0xfd54078badd5653571726c3370afb127351a6f26":{
 "name":"Huobi: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HTX (Huobi)"
+"exchange":"HTX (Huobi)",
+"category":"deposit_funder"
 },
 "0xfd8610d20aa15b7b2e3be39b396a1bc3516c7144":{
 "name":"Tornado.Cash: 1,000 DAI",
@@ -4718,9 +4739,10 @@
 },
 "0xfdeda15e2922c5ed41fc1fdf36da2fb2623666b3":{
 "name":"HitBTC: Deposit Funder",
-"kind":"exchange_hot",
+"kind":"service",
 "source":"etherscan-labels (brianleect, MIT)",
-"exchange":"HitBTC"
+"exchange":"HitBTC",
+"category":"deposit_funder"
 },
 "0xfe601de9d4295274b9904d5a9ad7069f23ee2b32":{
 "name":"Harmony: LINK Bridge",

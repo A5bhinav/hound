@@ -1,7 +1,7 @@
 {
-  "trace_id": "ohnd-replay-ah-cbc48fd1c3",
+  "trace_id": "ohnd-replay-ah-7836353925",
   "case_id": "ohnd-replay-ah",
-  "created_at": "2026-10-24T04:56:13Z",
+  "created_at": "2026-10-24T05:26:41Z",
   "replay": true,
   "status": "done",
   "source": "engine",
@@ -11,7 +11,7 @@
     "max_branches_per_node": 12,
     "min_amount": 100.0,
     "max_api_calls": 400,
-    "engine_version": "0.3",
+    "engine_version": "0.4",
     "as_of_block": 20170085,
     "freeze_visibility": "hidden",
     "confidence_model": {
@@ -80,7 +80,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 0
+      "depth": 0,
+      "path_confidence": 1.0
     },
     {
       "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
@@ -101,7 +102,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 1
+      "depth": 1,
+      "path_confidence": 1.0
     },
     {
       "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
@@ -122,7 +124,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 1
+      "depth": 1,
+      "path_confidence": 1.0
     },
     {
       "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
@@ -143,7 +146,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 1
+      "depth": 1,
+      "path_confidence": 1.0
     },
     {
       "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
@@ -164,7 +168,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 2
+      "depth": 2,
+      "path_confidence": 1.0
     },
     {
       "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
@@ -185,7 +190,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 2
+      "depth": 2,
+      "path_confidence": 0.9
     },
     {
       "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
@@ -206,7 +212,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 3
+      "depth": 3,
+      "path_confidence": 1.0
     },
     {
       "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
@@ -227,7 +234,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 3
+      "depth": 3,
+      "path_confidence": 1.0
     },
     {
       "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
@@ -248,7 +256,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 3
+      "depth": 3,
+      "path_confidence": 0.9
     },
     {
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
@@ -269,7 +278,8 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 4
+      "depth": 4,
+      "path_confidence": 0.9
     },
     {
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
@@ -290,7 +300,30 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 4
+      "depth": 4,
+      "path_confidence": 1.0
+    },
+    {
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "chain": "ethereum",
+      "kind": "holding",
+      "label": null,
+      "label_source": null,
+      "classifier": {
+        "kind": "unknown",
+        "confidence": 0.5,
+        "reasons": [
+          "no exchange-like pattern"
+        ]
+      },
+      "balance_usdt": null,
+      "frozen": {
+        "is_frozen": true,
+        "frozen_at": "2024-06-25T17:07:23Z",
+        "freeze_tx": "0xa76529e1aa4576206a8c4c5fab2b136d94f24768b957dd7809de41bf9f55f4a5"
+      },
+      "depth": 5,
+      "path_confidence": 1.0
     },
     {
       "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
@@ -305,13 +338,14 @@
           "no exchange-like pattern"
         ]
       },
-      "balance_usdt": 0.0,
+      "balance_usdt": 949999.0,
       "frozen": {
         "is_frozen": true,
         "frozen_at": "2024-06-21T14:53:11Z",
         "freeze_tx": "0x5b124d778136157b2f9e27e5fc6179780598288a9f36be7bd558301068f48b7a"
       },
-      "depth": 5
+      "depth": 5,
+      "path_confidence": 1.0
     },
     {
       "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
@@ -332,7 +366,8 @@
         "frozen_at": "2024-06-21T14:51:11Z",
         "freeze_tx": "0x547c5335f4887c8b06ef4f1eec7726404ad6c23ce8a9f794cd14d3e4d21da776"
       },
-      "depth": 5
+      "depth": 5,
+      "path_confidence": 1.0
     },
     {
       "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
@@ -353,95 +388,26 @@
         "frozen_at": null,
         "freeze_tx": null
       },
-      "depth": 5
+      "depth": 5,
+      "path_confidence": 0.9
     }
   ],
   "edges": [
     {
       "from": "0xd95da710ca21c985799a168109db702044be2cd4",
-      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-      "token": "ETH",
-      "amount": 26.618573196,
-      "attributed_amount": 26.618573196,
-      "attributed_by_seed": {
-        "s6": 26.618573196
-      },
-      "tx_hashes": [
-        "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
-      ],
-      "first_time": "2024-05-21T01:14:11Z",
-      "last_time": "2024-05-21T01:14:11Z",
-      "hop": 1,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0xd95da710ca21c985799a168109db702044be2cd4",
-      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-      "token": "ETH",
-      "amount": 33.004190307,
-      "attributed_amount": 33.004190307,
-      "attributed_by_seed": {
-        "s5": 33.004190307
-      },
-      "tx_hashes": [
-        "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029"
-      ],
-      "first_time": "2024-05-17T02:03:23Z",
-      "last_time": "2024-05-17T02:03:23Z",
-      "hop": 1,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0xd95da710ca21c985799a168109db702044be2cd4",
-      "to": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
-      "token": "ETH",
-      "amount": 15.08,
-      "attributed_amount": 15.08,
-      "attributed_by_seed": {
-        "s4": 15.08
-      },
-      "tx_hashes": [
-        "0x638cfc893b851ec6524542275a3a4eef75e453fd270ad6ce07a4f3321e74fde4"
-      ],
-      "first_time": "2024-04-30T02:09:35Z",
-      "last_time": "2024-04-30T02:09:35Z",
-      "hop": 1,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0xd95da710ca21c985799a168109db702044be2cd4",
-      "to": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
-      "token": "ETH",
-      "amount": 15.265363175,
-      "attributed_amount": 15.265363175,
-      "attributed_by_seed": {
-        "s3": 15.265363175
-      },
-      "tx_hashes": [
-        "0xe235b29e26540a3184627a0d2ecd3e60bebefc3f53d6c22a2e5f37b96ea50b12"
-      ],
-      "first_time": "2024-04-23T21:29:47Z",
-      "last_time": "2024-04-23T21:29:47Z",
-      "hop": 1,
-      "confidence": 1.0,
-      "method": "direct"
-    },
-    {
-      "from": "0xd95da710ca21c985799a168109db702044be2cd4",
       "to": "0xa327e6cfdd29022a530950079877861636f4dbb8",
       "token": "ETH",
-      "amount": 16.142294625,
-      "attributed_amount": 16.142294625,
+      "amount": 24.538073324,
+      "attributed_amount": 24.538073324,
       "attributed_by_seed": {
+        "s1": 8.395778699,
         "s2": 16.142294625
       },
       "tx_hashes": [
+        "0x39f5908eff18078de843427f245a8e3be6d64914241265ed2e3e893948741adc",
         "0xe95cc581e567558ef87503f2fe9d5135fb3b03023186a95395aefcab9e202d30"
       ],
-      "first_time": "2024-04-19T02:05:47Z",
+      "first_time": "2024-04-02T02:27:23Z",
       "last_time": "2024-04-19T02:05:47Z",
       "hop": 1,
       "confidence": 1.0,
@@ -449,18 +415,40 @@
     },
     {
       "from": "0xd95da710ca21c985799a168109db702044be2cd4",
-      "to": "0xa327e6cfdd29022a530950079877861636f4dbb8",
+      "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "token": "ETH",
-      "amount": 8.395778699,
-      "attributed_amount": 8.395778699,
+      "amount": 59.622763503,
+      "attributed_amount": 59.622763503,
       "attributed_by_seed": {
-        "s1": 8.395778699
+        "s5": 33.004190307,
+        "s6": 26.618573196
       },
       "tx_hashes": [
-        "0x39f5908eff18078de843427f245a8e3be6d64914241265ed2e3e893948741adc"
+        "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029",
+        "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
       ],
-      "first_time": "2024-04-02T02:27:23Z",
-      "last_time": "2024-04-02T02:27:23Z",
+      "first_time": "2024-05-17T02:03:23Z",
+      "last_time": "2024-05-21T01:14:11Z",
+      "hop": 1,
+      "confidence": 1.0,
+      "method": "direct"
+    },
+    {
+      "from": "0xd95da710ca21c985799a168109db702044be2cd4",
+      "to": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
+      "token": "ETH",
+      "amount": 30.345363175,
+      "attributed_amount": 30.345363175,
+      "attributed_by_seed": {
+        "s3": 15.265363175,
+        "s4": 15.08
+      },
+      "tx_hashes": [
+        "0xe235b29e26540a3184627a0d2ecd3e60bebefc3f53d6c22a2e5f37b96ea50b12",
+        "0x638cfc893b851ec6524542275a3a4eef75e453fd270ad6ce07a4f3321e74fde4"
+      ],
+      "first_time": "2024-04-23T21:29:47Z",
+      "last_time": "2024-04-30T02:09:35Z",
       "hop": 1,
       "confidence": 1.0,
       "method": "direct"
@@ -488,7 +476,7 @@
       ],
       "first_time": "2024-05-16T02:33:59Z",
       "last_time": "2024-06-25T05:58:35Z",
-      "hop": 1,
+      "hop": 5,
       "confidence": 1.0,
       "method": "direct"
     },
@@ -512,7 +500,7 @@
       ],
       "first_time": "2024-03-27T06:12:47Z",
       "last_time": "2024-04-17T07:03:11Z",
-      "hop": 1,
+      "hop": 4,
       "confidence": 1.0,
       "method": "direct"
     },
@@ -530,7 +518,7 @@
       ],
       "first_time": "2024-05-31T03:19:23Z",
       "last_time": "2024-05-31T03:19:23Z",
-      "hop": 2,
+      "hop": 5,
       "confidence": 0.9,
       "method": "consolidation"
     },
@@ -556,7 +544,7 @@
       ],
       "first_time": "2024-05-15T10:23:35Z",
       "last_time": "2024-06-25T05:51:35Z",
-      "hop": 2,
+      "hop": 4,
       "confidence": 0.9,
       "method": "consolidation"
     },
@@ -704,7 +692,7 @@
       ],
       "first_time": "2024-05-14T13:27:11Z",
       "last_time": "2024-06-25T15:14:35Z",
-      "hop": 2,
+      "hop": 6,
       "confidence": 0.9,
       "method": "consolidation"
     },
@@ -1076,6 +1064,30 @@
     },
     {
       "from": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "to": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "token": "USDT",
+      "amount": 1349999.0,
+      "attributed_amount": 12077.779779,
+      "attributed_by_seed": {
+        "s6": 12077.779779
+      },
+      "tx_hashes": [
+        "0x8f58e22a7d2befa66e96484e39014ab49eb745ea3508c0bc2a094e7f76033da8",
+        "0x822ade1d93c1d9a47b717f271e7e0b5d93f66e6d05e2e39439aa6040e6d0025a",
+        "0x7b5b3c35a867bb1d7a3be005731ed2a4515e69febd0889ea3a59963d17f66493",
+        "0xe42ef31c263016fbf6f8da789d4b8c05db498b16442fac0ec2a4f090d8757a9d",
+        "0x5a1cfb016549bc7a1c8d0bea5bdcb21684591fbbf988bee75bdb36f9de15bf16",
+        "0x595ba2151e63d0ae9dbe5cbdccc4005ed39766ac2db0a761c66af094816934c8",
+        "0x5275ccd23a1629403fc6b9d8561eef205f38ade7af791526f9fede53a8211b21"
+      ],
+      "first_time": "2024-05-30T16:34:47Z",
+      "last_time": "2024-06-24T16:09:59Z",
+      "hop": 5,
+      "confidence": 1.0,
+      "method": "direct"
+    },
+    {
+      "from": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
       "to": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
       "token": "USDT",
       "amount": 3820000.0,
@@ -1158,7 +1170,7 @@
       ],
       "first_time": "2024-05-15T16:50:23Z",
       "last_time": "2024-05-15T16:50:23Z",
-      "hop": 5,
+      "hop": 6,
       "confidence": 1.0,
       "method": "direct"
     }
@@ -1177,7 +1189,31 @@
         "s5": 101352.431358,
         "s6": 88378.568763
       },
-      "balance_usdt": 0.0,
+      "balance_usdt": 949999.0,
+      "freezable": false,
+      "exchange": null
+    },
+    {
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "reason": "holding",
+      "victim_inflow": 12077.779779,
+      "victim_remaining": 12077.779779,
+      "attributed_by_seed": {
+        "s6": 12077.779779
+      },
+      "balance_usdt": null,
+      "freezable": false,
+      "exchange": null
+    },
+    {
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "reason": "dust",
+      "victim_inflow": 1.0,
+      "victim_remaining": 1.0,
+      "attributed_by_seed": {
+        "s6": 1.0
+      },
+      "balance_usdt": null,
       "freezable": false,
       "exchange": null
     }
@@ -1351,287 +1387,329 @@
     }
   },
   "stats": {
-    "api_calls": 19,
+    "api_calls": 20,
     "cache_hits": 0,
     "empty_results": 0,
     "elapsed_ms": 10
   },
   "audit_log": [
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "freeze_check",
       "address": null,
       "detail": "replay mode: freezes hidden from the engine, cutoff block 20170085"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": null,
       "detail": "8 same-tx ETH to USDT swaps resolved, 1 unresolved"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "stop",
       "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
       "detail": "swap_unresolved: ETH out in 0xf31944f1c71ee5fcae1640574a8c9fe3a546a0d8d43a123b6d4139b9e9575e23 has no USDT leg in the same tx"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
       "detail": "48 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
       "detail": "unknown (0.50): collects from many senders and sweeps to one wallet that is not a known exchange: could be a scam collection wallet, keep tracing"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "detail": "52 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "detail": "unknown (0.50): collects from many senders and sweeps to one wallet that is not a known exchange: could be a scam collection wallet, keep tracing"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
       "detail": "36 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
       "detail": "unknown (0.50): collects from many senders and sweeps to one wallet that is not a known exchange: could be a scam collection wallet, keep tracing"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0xa327e6cfdd29022a530950079877861636f4dbb8",
       "detail": "77964.53425 victim USDT to 0x212a021291a4a4007bc8892b2176c41204d9c794"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
       "detail": "201809.7799 victim USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0",
       "detail": "97410.391488 victim USDT to 0x212a021291a4a4007bc8892b2176c41204d9c794"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
       "detail": "186 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
       "detail": "176 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
       "detail": "168274.925738 victim USDT to 0x447190fc07d5d9d0552077f6942fd3131eb6911a"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x212a021291a4a4007bc8892b2176c41204d9c794",
       "detail": "7100.0 victim USDT to 0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
       "detail": "201809.7799 victim USDT to 0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
       "detail": "27 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
       "detail": "106 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
       "detail": "69 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
       "detail": "7100.0 victim USDT to 0xa327e6cfdd29022a530950079877861636f4dbb8"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
       "detail": "175374.925738 victim USDT to 0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
       "detail": "114727.454431 victim USDT to 0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
       "detail": "87082.325469 victim USDT to 0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
       "detail": "77 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
       "detail": "93 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
       "detail": "114725.454431 victim USDT to 0xdf6fa72c71577c3a3209db202d4815021f0ed53f"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
       "detail": "20002.0 victim USDT to 0xcf9bbfa762ef5a84ba3d25350de941a6db485027"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
       "detail": "214756.331715 victim USDT to 0xa1770ead287dc8e91631a7a323390d5b744f0021"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
       "detail": "47702.919492 victim USDT to 0xafd770d8898a0e323c607fe91358345e7b2378a5"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
       "detail": "25 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
       "detail": "13 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
       "detail": "unknown (0.50): no exchange-like pattern"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "fetch",
       "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
       "detail": "140 transfers (full history up to block 20170085)"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "classify",
       "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
       "detail": "unknown (0.50): collects from many senders and sweeps to one wallet that is not a known exchange: could be a scam collection wallet, keep tracing"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
+      "step": "hop",
+      "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+      "detail": "5.0 victim USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
+      "step": "hop",
+      "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+      "detail": "12077.779779 victim USDT to 0x4e5cda8f0d772ac57e947545192a0657ad47abb5"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
+      "step": "hop",
+      "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+      "detail": "11960.04637 victim USDT to 0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
+      "step": "hop",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "12072.779779 victim USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0xafd770d8898a0e323c607fe91358345e7b2378a5",
       "detail": "47702.919492 victim USDT to 0xa1770ead287dc8e91631a7a323390d5b744f0021"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
       "step": "hop",
       "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
       "detail": "176676.500801 victim USDT to 0x78366b2f6c5321ac30629c078120385ae2da1a06"
     },
     {
-      "t": "2026-10-24T04:56:13Z",
+      "t": "2026-10-24T05:26:41Z",
+      "step": "fetch",
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "detail": "8 transfers (full history up to block 20170085)"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
+      "step": "classify",
+      "address": "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+      "detail": "unknown (0.50): no exchange-like pattern"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
       "step": "stop",
       "address": null,
-      "detail": "no new victim-funded addresses after hop 5"
+      "detail": "no new victim-funded addresses after hop 6"
+    },
+    {
+      "t": "2026-10-24T05:26:41Z",
+      "step": "skip_branch",
+      "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+      "detail": "1 branches, 1.0 USDT not followed (dust)"
     }
   ]
 }

@@ -28,6 +28,7 @@ log = logging.getLogger("hound.watch.other_payers")
 
 REPLAY_AFTER_DAYS = 90  # a trace whose last edge is older than this is a historical replay
 MAX_SWAP_LAYER_SENDERS = 20
+MAX_ENTRY_PAYMENTS = 200  # more inbound payments than this in the window: a service, not a pass-through
 MIN_USDT = 100.0
 MIN_ETH = 0.03  # ~100 USD; there is no price feed, so this is a fixed stand-in (stated in each row)
 EXCHANGE_KINDS = ("exchange_hot", "exchange_deposit")
@@ -45,11 +46,20 @@ def _skip_fetch(ch: str, address: str) -> str | None:
     lb = chain.label(ch, address)
     if lb:
         return f"labelled {lb['kind']} ({lb['name']}): never fetched"
+    try:
+        if chain.is_contract(ch, address):
+            return "a smart contract (router / RFQ / service), not a person's pass-through"
+    except chain.ChainAPIError as e:
+        log.warning("is_contract failed for %s: %s", address, e)
     return None
 
 
 def _fetch(ch: str, address: str, start: int, end: int, token: str) -> list[dict]:
     try:
+        if token == "ETH":
+            return [{"from": t["from"], "to": t["to"], "amount": int(t["amount_wei"]) / 1e18, "token": "ETH",
+                     "time": t["time"], "tx_hash": t["tx_hash"]}
+                    for t in chain.get_native_txs(ch, address, as_of=iso(end), after=iso(start))]
         return chain.get_transfers(ch, address, token=token, after=iso(start), as_of=iso(end))
     except chain.TooManyTransfers:
         log.warning("%s is high-volume; not used for other payers", address)
@@ -72,6 +82,7 @@ def entry_layer(trace: dict, start: int, end: int) -> list[str]:
         for t in _fetch(ch, a, start, end, "USDT"):
             if t["to"] == a and t["from"] not in known and t["amount"] >= MIN_USDT:
                 senders[t["from"]] = senders.get(t["from"], 0.0) + t["amount"]
+    senders = {s: v for s, v in senders.items() if not _skip_fetch(ch, s)}
     extra = sorted(senders, key=lambda s: -senders[s])[:MAX_SWAP_LAYER_SENDERS]
     if len(senders) > MAX_SWAP_LAYER_SENDERS:
         log.info("first-swap layer has %d outside senders; capped at %d", len(senders), MAX_SWAP_LAYER_SENDERS)
@@ -91,6 +102,7 @@ def payments(trace: dict, window_days: int = 7, as_of: str | None = None) -> lis
             log.info("entry %s skipped: %s", entry, why)
             continue
         native = "ETH" if ch == "ethereum" else None
+        entry_rows: list[dict[str, Any]] = []
         for token, minimum in (("USDT", MIN_USDT), (native, MIN_ETH)):
             if token is None:
                 continue
@@ -99,13 +111,18 @@ def payments(trace: dict, window_days: int = 7, as_of: str | None = None) -> lis
                     continue
                 lb = chain.label(ch, t["from"])
                 exch = (lb.get("exchange") or lb["name"]) if lb and lb["kind"] in EXCHANGE_KINDS else None
-                rows.append({
+                entry_rows.append({
                     "tx_hash": t["tx_hash"], "entry_address": entry, "source_exchange": exch,
                     "amount": round(t["amount"], 6), "token": t["token"], "time": t["time"], "from": t["from"],
                     "chain": ch, "window_days": window_days, "window_end": iso(end), "replay": replay,
                     "confidence": 0.7 if exch else 0.6,
                     "threshold": f">= {minimum} {token}" + (" (fixed stand-in for ~100 USD)" if token == "ETH" else ""),
                 })
+        if len(entry_rows) > MAX_ENTRY_PAYMENTS:
+            log.warning("entry %s has %d inbound payments in %d days: high-volume, not counted",
+                        entry, len(entry_rows), window_days)
+            continue
+        rows.extend(entry_rows)
     rows.sort(key=lambda r: (r["time"], r["tx_hash"]))
     if not rows:
         log.warning("no other-payer payments into the entry layer in %d days to %s", window_days, iso(end))

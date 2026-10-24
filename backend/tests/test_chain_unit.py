@@ -166,8 +166,8 @@ def test_known_labels():
     assert labels.label("ethereum", "0x28C6c06298d514Db089934071355E5743bf21d60")["kind"] == "exchange_hot"
     assert labels.is_exchange("ethereum", "0x28c6c06298d514db089934071355e5743bf21d60")
     torn = labels.label("ethereum", "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf")
-    assert torn["kind"] in ("ofac", "service")
-    assert labels.label("ethereum", A7) is None
+    assert torn["kind"] in ("sanctioned", "service")
+    assert labels.label("ethereum", A7, network=False) is None
 
 
 # ------------------------------------------------------------------ cache modes + snapshot
@@ -231,3 +231,55 @@ def test_rate_limit_body_with_http_200_raises_and_caches_nothing(monkeypatch):
     with pytest.raises(net.ChainAPIError):
         eth.explorer(params, sources=["blockscout"])
     assert cache.read("eth_v1", {"source": "blockscout", **params}) is None
+
+
+def test_infra_and_sanctioned_kinds():
+    labels.reload()
+    ur = labels.label("ethereum", "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD", network=False)
+    assert ur["kind"] == "infra"
+    assert labels.label("ethereum", eth.USDT, network=False)["kind"] == "infra"
+    assert labels.label("ethereum", "0x7f367cc41522ce07553e823bf3be79a889debe1b", network=False)["kind"] == "sanctioned"
+
+
+def test_range_too_big_is_remembered_for_readonly_replays(monkeypatch):
+    calls = []
+
+    def too_big(url, method, params):
+        calls.append(url)
+        raise eth.RangeTooBig("query returned more than 10000 results")
+
+    monkeypatch.setattr(eth, "_rpc_once", too_big)
+    flt = [{"address": eth.USDT, "fromBlock": "0x1", "toBlock": "0x2"}]
+    with pytest.raises(eth.RangeTooBig):
+        eth.rpc("eth_getLogs", flt, ttl=None, urls=["https://a.test"])
+    monkeypatch.setenv("HOUND_CACHE_MODE", "readonly")
+    with pytest.raises(eth.RangeTooBig):  # not CacheMiss: the split is replayed offline
+        eth.rpc("eth_getLogs", flt, ttl=None, urls=["https://a.test"])
+    assert len(calls) == 1
+
+
+def test_snapshot_refuses_live_case_addresses(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    live = "0x" + "7830c87c" + "0" * 25 + "fa86f43"
+    cache.cached("eth_rpc", {"method": "z"}, lambda: {"to": live}, ttl=None)
+    (cache.cache_dir()).mkdir(parents=True, exist_ok=True)
+    (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([live]))
+    with pytest.raises(RuntimeError, match="live-case"):
+        snapshot.pack(out_dir=tmp_path / "snap")
+
+
+def test_tx_sends_rejects_bad_hash():
+    with pytest.raises(ValueError):
+        eth.tx_sends("0x1234")
+
+
+def test_rpc_errors_never_include_url_paths(monkeypatch):
+    _mock_client(monkeypatch, lambda req: httpx.Response(200, json={"jsonrpc": "2.0", "id": 1,
+                                                                    "error": {"message": "boom"}}))
+    with pytest.raises(net.ChainAPIError) as ei:
+        eth._rpc_once("https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123", "eth_call", [])
+    assert "SECRETKEY123" not in str(ei.value)
+    _mock_client(monkeypatch, lambda req: httpx.Response(503, text="down"))
+    with pytest.raises(net.ChainAPIError) as ei:
+        net.request_json("POST", "https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123", retries=0)
+    assert "SECRETKEY123" not in str(ei.value)

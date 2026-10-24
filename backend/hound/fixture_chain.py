@@ -57,10 +57,18 @@ def label(chain, address):
     return None  # holdout: no DOJ labels, and the fixture has no exchange labels
 
 
-def freeze_status(chain, address):
+def freeze_status(chain, address, as_of=None):
+    """as_of: a block (read as the time of the last fixture transfer at or before it) or an ISO time."""
     f = _freezes().get(address)
+    if f and as_of is not None:
+        if isinstance(as_of, int):
+            as_of = max((t["time"] for t in _all() if t["block"] <= as_of), default="")
+        if f[0] > as_of:
+            f = None
     return {"is_frozen": bool(f), "frozen_at": f[0] if f else None, "freeze_tx": f[1] if f else None}
 
 
-def get_balance(chain, address, token="USDT"):
-    return 0.0  # the frozen USDT was burned and reissued to law enforcement in Nov 2024
+def get_balance(chain, address, token="USDT", block=None):
+    # Today's balance: the frozen USDT was burned and reissued to law enforcement in Nov 2024.
+    # The engine never calls this in a replay; it computes the cutoff balance from the history.
+    return 0.0

@@ -1,6 +1,6 @@
 {
  "_meta": {
-  "built_at": "2026-10-24T04:54:28Z",
+  "built_at": "2026-10-24T05:06:03Z",
   "sources": {
    "ofac_eth": "https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_ETH.json",
    "ofac_usdt": "https://raw.githubusercontent.com/0xB10C/ofac-sanctioned-digital-currency-addresses/lists/sanctioned_addresses_USDT.json",
