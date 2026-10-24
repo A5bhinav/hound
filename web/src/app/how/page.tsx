@@ -32,7 +32,7 @@ function sentLine(c: CaseSummary | Case) {
 }
 
 const HOW = [
-  { title: "Report", href: "/intake", points: ["Victim calls the hotline", "Gets a text link", "Uploads a payment screenshot"] },
+  { title: "Report", href: "/intake", points: ["Victim calls the hotline or reports online", "Hears the website and a case code", "Uploads a payment screenshot"] },
   { title: "Follow the money", href: `/cases/${DEMO_CASE}`, points: ["Every wallet the money passed", "Where it sits now", "Which wallets Tether froze"] },
   { title: "Stop the next victim", href: "/exchange", points: ["Traced wallets go on a warning list", "Exchanges check before a withdrawal", "Hold, warn or allow"] },
   { title: "Police report", href: `/cases/${DEMO_CASE}/packet`, points: ["One page for a detective", "Every transfer, cited", "Who to contact"] },
