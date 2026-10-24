@@ -132,6 +132,7 @@ def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
 
     def hop(e):
         return {"from": e["from"], "to": e["to"], "amount": e.get("attributed_amount", e.get("amount")),
+                "token": e.get("token") or "USDT",  # victim-side hops are ETH: never print them as USDT
                 "tx_hashes": (e.get("tx_hashes") or [])[:2], "confidence": e.get("confidence"),
                 "method": e.get("method")}
 
