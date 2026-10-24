@@ -1,48 +1,48 @@
+/* Victim-facing pages opened from a text message: phone first, one column, no app chrome. */
 .page {
-  max-width: 36rem;
+  max-width: 40rem;
   margin: 0 auto;
-  padding: 1.25rem 1.25rem 3rem;
+  padding: 1rem 1.25rem 3rem;
   min-height: 100vh;
 }
 
 .head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: 0.75rem;
-  margin-bottom: 1.25rem;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.75rem;
   border-bottom: 1px solid var(--rule);
 }
 
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--font-d);
-  font-weight: 400;
-  font-size: 1.6rem;
-  letter-spacing: -0.01em;
-}
-
-.brand::before {
-  content: "";
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 2px;
-  background: var(--red);
-  box-shadow: 0 0 14px rgba(224, 70, 76, 0.6);
-  transform: rotate(45deg);
-}
-
 .code {
+  padding: 0.3rem 0.65rem;
   font-family: var(--font-m);
-  font-size: 1.15rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 .h1 {
-  font-family: var(--font-d);
-  font-weight: 400;
-  font-size: 2.6rem;
-  line-height: 1.05;
   margin: 0 0 1.25rem;
+  font-size: clamp(1.85rem, 7vw, 2.4rem);
+  line-height: 1.1;
+}
+
+.sub {
+  margin: -0.5rem 0 1.5rem;
+  font-size: 1.15rem;
+  color: var(--ink-2);
+}
+
+@media (min-width: 720px) {
+  .page {
+    padding-top: 1.5rem;
+  }
 }

@@ -1,126 +1,109 @@
-.wrap {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem;
-}
-
-.top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  gap: 1rem;
+/* Operator console for step 1: four status tiles, then progress, the case card and the upload link. */
+.tiles {
   margin-bottom: 1rem;
 }
 
-.h1 {
-  font-size: 2.2rem;
+.tile {
+  display: flex;
+  flex-direction: column;
 }
 
-.replay {
-  font: 500 0.9rem var(--font-b);
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--ink);
-  background: var(--paper);
+.tile :global(.label) {
+  margin-bottom: 0.6rem;
+}
+
+.tile :global(.stat-l) {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.phone {
   color: var(--ink);
-  cursor: pointer;
+  white-space: nowrap;
 }
 
-.replay:hover:not(:disabled) {
-  background: var(--ink);
-  color: var(--paper);
+.phone:hover {
+  color: var(--trace);
+  text-decoration: none;
 }
 
-.replay:disabled {
-  opacity: 0.45;
-  cursor: default;
+.code {
+  font-family: var(--font-m);
+  letter-spacing: 0.08em;
 }
 
-.lead {
-  color: var(--ink-2);
+.grid > * {
+  min-width: 0;
 }
 
 .notice {
-  padding: 0.6rem 0.8rem;
-  background: var(--hold-wash);
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1.25rem;
-  align-items: start;
-}
-
-.card,
-.qr {
-  padding: 1.25rem 1.5rem;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-}
-
-.steps {
-  list-style: none;
   margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--hold-wash);
+  border: 1px solid #4a3816;
+  border-radius: var(--radius);
+}
+
+.grid .notice {
+  margin: 1rem 0 0;
+}
+
+.boxTitle {
+  margin: 0 0 0.85rem;
+}
+
+/* Progress: grey ring while pending, green check once done, so progress never reads as an error. */
+.steps {
+  display: grid;
+  margin: 0;
   padding: 0;
+  list-style: none;
+  font-size: 0.95rem;
+  border-top: 1px solid var(--rule);
 }
 
 .steps li {
-  padding: 0.35rem 0 0.35rem 1.6rem;
   position: relative;
-  color: var(--ink-2);
+  padding: 0.7rem 0 0.7rem 1.9rem;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--rule);
 }
 
 .steps li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0.6rem;
-  width: 0.8rem;
-  height: 0.8rem;
-  border: 2px solid var(--dead);
-  border-radius: 50%;
+  top: 50%;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: -0.55rem;
+  border: 2px solid var(--rule-2);
+  border-radius: 4px;
 }
 
 .steps li[data-done] {
   color: var(--ink);
 }
 
-/* A done step gets a green check, so progress never reads as an error. */
 .steps li[data-done]::before {
   content: "✓";
   display: grid;
   place-items: center;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  top: 0.5rem;
-  width: 1rem;
-  height: 1rem;
-  color: var(--fog);
-  border-color: var(--ok);
-  background: var(--ok);
-}
-
-.facts {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.3rem 1rem;
-  margin: 0 0 0.75rem;
+  color: var(--ok);
+  border: 1px solid #1f4a35;
+  background: var(--ok-wash);
 }
 
 .fact {
   display: contents;
 }
 
-.facts dt {
-  color: var(--ink-2);
-}
-
 .facts dd {
-  margin: 0;
+  font-weight: 500;
   animation: fill-in 400ms ease-out;
 }
 
@@ -131,46 +114,75 @@
 }
 
 .summary {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.summary p:last-child {
+  margin: 0;
+  font-size: 0.88rem;
   color: var(--ink-2);
-  font-size: 0.9rem;
 }
 
 .go {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.65rem 1.2rem;
-  background: var(--ink);
-  color: var(--fog);
-  text-decoration: none;
-  font-weight: 600;
-  border-radius: 999px;
+  margin-top: 1rem;
+  width: 100%;
 }
 
-.qr {
-  text-align: center;
+.approved {
+  margin: 0.75rem 0 0;
+  white-space: normal;
 }
 
-.url {
-  font-family: var(--font-m);
-  font-size: 0.85rem;
-  overflow-wrap: anywhere;
-  margin: 0.5rem 0 0;
+.qrBody {
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+}
+
+/* White quiet zone around the code, so any phone camera reads it on a black page. */
+.qrImg {
+  flex: none;
+  width: 168px;
+  height: 168px;
+  padding: 6px;
+  background: var(--white);
+  border-radius: var(--radius);
+}
+
+.qrBody {
+  margin-bottom: 1rem;
 }
 
 .codeBig {
+  margin: 0 0 0.35rem;
   font-family: var(--font-m);
   font-size: 2rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
-  margin: 0.25rem 0 0;
 }
 
-@media (max-width: 700px) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
+.url {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-m);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.sampleNote {
+  margin: 0.85rem 0 0;
+}
+
+@media (max-width: 1200px) {
+  .qrBody {
+    flex-direction: column;
+    align-items: flex-start;
   }
-}
-
-.phone {
-  font-size: 1.15em;
-  white-space: nowrap;
 }

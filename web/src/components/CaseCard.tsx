@@ -62,7 +62,7 @@ export default function CaseCard({
       )}
 
       {facts.length > 0 && (
-        <dl className={styles.facts}>
+        <dl className={`kv ${styles.facts}`}>
           {facts.map(([k, v]) => (
             <div key={k} className={styles.fact}>
               <dt>{k}</dt>
@@ -71,7 +71,12 @@ export default function CaseCard({
           ))}
         </dl>
       )}
-      {c.story?.summary && <p className={styles.summary}>{c.story.summary}</p>}
+      {c.story?.summary && (
+        <div className={styles.summary}>
+          <p className="label">Story</p>
+          <p>{c.story.summary}</p>
+        </div>
+      )}
 
       {sendList.length > 0 && <h3 className={styles.h3}>Sends · {totalText}</h3>}
       <ul className={`${styles.list} ${styles.sends}`}>

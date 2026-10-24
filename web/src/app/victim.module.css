@@ -1,10 +1,4 @@
 /* Victim-facing pages: large type, one action at a time, nothing internal on screen. */
-.main {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 4.5rem 1.5rem 3.5rem;
-  font-size: 1.12rem;
-}
 
 .h1 {
   max-width: 28ch;
@@ -77,50 +71,58 @@
   margin-top: 1.5rem;
 }
 
-.back {
-  margin: 1.5rem 0 2.5rem;
+/* ───────────── Report form ───────────── */
+.reportGrid {
+  align-items: start;
 }
 
-.safe {
-  padding: 1.5rem 1.6rem;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--red);
-  border-radius: 14px;
+.side {
+  display: grid;
+  gap: 1rem;
 }
 
-.safe h2 {
-  margin: 0 0 0.6rem;
-  font-family: var(--font-b);
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--trace);
-}
-
-.safe ul {
-  margin: 0 0 0.75rem;
-  padding-left: 1.2rem;
-}
-
-.safe p {
+.nextList {
+  display: grid;
+  gap: 0.6rem;
   margin: 0;
-  color: var(--ink-2);
-}
-
-.small {
-  margin-top: 2rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: next;
   font-size: 0.95rem;
-  color: var(--ink-3);
 }
 
-/* Report form */
+.nextList li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  counter-increment: next;
+}
+
+.nextList li::before {
+  content: counter(next);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--red);
+  border-radius: 5px;
+}
+
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-  margin-top: 1.5rem;
+  gap: 1.35rem;
+  font-size: 1.1rem;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.35rem 1.25rem;
 }
 
 .field {
@@ -132,36 +134,42 @@
 
 .field span {
   font-weight: 400;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--ink-3);
 }
 
+/* Big fields for a shaky hand: 56 px tall, 18 px type. */
 .field input,
 .field textarea {
+  margin-top: 0.2rem;
+  min-height: 3.5rem;
+  padding: 0.8rem 0.95rem;
   font: inherit;
   font-weight: 400;
-  padding: 0.75rem 0.85rem;
+  color: var(--ink);
+  background: var(--fog);
   border: 1px solid var(--rule-2);
   border-radius: var(--radius);
-  background: var(--paper);
-  color: var(--ink);
 }
 
 .field textarea {
-  min-height: 8rem;
+  min-height: 9rem;
+  resize: vertical;
+}
+
+.formFoot {
+  display: flex;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  flex-wrap: wrap;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
 }
 
 .submit {
-  align-self: flex-start;
-  padding: 0.95rem 1.5rem;
-  font: inherit;
-  font-weight: 700;
-  color: var(--white);
-  background: var(--red);
-  border: 0;
-  border-radius: 999px;
-  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
-  cursor: pointer;
+  min-height: 3.5rem;
+  padding: 0.95rem 1.6rem;
+  font-size: 1.1rem;
 }
 
 .submit:disabled {
@@ -170,29 +178,55 @@
 }
 
 .error {
+  margin: 0;
   padding: 0.85rem 1rem;
-  border-left: 4px solid var(--hold);
-  background: var(--paper);
-}
-
-/* Your case */
-.status {
-  padding: 1.1rem 1.3rem;
-  background: var(--paper);
-  border: 1px solid var(--rule);
+  color: var(--ink);
+  background: var(--hold-wash);
+  border: 1px solid #4a3816;
   border-radius: var(--radius);
 }
 
+@media (max-width: 640px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .submit {
+    width: 100%;
+  }
+}
+
+/* ───────────── Your case ───────────── */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.tiles {
+  margin-bottom: 1rem;
+}
+
+.pending {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
 .found {
-  margin: 1.5rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
+  font-size: 1.02rem;
   border-top: 1px solid var(--rule);
 }
 
 .found li {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 1rem;
   padding: 0.85rem 0;
   border-bottom: 1px solid var(--rule);
@@ -200,45 +234,75 @@
 
 .found strong {
   white-space: nowrap;
+  font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
-.h2 {
-  margin: 2.75rem 0 0.85rem;
-  font-size: 2rem;
-}
-
 .todo {
+  display: grid;
+  gap: 0;
   margin: 0;
-  padding-left: 1.4rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: todo;
+  font-size: 1.02rem;
+  border-top: 1px solid var(--rule);
 }
 
 .todo li {
-  margin-bottom: 0.9rem;
+  position: relative;
+  padding: 0.8rem 0 0.8rem 2.4rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--rule);
+  counter-increment: todo;
+}
+
+.todo li::before {
+  content: counter(todo);
+  position: absolute;
+  left: 0;
+  top: 0.8rem;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--red);
+  border-radius: 5px;
 }
 
 .todo li span {
   display: block;
+  margin-top: 0.2rem;
+  font-weight: 400;
+  font-size: 0.9rem;
   color: var(--ink-2);
 }
 
 .primary {
-  display: inline-block;
-  margin-top: 0.5rem;
-  padding: 0.9rem 1.4rem;
-  font-weight: 700;
-  color: var(--white);
-  background: var(--red);
-  border-radius: 999px;
-  box-shadow: 0 10px 30px -12px rgba(224, 70, 76, 0.7);
-  text-decoration: none;
+  min-height: 3.5rem;
+  font-size: 1.1rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
 .trail {
-  margin-top: 2.5rem;
+  margin-top: 1rem;
 }
 
 .trail summary {
   cursor: pointer;
   font-weight: 700;
+}
+
+.trail[open] summary {
+  margin-bottom: 1rem;
 }

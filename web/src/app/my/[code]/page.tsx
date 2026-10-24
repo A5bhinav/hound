@@ -24,30 +24,75 @@ export default async function MyCase({ params }: PageProps<"/my/[code]">) {
   return (
     <>
       <Bar offline={usingFixtures} />
-      <main className={styles.main}>
-        <p className="eyebrow">Your case · {code}</p>
+      <main className="wrap">
         {!s ? (
           <>
-            <h1 className={styles.h1}>We can&apos;t find that case code</h1>
-            <p className={styles.lede}>
-              Check the six letters and digits, or <Link href="/report">report again</Link>. Codes for a report with no payment
-              picture expire after 2 hours.
-            </p>
+            <header className="page-head">
+              <div>
+                <p className="label">Your case · {code}</p>
+                <h1>We can&apos;t find that case code</h1>
+              </div>
+            </header>
+            <div className="grid g2">
+              <section className="box" aria-labelledby="try-h">
+                <h2 id="try-h" className={styles.boxTitle}>What to try</h2>
+                <ul className="checks">
+                  <li>Check the six letters and digits</li>
+                  <li>
+                    Or <Link href="/report">report again</Link>
+                  </li>
+                  <li>Codes for a report with no payment picture expire after 2 hours</li>
+                </ul>
+              </section>
+              <section className="box box-red" aria-labelledby="never-h">
+                <h2 id="never-h" className={styles.boxTitle}>Hound will never</h2>
+                <ul className="checks no">
+                  <li>Ask you for money, a fee, or a &quot;tax&quot; to release funds</li>
+                  <li>Ask for your passwords, seed phrase, recovery phrase or private keys</li>
+                </ul>
+              </section>
+            </div>
           </>
         ) : s.status === "validated" && s.case_id ? (
           <>
-            <h1 className={styles.h1}>We found your payment</h1>
+            <header className="page-head">
+              <div>
+                <p className="label">Your case · {code}</p>
+                <h1>We found your payment</h1>
+              </div>
+              <span className="badge badge-ok">Payment confirmed</span>
+            </header>
             <VictimCase caseId={s.case_id} code={code} exchangeUsed={s.exchange_used} />
           </>
         ) : (
           <>
-            <h1 className={styles.h1}>{s.status === "validating" ? "We are checking your picture" : "We still need a picture of your payment"}</h1>
-            {s.status === "needs_retake" && s.message && <p className={styles.error}>{s.message}</p>}
-            {s.status !== "validating" && (
-              <Link href={`/c/${code}`} className={styles.primary}>
-                Send a picture of your payment →
-              </Link>
-            )}
+            <header className="page-head">
+              <div>
+                <p className="label">Your case · {code}</p>
+                <h1>{s.status === "validating" ? "We are checking your picture" : "We still need a picture of your payment"}</h1>
+              </div>
+            </header>
+            <div className="grid g2">
+              <section className={`box ${styles.pending}`}>
+                {s.status === "needs_retake" && s.message && <p className={styles.error}>{s.message}</p>}
+                {s.status !== "validating" ? (
+                  <Link href={`/c/${code}`} className={`btn btn-primary btn-lg ${styles.primary}`}>
+                    Send a picture of your payment →
+                  </Link>
+                ) : (
+                  <p className={styles.status} role="status">
+                    <span className="badge badge-hold">Checking</span> Reading your picture now
+                  </p>
+                )}
+              </section>
+              <section className="box box-red" aria-labelledby="never-h">
+                <h2 id="never-h" className={styles.boxTitle}>Hound will never</h2>
+                <ul className="checks no">
+                  <li>Ask you for money, a fee, or a &quot;tax&quot; to release funds</li>
+                  <li>Ask for your passwords, seed phrase, recovery phrase or private keys</li>
+                </ul>
+              </section>
+            </div>
           </>
         )}
       </main>

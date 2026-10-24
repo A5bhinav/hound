@@ -44,28 +44,31 @@ export default function ReportForm() {
     <form className={styles.form} onSubmit={submit}>
       <label className={styles.field}>
         What happened?
-        <span>In your own words: who contacted you, what they promised, and roughly how much you sent.</span>
+        <span>Who contacted you, what they promised, roughly how much you sent.</span>
         <textarea name="summary" required maxLength={1200} />
       </label>
-      <label className={styles.field}>
-        What app or website did you invest through?
-        <span>For example the name of the trading app they told you to use.</span>
-        <input name="scam_app" maxLength={120} />
-      </label>
-      <label className={styles.field}>
-        How did they first contact you?
-        <span>A text, WhatsApp, a dating app, social media…</span>
-        <input name="platform" maxLength={120} />
-      </label>
-      <label className={styles.field}>
-        When did it start?
-        <input name="first_contact" type="month" />
-      </label>
-      <label className={styles.field}>
-        Which exchange did you send the money from?
-        <span>For example Coinbase, Crypto.com, Kraken.</span>
-        <input name="exchange_used" maxLength={80} />
-      </label>
+      <div className={styles.pair}>
+        <label className={styles.field}>
+          What app or website did you invest through?
+          <span>For example the trading app they told you to use.</span>
+          <input name="scam_app" maxLength={120} />
+        </label>
+        <label className={styles.field}>
+          How did they first contact you?
+          <span>A text, WhatsApp, a dating app, social media…</span>
+          <input name="platform" maxLength={120} />
+        </label>
+        <label className={styles.field}>
+          When did it start?
+          <span>Month and year.</span>
+          <input name="first_contact" type="month" />
+        </label>
+        <label className={styles.field}>
+          Which exchange did you send the money from?
+          <span>For example Coinbase, Crypto.com, Kraken.</span>
+          <input name="exchange_used" maxLength={80} />
+        </label>
+      </div>
       <label className={styles.field}>
         Your first name (optional)
         <input name="name" maxLength={40} autoComplete="given-name" />
@@ -75,9 +78,12 @@ export default function ReportForm() {
           {state.message}
         </p>
       )}
-      <button type="submit" className={styles.submit} disabled={state.k === "sending"}>
-        {state.k === "sending" ? "Sending…" : "Next: send a picture of your payment →"}
-      </button>
+      <div className={styles.formFoot}>
+        <button type="submit" className={`btn btn-primary btn-lg ${styles.submit}`} disabled={state.k === "sending"}>
+          {state.k === "sending" ? "Sending…" : "Next: send a picture of your payment →"}
+        </button>
+        <span className="small">Only &quot;What happened?&quot; is required.</span>
+      </div>
     </form>
   );
 }

@@ -1,18 +1,21 @@
+/* Case details: key/value rows, then the sends and every endpoint as ruled rows. */
 .card {
-  padding: 0.5rem 0 0.25rem;
-  max-width: 46rem;
+  padding: 0.75rem 0 0.25rem;
 }
 
 .caseId {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.85rem;
   color: var(--ink-2);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .h3 {
-  margin: 1.25rem 0 0.25rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
 .alias {
@@ -30,10 +33,7 @@
 }
 
 .facts {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
-  margin: 0 0 0.75rem;
+  margin: 0 0 1rem;
   font-size: 0.88rem;
 }
 
@@ -41,14 +41,14 @@
   display: contents;
 }
 
-.facts dt {
-  color: var(--ink-2);
-}
-
 .replay {
-  margin: 0.25rem 0 1rem;
-  font-size: 0.82rem;
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.8rem;
   color: var(--ink-2);
+  background: var(--ice-wash);
+  border: 1px solid #1d3a55;
+  border-radius: var(--radius);
 }
 
 .sends {
@@ -56,30 +56,46 @@
   overflow-y: auto;
 }
 
-.facts dd {
-  margin: 0;
+.summary {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
 }
 
-.summary {
-  font-size: 0.88rem;
+.summary p:last-child {
+  margin: 0;
+  font-size: 0.86rem;
   color: var(--ink-2);
-  margin: 0 0 1.25rem;
 }
 
 .list {
   list-style: none;
-  margin: 0 0 1.25rem;
+  margin: 0 0 1rem;
   padding: 0;
   font-size: 0.88rem;
+  border-bottom: 1px solid var(--rule);
 }
 
 .list li {
   display: flex;
-  flex-direction: column;
-  padding: 0.45rem 0;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.15rem 1rem;
+  padding: 0.5rem 0 0.5rem 0.75rem;
   border-top: 1px solid var(--rule);
+  box-shadow: inset 2px 0 0 var(--rule-2);
 }
 
+.list li > span:first-child {
+  font-weight: 600;
+}
+
+.list li[data-reason="exchange"] { box-shadow: inset 2px 0 0 var(--exchange); }
+.list li[data-reason="holding"] { box-shadow: inset 2px 0 0 var(--hold); }
+.list li[data-reason="frozen"] { box-shadow: inset 2px 0 0 var(--ice); }
 .list li[data-reason="exchange"] > span:first-child { color: var(--exchange); }
 .list li[data-reason="holding"] > span:first-child { color: var(--hold); }
 .list li[data-reason="frozen"] > span:first-child { color: var(--ice-ink); }
@@ -90,10 +106,12 @@
 .meta {
   color: var(--ink-2);
   font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .method {
+  margin: 0;
   font-family: var(--font-m);
   font-size: 0.72rem;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }

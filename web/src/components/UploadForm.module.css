@@ -3,19 +3,48 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   line-height: 1.5;
   /* A 66-character tx hash must wrap on a 390 px phone instead of widening the page. */
   overflow-wrap: anywhere;
 }
 
+/* Three numbered steps in one box: red number chips, one short line each. */
 .steps {
+  display: grid;
   margin: 0;
-  padding-left: 1.6rem;
+  padding: 0.35rem 1.25rem;
+  list-style: none;
+  counter-reset: step;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
 }
 
 .steps li {
-  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 0;
+  counter-increment: step;
+}
+
+.steps li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.steps li::before {
+  content: counter(step);
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--red);
+  border-radius: 6px;
 }
 
 .hidden {
@@ -27,14 +56,26 @@
 }
 
 .cta {
-  min-height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 4.75rem;
   padding: 1rem 1.25rem;
-  font: 600 1.45rem var(--font-b);
-  color: var(--on-trace);
+  font: 700 1.35rem var(--font-b);
+  color: var(--white);
   background: var(--red);
   border: 0;
   border-radius: 12px;
+  text-decoration: none;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.cta:hover:not(:disabled) {
+  color: var(--white);
+  background: var(--red-2);
+  text-decoration: none;
 }
 
 .cta:focus-visible {
@@ -57,7 +98,7 @@
   flex-direction: column;
   gap: 0.3rem;
   margin: 0;
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   border-radius: 10px;
 }
 
@@ -68,14 +109,16 @@
 
 .error {
   background: var(--bad-wash);
-  border: 2px solid var(--exchange);
+  border: 2px solid var(--bad);
 }
 
 .link {
   align-self: flex-start;
   font: inherit;
+  font-size: 1.1rem;
   color: var(--trace);
   text-decoration: underline;
+  text-underline-offset: 0.18em;
   background: none;
   border: 0;
   padding: 0.25rem 0;
@@ -85,45 +128,106 @@
 .typed {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.typed label {
+  font-size: 1.05rem;
 }
 
 .typed textarea {
-  font: 1.2rem var(--font-m);
+  font: 1.15rem var(--font-m);
   padding: 0.75rem;
-  border: 2px solid var(--ink-2);
+  border: 2px solid var(--rule-2);
   border-radius: 10px;
 }
 
 .secondary {
   min-height: 3.5rem;
-  font: 600 1.25rem var(--font-b);
+  font: 600 1.2rem var(--font-b);
   color: var(--ink);
-  background: var(--paper);
-  border: 2px solid var(--ink);
+  background: var(--paper-2);
+  border: 2px solid var(--ink-2);
   border-radius: 10px;
   cursor: pointer;
 }
 
 .secondary:disabled {
   opacity: 0.5;
+  cursor: default;
 }
 
 .small {
-  font-size: 1.1rem;
+  margin: 0;
+  font-size: 1rem;
   color: var(--ink-2);
 }
 
-.done {
-  font-size: 1.3rem;
-  padding: 1.25rem;
-  background: var(--ok-wash);
-  border: 2px solid var(--ok);
+/* The safety promise, always on screen: a red-edged box, never small print. */
+.safe {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  font-size: 1.05rem;
+  color: var(--ink);
+  background: #160d0e;
+  border: 1px solid #4a1a1d;
+  border-radius: 10px;
+}
+
+.done,
+.inactive {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  font-size: 1.2rem;
+  padding: 1.4rem 1.25rem;
   border-radius: 12px;
 }
 
+.done {
+  background: var(--ok-wash);
+  border: 1px solid #1f4a35;
+  box-shadow: inset 0 3px 0 var(--ok);
+}
+
+.inactive {
+  background: var(--paper);
+  border: 1px solid #4a3816;
+  box-shadow: inset 0 3px 0 var(--hold);
+}
+
+.done :global(.checks),
+.inactive :global(.checks) {
+  font-size: 1.1rem;
+}
+
+.keep {
+  padding: 1rem 1.1rem;
+  background: var(--fog);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.keepCode {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-m);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
 .big {
-  margin-top: 0;
-  font-size: 1.7rem;
-  font-weight: 600;
+  margin: 0;
+  font-family: var(--font-d);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }

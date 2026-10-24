@@ -14,7 +14,7 @@ export default function CodeEntry() {
   const ok = CODE.test(code);
   return (
     <form
-      className={styles.form}
+      className={`box ${styles.form}`}
       onSubmit={(e) => {
         e.preventDefault();
         if (ok) router.push(`/my/${code}`);
@@ -36,11 +36,16 @@ export default function CodeEntry() {
         maxLength={8}
         aria-invalid={raw.length > 0 && !ok}
       />
-      <p className={styles.hint}>Six letters or digits. The person on the phone reads it to you twice.</p>
-      <button type="submit" className={styles.go} disabled={!ok}>
+      <ul className={`checks ${styles.hint}`}>
+        <li>Six letters or digits</li>
+        <li>The person on the phone reads it to you twice</li>
+      </ul>
+      <button type="submit" className={`btn btn-primary btn-lg ${styles.go}`} disabled={!ok}>
         Open my case
       </button>
-      <p className={styles.safe}>We will never ask for your password, your PIN, or your recovery words.</p>
+      <p className={styles.safe}>
+        <span className="badge badge-red">Safe</span> We will never ask for your password, your PIN, or your recovery words.
+      </p>
     </form>
   );
 }

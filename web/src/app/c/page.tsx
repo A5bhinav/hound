@@ -1,3 +1,4 @@
+import { HoundMark } from "@/components/Chrome";
 import CodeEntry from "./CodeEntry";
 import styles from "./[code]/upload.module.css";
 
@@ -9,10 +10,13 @@ export default function CodePage() {
   return (
     <main className={styles.page}>
       <header className={styles.head}>
-        <span className={styles.brand}>Hound</span>
+        <span className="wordmark">
+          <HoundMark />
+          Hound
+        </span>
       </header>
       <h1 className={styles.h1}>Check your case</h1>
-      <p>Type the case code you were given on the phone or after reporting online.</p>
+      <p className={styles.sub}>Type the case code from the phone call or your online report.</p>
       <CodeEntry />
     </main>
   );

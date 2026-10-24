@@ -15,9 +15,12 @@ type State =
 /** Unknown or expired code (sessions last 2 hours): plain words, never the raw HTTP error (review F7). */
 export function LinkNotActive() {
   return (
-    <div className={styles.done} role="alert">
+    <div className={styles.inactive} role="alert">
       <p className={styles.big}>This link is not active.</p>
-      <p>It may have expired, or the code may be mistyped. Ask the person on the phone for a new link.</p>
+      <ul className="checks">
+        <li>It may have expired, or the code may be mistyped</li>
+        <li>Ask the person on the phone for a new link</li>
+      </ul>
     </div>
   );
 }
@@ -101,13 +104,18 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
         {heading}
         <div className={styles.done} role="status" aria-live="polite">
           <p className={styles.big}>Thank you. We found your payment.</p>
-          <p>You can tell the person on the phone you&apos;re done. We&apos;ll follow where the money went.</p>
-          <p className={styles.small}>Your case number is {code}. Keep it: it opens your case again.</p>
-          <p>
-            <a href={`/my/${code}`} className={styles.link}>
-              See what we found →
-            </a>
-          </p>
+          <ul className="checks ok">
+            <li>You can tell the person on the phone you&apos;re done</li>
+            <li>We&apos;ll follow where the money went</li>
+          </ul>
+          <div className={styles.keep}>
+            <p className="label">Your case number</p>
+            <p className={styles.keepCode}>{code}</p>
+            <p className={styles.small}>Keep it: it opens your case again.</p>
+          </div>
+          <a href={`/my/${code}`} className={`btn btn-primary btn-lg ${styles.cta}`}>
+            See what we found →
+          </a>
         </div>
       </>
     );
@@ -118,9 +126,9 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
       {heading}
       <div className={styles.wrap}>
         <ol className={styles.steps}>
-          <li>Open the app you used to send the money.</li>
-          <li>Find that payment and take a screenshot of it.</li>
-          <li>Press the big button below and choose that picture.</li>
+          <li>Open the app you used to send the money</li>
+          <li>Find that payment and take a screenshot of it</li>
+          <li>Press the big button below and choose that picture</li>
         </ol>
 
         <input
@@ -172,7 +180,10 @@ export default function UploadForm({ code, heading }: { code: string; heading?: 
           </form>
         )}
 
-        <p className={styles.small}>We will never ask for your password, your PIN, or your recovery words.</p>
+        <p className={styles.safe}>
+          <span className="badge badge-red">Safe</span>
+          <span>We will never ask for your password, your PIN, or your recovery words.</span>
+        </p>
       </div>
     </>
   );

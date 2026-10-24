@@ -1,3 +1,4 @@
+import { HoundMark } from "@/components/Chrome";
 import UploadForm, { LinkNotActive } from "@/components/UploadForm";
 import { intakeCodeActive } from "@/lib/api";
 import styles from "./upload.module.css";
@@ -12,7 +13,10 @@ export default async function UploadPage({ params }: PageProps<"/c/[code]">) {
   return (
     <main className={styles.page}>
       <header className={styles.head}>
-        <span className={styles.brand}>Hound</span>
+        <span className="wordmark">
+          <HoundMark />
+          Hound
+        </span>
         <span className={styles.code}>Case {code}</span>
       </header>
       {active === false ? (

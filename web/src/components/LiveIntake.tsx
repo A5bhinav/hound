@@ -22,6 +22,15 @@ const STEPS: { status: IntakeSession["status"][]; label: string }[] = [
   { status: ["validated"], label: "Send confirmed on chain" },
 ];
 
+/** One or two words per intake status, for the status tile. */
+const STATUS: Record<IntakeSession["status"], string> = {
+  story: "On the call",
+  awaiting_upload: "Awaiting picture",
+  validating: "Checking",
+  needs_retake: "Retake asked",
+  validated: "Confirmed",
+};
+
 /** Polls GET /intake/active (AUDIT §5). Replay plays the same steps from a curated case, no backend involved. */
 export default function LiveIntake({ replayCase, publicBase, phone }: { replayCase: CaseSummary | null; publicBase?: string | null; phone?: string | null }) {
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
@@ -118,54 +127,107 @@ export default function LiveIntake({ replayCase, publicBase, phone }: { replayCa
   }
 
   const s = feed.k === "live" || feed.k === "replay" ? feed.s : null;
+  const done = s ? STEPS.filter((st) => st.status.includes(s.status)).length : 0;
   return (
-    <div className={styles.wrap}>
-      <div className={styles.top}>
+    <main className="wrap">
+      <header className="page-head">
         <div>
           <p className="eyebrow">
             Step 1 of 4 · Report the scam{feed.k === "replay" ? " · replay of a recorded call, not a live one" : ""}
           </p>
-          <h1 className={styles.h1}>{s ? `Case ${s.case_code}` : "Waiting for a victim to call"}</h1>
+          <h1>{s ? `Case ${s.case_code}` : "Waiting for a victim to call"}</h1>
         </div>
         {feed.k === "replay" ? (
-          <button type="button" className={styles.replay} onClick={backToLive}>
+          <button type="button" className="btn btn-lg" onClick={backToLive}>
             Back to live
           </button>
         ) : (
-          <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase}>
+          <button type="button" className="btn btn-primary btn-lg" onClick={replay} disabled={!replayCase}>
             Play a sample call
           </button>
         )}
-      </div>
+      </header>
 
       {feed.k === "unavailable" && (
-        <p className={styles.notice} role="alert">
+        <p className={`box ${styles.notice}`} role="alert">
           {feed.message} Use &quot;Play a sample call&quot; to show the flow.
         </p>
       )}
-      {feed.k === "waiting" && (
-        <p className={styles.lead}>
-          {phone ? (
-            <>
-              Call <strong className={styles.phone}>{formatPhone(phone)}</strong> to report a scam. The case appears here as you talk.
-            </>
-          ) : (
-            "When someone calls the Hound line, their case appears here as they talk."
-          )}
-        </p>
-      )}
 
-      {s && (
-        <div className={styles.grid}>
-          <section className={styles.card} aria-live="polite">
-            <ol className={styles.steps}>
-              {STEPS.map((st) => (
-                <li key={st.label} data-done={st.status.includes(s.status) || undefined}>
-                  {st.label}
-                </li>
-              ))}
-            </ol>
-            <dl className={styles.facts}>
+      <div className={`grid g4 ${styles.tiles}`}>
+        <div className={`box ${styles.tile}`}>
+          <p className="label">Hotline</p>
+          {phone ? (
+            <a href={`tel:${phone}`} className={`stat-n ${styles.phone}`}>
+              {formatPhone(phone)}
+            </a>
+          ) : (
+            <span className="stat-n">Not set</span>
+          )}
+          <span className="stat-l">The case appears here as they talk</span>
+        </div>
+        <div className={`box ${styles.tile}`}>
+          <p className="label">Case code</p>
+          <span className={`stat-n ${s ? styles.code : ""}`}>{s ? s.case_code : "None yet"}</span>
+          <span className="stat-l">Read out to the caller twice</span>
+        </div>
+        <div className={`box ${styles.tile}`}>
+          <p className="label">Status</p>
+          <span className="stat-n">{s ? STATUS[s.status] : feed.k === "unavailable" ? "Offline" : "Waiting"}</span>
+          <span className="stat-l">{done} of {STEPS.length} steps done</span>
+        </div>
+        <div className={`box ${styles.tile}`}>
+          <p className="label">Feed</p>
+          <span className="stat-n">{feed.k === "replay" ? "Sample" : feed.k === "live" ? "Live call" : "Listening"}</span>
+          <span className="stat-l">
+            {feed.k === "replay" ? (
+              <span className="badge badge-hold">Recorded call, not live</span>
+            ) : (
+              <span className="badge badge-ok">Checks every second</span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div className={`grid g3 ${styles.grid}`}>
+        <section className="box" aria-labelledby="progress-h" aria-live="polite">
+          <div className="box-h">
+            <h2 id="progress-h">Intake progress</h2>
+            <span className={`badge ${done === STEPS.length ? "badge-ok" : ""}`}>
+              {done} / {STEPS.length}
+            </span>
+          </div>
+          <ol className={styles.steps}>
+            {STEPS.map((st) => (
+              <li key={st.label} data-done={(s && st.status.includes(s.status)) || undefined}>
+                {st.label}
+              </li>
+            ))}
+          </ol>
+          {s?.status === "needs_retake" && s.message && (
+            <p className={styles.notice} role="alert">
+              Asked for another picture: {s.message}
+            </p>
+          )}
+          {s?.status === "validated" && s.case_id && (
+            <Link href={`/cases/${encodeURIComponent(s.case_id)}`} className={`btn btn-primary btn-lg ${styles.go}`}>
+              Next: Follow the money →
+            </Link>
+          )}
+          {feed.k === "live" && s?.status === "validated" && s.case_id && s.upload_url && (
+            // Operator only (upload_url is null beyond localhost): a validated send proves the payment
+            // exists, not who made it, so a human approves before the case can cause exchange holds.
+            <Approve code={s.case_code} caseId={s.case_id} approved={!!s.approved} />
+          )}
+        </section>
+
+        <section className="box" aria-labelledby="caller-h">
+          <div className="box-h">
+            <h2 id="caller-h">Case card</h2>
+            {s && <span className="badge">{feed.k === "replay" ? "From the recorded call" : "From the call"}</span>}
+          </div>
+          {s ? (
+            <dl className={`kv ${styles.facts}`}>
               <Fact k="Who" v={s.victim?.alias} />
               <Fact k="Age" v={s.victim?.age_band} />
               <Fact k="Sent from" v={s.victim?.exchange_used} />
@@ -173,38 +235,44 @@ export default function LiveIntake({ replayCase, publicBase, phone }: { replayCa
               <Fact k="Contacted on" v={s.story?.platform} />
               <Fact k="First contact" v={s.story?.first_contact} />
             </dl>
-            {s.story?.summary && <p className={styles.summary}>{s.story.summary}</p>}
-            {s.status === "needs_retake" && s.message && (
-              <p className={styles.notice} role="alert">
-                Asked for another picture: {s.message}
-              </p>
-            )}
-            {s.status === "validated" && s.case_id && (
-              <Link href={`/cases/${encodeURIComponent(s.case_id)}`} className={styles.go}>
-                Next: Follow the money →
-              </Link>
-            )}
-            {feed.k === "live" && s.status === "validated" && s.case_id && s.upload_url && (
-              // Operator only (upload_url is null beyond localhost): a validated send proves the payment
-              // exists, not who made it, so a human approves before the case can cause exchange holds.
-              <Approve code={s.case_code} caseId={s.case_id} approved={!!s.approved} />
-            )}
+          ) : (
+            <p className="small">Fills in as the caller talks.</p>
+          )}
+          {s?.story?.summary && (
+            <div className={styles.summary}>
+              <p className="label">Story</p>
+              <p>{s.story.summary}</p>
+            </div>
+          )}
+        </section>
+
+        {s && s.status !== "story" ? (
+          s.upload_url ? (
+            <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />
+          ) : (
+            <section className="box">
+              <h2 className={styles.boxTitle}>Upload link</h2>
+              <p className="small">The upload link is shown on the operator&apos;s screen.</p>
+            </section>
+          )
+        ) : (
+          <section className="box" aria-labelledby="upload-h">
+            <h2 id="upload-h" className={styles.boxTitle}>Upload link</h2>
+            <ul className="checks">
+              <li>Appears once the case code is read out</li>
+              <li>The caller opens it on their phone</li>
+              <li>They send a screenshot of the payment</li>
+            </ul>
           </section>
-          {s.status !== "story" &&
-            (s.upload_url ? (
-              <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />
-            ) : (
-              <p className={styles.notice}>The upload link is shown on the operator&apos;s screen.</p>
-            ))}
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </main>
   );
 }
 
 function Approve({ code, caseId, approved }: { code: string; caseId: string; approved: boolean }) {
   const [st, setSt] = useState<{ k: "idle" | "busy" | "done" } | { k: "error"; message: string }>({ k: approved ? "done" : "idle" });
-  if (approved || st.k === "done") return <p className={styles.summary}>Approved: this case can now trigger exchange holds.</p>;
+  if (approved || st.k === "done") return <p className={`badge badge-ok ${styles.approved}`}>Approved: this case can now trigger exchange holds.</p>;
   const go = async () => {
     setSt({ k: "busy" });
     try {
@@ -226,7 +294,7 @@ function Approve({ code, caseId, approved }: { code: string; caseId: string; app
   };
   return (
     <>
-      <button type="button" className={styles.go} onClick={go} disabled={st.k === "busy"}>
+      <button type="button" className={`btn ${styles.go}`} onClick={go} disabled={st.k === "busy"}>
         {st.k === "busy" ? "Approving…" : "Approve: I reviewed this send"}
       </button>
       {st.k === "error" && <p className={styles.notice} role="alert">{st.message}</p>}
@@ -262,17 +330,27 @@ function UploadLink({ url, code, sample }: { url: string; code: string; sample?:
       });
   }, [url]);
   return (
-    <section className={styles.qr}>
-      <p className="eyebrow">Upload link for the caller</p>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- data: URL generated in the browser
-        <img src={src} width={240} height={240} alt={`QR code for ${url}`} />
-      ) : (
-        <p className={styles.notice}>{err ? `QR code failed: ${err}` : "Making the QR code…"}</p>
-      )}
+    <section className={`box ${styles.qr}`} aria-labelledby="upload-h">
+      <div className="box-h">
+        <h2 id="upload-h">Upload link for the caller</h2>
+        {sample && <span className="badge badge-hold">Sample</span>}
+      </div>
+      <div className={styles.qrBody}>
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element -- data: URL generated in the browser
+          <img src={src} width={168} height={168} alt={`QR code for ${url}`} className={styles.qrImg} />
+        ) : (
+          <p className={styles.notice}>{err ? `QR code failed: ${err}` : "Making the QR code…"}</p>
+        )}
+        <div>
+          <p className="label">Case code</p>
+          <p className={styles.codeBig}>{code}</p>
+          <p className="small">Scan to open the upload page</p>
+        </div>
+      </div>
+      <p className="label">Link</p>
       <p className={styles.url}>{url.replace(/^https?:\/\//, "")}</p>
-      <p className={styles.codeBig}>{code}</p>
-      {sample && <p className={styles.url}>Sample link from the recorded intake. It does not take uploads.</p>}
+      {sample && <p className={`small ${styles.sampleNote}`}>Sample link from the recorded intake. It does not take uploads.</p>}
     </section>
   );
 }

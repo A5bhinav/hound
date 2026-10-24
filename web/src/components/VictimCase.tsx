@@ -29,17 +29,23 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
 
   if (state.phase === "running") {
     return (
-      <p className={styles.status} role="status">
-        We are following your money now. This usually takes under a minute; keep this page open.
-      </p>
+      <section className="box" role="status">
+        <p className={styles.status}>
+          <span className="badge badge-hold">Working</span> We are following your money now. Keep this page open.
+        </p>
+        <p className="small">This usually takes under a minute.</p>
+      </section>
     );
   }
   if (state.phase === "error") {
     return (
-      <p className={styles.error} role="alert">
-        We couldn&apos;t finish following your money just now. Please reload this page in a minute. Your case is saved under code{" "}
-        {code}.
-      </p>
+      <section className="box" role="alert">
+        <p className={styles.error}>We couldn&apos;t finish following your money just now.</p>
+        <ul className="checks" style={{ marginTop: "1rem" }}>
+          <li>Please reload this page in a minute</li>
+          <li>Your case is saved under code {code}</li>
+        </ul>
+      </section>
     );
   }
 
@@ -49,79 +55,104 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
   const followed = trace.endpoints.reduce((n, p) => n + (p.victim_inflow ?? 0), 0);
   return (
     <>
-      <h2 className={styles.h2}>What we found</h2>
-      {trace.endpoints.length === 0 ? (
-        <p className={styles.status}>
-          We could not follow this payment anywhere yet. Check that the screenshot shows the right payment, then{" "}
-          <Link href={`/c/${code}`}>send it again</Link>.
-        </p>
-      ) : (
-        <>
-          <p>
-            We followed {usdt(followed)} of your money through {Math.max(0, trace.nodes.length - 1)} wallets. This is where it
-            went. Reported, not proven.
-          </p>
-          <ul className={styles.found}>
-            {s.frozen > 0 && (
-              <li>
-                Frozen by Tether, so it can&apos;t move <strong>{usdt(s.frozen)}</strong>
-              </li>
-            )}
-            {exchanges.map(([name, v]) => (
-              <li key={name}>
-                Reached {name}, which can freeze the account it went to <strong>{usdt(v)}</strong>
-              </li>
-            ))}
-            {s.freezable > 0 && (
-              <li>
-                Sitting in wallets Tether can freeze on a police request <strong>{usdt(s.freezable)}</strong>
-              </li>
-            )}
-            {s.other > 0 && (
-              <li>
-                Moved on where we could not follow it further <strong>{usdt(s.other)}</strong>
-              </li>
-            )}
-          </ul>
-        </>
+      {trace.endpoints.length > 0 && (
+        <div className={`grid g3 ${styles.tiles}`}>
+          <div className="box">
+            <p className="label">Money followed</p>
+            <span className="stat-n">{usdt(followed)}</span>
+          </div>
+          <div className="box">
+            <p className="label">Wallets it passed</p>
+            <span className="stat-n">{Math.max(0, trace.nodes.length - 1)}</span>
+          </div>
+          <div className="box">
+            <p className="label">Your case code</p>
+            <span className="stat-n">{code}</span>
+          </div>
+        </div>
       )}
 
-      <h2 className={styles.h2}>What to do now</h2>
-      <ol className={styles.todo}>
-        <li>
-          Report it to the FBI at <a href="https://www.ic3.gov" target="_blank" rel="noreferrer">ic3.gov</a>.
-          <span>Attach your Hound report below. It lists every wallet and who to contact.</span>
-        </li>
-        <li>
-          Tell {exchangeUsed || "the exchange you sent the money from"} that it was a scam.
-          <span>Give them your case code, {code}, and the report.</span>
-        </li>
-        {(exchanges.length > 0 || s.freezable > 0) && (
-          <li>
-            Ask your local police to send a freeze request.
-            <span>
-              {exchanges.length > 0 ? `${exchanges.map(([n]) => n).join(" and ")} can freeze the account your money reached. ` : ""}
-              {s.freezable > 0 ? "Tether can freeze USDT on one law enforcement request." : ""}
-            </span>
-          </li>
-        )}
-        <li>
-          Stop sending money to the platform, even if it asks for a fee or a tax to release your funds.
-          <span>Don&apos;t pay anyone who offers to recover your money for a fee. That is a second scam.</span>
-        </li>
-        <li>
-          Keep your case code, {code}.
-          <span>
-            It opens this page again: <Link href={`/my/${code}`}>/my/{code}</Link>
-          </span>
-        </li>
-      </ol>
-      <Link href={report} className={styles.primary}>
-        Open your report (print or save as PDF) →
-      </Link>
+      <div className="grid g2">
+        <section className="box" aria-labelledby="found-h">
+          <div className="box-h">
+            <h2 id="found-h">What we found</h2>
+            <span className="badge">Reported, not proven</span>
+          </div>
+          {trace.endpoints.length === 0 ? (
+            <ul className="checks">
+              <li>We could not follow this payment anywhere yet</li>
+              <li>Check that the screenshot shows the right payment</li>
+              <li>
+                Then <Link href={`/c/${code}`}>send it again</Link>
+              </li>
+            </ul>
+          ) : (
+            <ul className={styles.found}>
+              {s.frozen > 0 && (
+                <li>
+                  Frozen by Tether, so it can&apos;t move <strong>{usdt(s.frozen)}</strong>
+                </li>
+              )}
+              {exchanges.map(([name, v]) => (
+                <li key={name}>
+                  Reached {name}, which can freeze the account it went to <strong>{usdt(v)}</strong>
+                </li>
+              ))}
+              {s.freezable > 0 && (
+                <li>
+                  Sitting in wallets Tether can freeze on a police request <strong>{usdt(s.freezable)}</strong>
+                </li>
+              )}
+              {s.other > 0 && (
+                <li>
+                  Moved on where we could not follow it further <strong>{usdt(s.other)}</strong>
+                </li>
+              )}
+            </ul>
+          )}
+          <div className={styles.actions}>
+            <Link href={report} className={`btn btn-primary btn-lg ${styles.primary}`}>
+              Open your report (print or save as PDF) →
+            </Link>
+          </div>
+        </section>
+
+        <section className="box" aria-labelledby="todo-h">
+          <h2 id="todo-h" className={styles.boxTitle}>What to do now</h2>
+          <ol className={styles.todo}>
+            <li>
+              Report it to the FBI at <a href="https://www.ic3.gov" target="_blank" rel="noreferrer">ic3.gov</a>.
+              <span>Attach your Hound report. It lists every wallet and who to contact.</span>
+            </li>
+            <li>
+              Tell {exchangeUsed || "the exchange you sent the money from"} that it was a scam.
+              <span>Give them your case code, {code}, and the report.</span>
+            </li>
+            {(exchanges.length > 0 || s.freezable > 0) && (
+              <li>
+                Ask your local police to send a freeze request.
+                <span>
+                  {exchanges.length > 0 ? `${exchanges.map(([n]) => n).join(" and ")} can freeze the account your money reached. ` : ""}
+                  {s.freezable > 0 ? "Tether can freeze USDT on one law enforcement request." : ""}
+                </span>
+              </li>
+            )}
+            <li>
+              Stop sending money to the platform, even if it asks for a fee or a tax to release your funds.
+              <span>Don&apos;t pay anyone who offers to recover your money for a fee. That is a second scam.</span>
+            </li>
+            <li>
+              Keep your case code, {code}.
+              <span>
+                It opens this page again: <Link href={`/my/${code}`}>/my/{code}</Link>
+              </span>
+            </li>
+          </ol>
+        </section>
+      </div>
 
       {trace.endpoints.length > 0 && (
-        <details className={styles.trail}>
+        <details className={`box ${styles.trail}`}>
           <summary>See the trail your money took</summary>
           <TraceGraph trace={trace} />
         </details>
