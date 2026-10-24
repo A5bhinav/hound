@@ -761,3 +761,61 @@ def test_intake_router_is_included_when_present(monkeypatch):
     target = FastAPI()
     api._include_intake_router(target)
     assert "/intake/active" in api._route_paths(target.routes)
+
+
+# ---- round 3: prewarm after reset, packet cache eviction, writer crash ----
+
+def test_prewarm_retraces_replay_and_writes_both_packets(monkeypatch):
+    calls = []
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "claude"})
+    assert CASE == api.REPLAY_CASE
+    api._prewarm(api._GENERATION)
+    tid = api.LAST_DONE[CASE]
+    assert tid in api.TRACES and calls == ["victim", "detective"]
+    assert {(tid, "victim"), (tid, "detective")} <= set(api.PACKETS)
+    assert client.get(f"/cases/{CASE}/packet?audience=victim").status_code == 200 and len(calls) == 2  # served warm
+
+
+def test_prewarm_drops_results_after_another_reset(monkeypatch):
+    def reset_mid_write(t, c, a):
+        api._GENERATION += 1  # a /demo/reset landed while the packet was being written
+        return {"text": "x", "source": "claude"}
+
+    monkeypatch.setattr(api, "write_case", reset_mid_write)
+    api._prewarm(api._GENERATION)
+    assert not api.PACKETS
+
+
+def test_prewarm_for_an_old_generation_never_writes():
+    api._prewarm(api._GENERATION - 1)
+    assert CASE not in api.LAST_DONE and not api.PACKETS
+
+
+def test_reset_starts_prewarm_in_background(monkeypatch):
+    started = []
+    monkeypatch.delenv("HOUND_NO_PREWARM")
+    monkeypatch.setattr(api, "_prewarm", lambda g: started.append(g))
+    assert client.post("/demo/reset").status_code == 200
+    for _ in range(100):
+        if started:
+            break
+        time.sleep(0.01)
+    assert started == [api._GENERATION]
+
+
+def test_retrace_evicts_stale_packet(monkeypatch):
+    first = _trace_done()
+    api.PACKETS[(first["trace_id"], "detective")] = {"text": "stale", "source": "claude"}
+    api.FALLBACK_PACKETS[(first["trace_id"], "victim")] = ({"text": "stale"}, time.monotonic() + 60)
+    second = _trace_done()
+    assert (second["trace_id"], "detective") not in api.PACKETS
+    assert (second["trace_id"], "victim") not in api.FALLBACK_PACKETS
+
+
+def test_writer_assertion_is_a_plain_500(monkeypatch, caplog):
+    _trace_done()
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: (_ for _ in ()).throw(AssertionError("cite mismatch")))
+    with caplog.at_level("ERROR", logger="hound.api"):
+        r = TestClient(app, raise_server_exceptions=False, client=("127.0.0.1", 50000)).get(f"/cases/{CASE}/packet")
+    assert r.status_code == 500 and "could not be written" in r.json()["detail"]
+    assert "cite mismatch" in caplog.text
