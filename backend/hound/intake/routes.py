@@ -25,6 +25,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from hound.chain import CacheMiss, ChainAPIError
 
@@ -173,13 +174,13 @@ def active(request: Request):
     full = _authorised(request)
     with _LOCK:
         _expire()
+        # Newest session wins (AUDIT H13): a fresh validated case must not be hidden by an older,
+        # abandoned unvalidated one. A validated session stays visible for 2 minutes for the reveal.
         for code in reversed(_ACTIVE):
             s = SESSIONS.get(code)
-            if s and s["status"] != "validated":
-                return _session_view(s) if full else _public_view(s)
-        for code in reversed(_ACTIVE):  # a just-validated session stays visible for the reveal
-            s = SESSIONS.get(code)
-            if s and time.time() - s.get("_validated_at", 0) < 120:
+            if not s:
+                continue
+            if s["status"] != "validated" or time.time() - s.get("_validated_at", 0) < 120:
                 return _session_view(s) if full else _public_view(s)
     return Response(status_code=204)
 
@@ -241,9 +242,10 @@ async def upload(case_code: str, request: Request, file: UploadFile | None = Fil
             data = await file.read()
             if len(data) > 8 * 1024 * 1024:
                 return _retake(s, "That image is too large. Please send a smaller screenshot, or type the details.")
-            extracted = extract_from_image(data, file.content_type or "image/png")
+            # Vision (up to 15 s) and the chain reads below block; keep them off the event loop (AUDIT H12).
+            extracted = await run_in_threadpool(extract_from_image, data, file.content_type or "image/png")
             extracted["source"] = "screenshot"
-        case = validate_and_build_case(s, extracted)
+        case = await run_in_threadpool(validate_and_build_case, s, extracted)
     except NeedsRetake as e:
         return _retake(s, str(e))
     except (CacheMiss, ChainAPIError) as e:  # offline cache miss or chain APIs down: not the victim's fault
@@ -319,10 +321,13 @@ def extract_from_image(data: bytes, mime: str) -> dict[str, Any]:
                   "Extract ONLY what is visible. Reply with JSON and nothing else: "
                   '{"tx_hash": "0x... or null", "to": "destination address, full if visible, else the visible prefix and suffix like 0x2f1c…8fa4, or null", '
                   '"amount": number or null, "token": "USDT|ETH|other|null", "time": "ISO 8601 or the visible date text, or null", "chain": "ethereum|tron|null"}')
-        msg = client.messages.create(model=VISION_MODEL, max_tokens=300, messages=[{"role": "user", "content": [
+        msg = client.messages.create(model=VISION_MODEL, max_tokens=600, messages=[{"role": "user", "content": [
             {"type": "image", "source": {"type": "base64", "media_type": mime if mime in ("image/png", "image/jpeg", "image/webp", "image/gif") else "image/png", "data": base64.b64encode(data).decode()}},
             {"type": "text", "text": prompt}]}])
         text = "".join(getattr(b, "text", "") for b in msg.content)
+        if not text.strip():
+            log.warning("vision returned no text (stop_reason=%s, blocks=%s)", getattr(msg, "stop_reason", None), [getattr(b, "type", "?") for b in msg.content])
+            raise NeedsRetake("We could not read the image. Please type the transaction hash or the address you sent to.")
     except NeedsRetake:
         raise
     except Exception as e:  # noqa: BLE001
@@ -360,9 +365,16 @@ def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, 
     from hound import chain
     from hound.contracts import validate_case
     sends: list[dict[str, Any]] = []
+    try:
+        from hound.chain.net import ChainAPIError
+    except Exception:  # noqa: BLE001
+        ChainAPIError = RuntimeError  # type: ignore[assignment]
     if ex.get("tx_hash"):
         try:
             sends = chain.tx_sends("ethereum", ex["tx_hash"])
+        except ChainAPIError as e:  # an RPC outage is our problem, not the victim's hash (AUDIT H15)
+            log.warning("chain unavailable while checking %s: %s", ex["tx_hash"][:12], type(e).__name__)
+            raise NeedsRetake("We could not reach the blockchain just now. Your details are saved; please try again in a minute.")
         except ValueError as e:
             raise NeedsRetake(f"That transaction hash did not check out on Ethereum ({e}). Please check it and try again.")
         if ex.get("amount") and sends:
@@ -373,7 +385,11 @@ def validate_and_build_case(s: dict[str, Any], ex: dict[str, Any]) -> dict[str, 
         when = _iso(str(ex.get("time") or "")) or datetime.now(timezone.utc)
         lo, hi = (when - TIME_WINDOW).strftime("%Y-%m-%dT%H:%M:%SZ"), (when + TIME_WINDOW).strftime("%Y-%m-%dT%H:%M:%SZ")
         if ex.get("to"):
-            rows = chain.get_transfers("ethereum", ex["to"], token="USDT" if ex.get("token", "USDT") != "ETH" else "ETH", after=lo, before=hi)
+            try:
+                rows = chain.get_transfers("ethereum", ex["to"], token="USDT" if ex.get("token", "USDT") != "ETH" else "ETH", after=lo, before=hi)
+            except ChainAPIError as e:
+                log.warning("chain unavailable while scanning %s: %s", ex["to"][:12], type(e).__name__)
+                raise NeedsRetake("We could not reach the blockchain just now. Your details are saved; please try again in a minute.")
             rows = [r for r in rows if r["to"].lower() == ex["to"]]
         else:
             raise NeedsRetake("Please type the full destination address (0x and 40 characters) or the transaction hash; a shortened address is not enough to find the payment.")

@@ -38,6 +38,7 @@ OUT = ROOT / "data" / "cases_live" / "scan_latest.json"  # gitignored: live addr
 SUMMARY = ROOT / "data" / "proof" / "weekend_scan_summary.json"  # committed, redacted: truncated addresses, no report ids
 CATEGORIES = ("PIGBUTCHERING", "ROMANCE", "FAKE_RETURNS", "OTHER_INVESTMENT_SCAM")
 MAX_LIFETIME_TRANSFERS = 2000  # AUDIT 24: above this the wallet is exchange/service sized, never a scam wallet we can claim
+EXPLORER_COUNT_CAP = 1000  # AUDIT H10: Etherscan caps counts at 1000, so a count at or above it is saturated, not measured
 ROW_LABEL = "reported, not proven"
 _FULL_ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")
 
@@ -76,6 +77,8 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
         tc = c.get("transfer_count")
         if tc is not None and tc > MAX_LIFETIME_TRANSFERS:
             reasons.append(f">{MAX_LIFETIME_TRANSFERS:,} lifetime transfers")
+        elif tc is not None and tc == EXPLORER_COUNT_CAP:  # exactly the cap = Etherscan stopped counting
+            reasons.append(f"transfer count saturated at the explorer cap ({EXPLORER_COUNT_CAP:,}), not measured")
         if c.get("transfer_count_error"):
             reasons.append("transfer count unavailable")
         elif tc is None:
@@ -102,7 +105,7 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
         "label": ROW_LABEL,
         "usdt_unfrozen": round(sum(c["capped_usdt"] for c in unfrozen), 2),
         "addresses_unfrozen": len(unfrozen),
-        "already_frozen": sum(bool(c.get("is_frozen")) for c in cases),
+        "already_frozen": sum(1 for c in cases if c.get("is_frozen") and not c.get("label") and not c.get("excluded_as_exchange_or_infra")),
         "cases": cases,
     }
 

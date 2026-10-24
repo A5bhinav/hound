@@ -201,3 +201,14 @@ def test_intake_case_is_redacted_for_remote_viewers(monkeypatch):
     assert far["sends"][0]["tx_hash"] != TX and "story" not in far
     api.CASES.pop(cid, None)
     api.LIVE_CASES.discard(cid)
+
+
+def test_active_prefers_newest_session_over_older_unvalidated(monkeypatch):
+    import hound.chain as chain
+    monkeypatch.setattr(chain, "tx_sends", _fake_tx_sends)
+    old = client.post("/intake/start", json={}).json()["case_code"]          # abandoned, never validated
+    new = client.post("/intake/start", json={}).json()["case_code"]
+    r = client.post(f"/intake/{new}/screenshot", data={"typed": f"sent 11,082.48 USDT hash {TX}"})
+    assert r.json()["status"] == "validated"
+    a = client.get("/intake/active").json()
+    assert a["case_code"] == new and a["status"] == "validated", (old, new, a)
