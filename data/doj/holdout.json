@@ -4,7 +4,7 @@
   "filed": "2025-02-27",
   "source_pdf": "https://www.justice.gov/usao-ndoh/media/1391461/dl",
   "chain": "ethereum",
-  "note": "Every address below is HOLDOUT: never add to the label DB. Complaint truncates to first-3/last-7 hex; full finals recovered from USDT AddedBlackList events (blocks 20140808/20140818/20170086).",
+  "note": "Every address below is HOLDOUT: never add to the label DB. Complaint gives first-3/last-7 hex only; full addresses recovered on-chain (finals from USDT AddedBlackList events; starts/intermediates by walking USDT transfers backward from the finals and matching prefix+suffix). All 14 verified.",
   "accounting": {
     "named_victims": "FIFO (\u00b6\u00b671,73,80)",
     "28_additional": "LIFO, Proceeds-In-First-Out, or FIFO (\u00b681)",
@@ -89,64 +89,75 @@
         "label": "A-1",
         "prefix": "0xcf9",
         "suffix": "b485027",
-        "role": "received ETH from A.H.; swapped ETH->USDT here (\u00b670)"
+        "role": "received ETH from A.H.; swapped ETH->USDT here (\u00b670)",
+        "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027"
       },
       {
         "label": "B-1",
         "prefix": "0xe79",
         "suffix": "c2d6ad0",
-        "role": "received ETH from A.H."
+        "role": "received ETH from A.H.",
+        "address": "0xe799442b78b502cfa156895099ae26709c2d6ad0"
       },
       {
         "label": "C-1",
         "prefix": "0xa32",
         "suffix": "6f4dbb8",
-        "role": "received ETH from A.H."
+        "role": "received ETH from A.H.",
+        "address": "0xa327e6cfdd29022a530950079877861636f4dbb8"
       }
     ],
     "intermediates": [
       {
         "label": "A-2",
         "prefix": "0x783",
-        "suffix": "2da1a06"
+        "suffix": "2da1a06",
+        "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06"
       },
       {
         "label": "A-3",
         "prefix": "0x9eb",
         "suffix": "5db5e1f",
-        "role": "FIFO lands here; 4 transfers May 21-30 2024 to A-6 (\u00b671)"
+        "role": "FIFO lands here; 4 transfers May 21-30 2024 to A-6 (\u00b671)",
+        "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f"
       },
       {
         "label": "A-4",
         "prefix": "0x07f",
-        "suffix": "93e9d53"
+        "suffix": "93e9d53",
+        "address": "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53"
       },
       {
         "label": "A-5",
         "prefix": "0xdf6",
-        "suffix": "f0ed53f"
+        "suffix": "f0ed53f",
+        "address": "0xdf6fa72c71577c3a3209db202d4815021f0ed53f"
       },
       {
         "label": "A-6",
         "prefix": "0x58e",
         "suffix": "b2d0dcb",
-        "role": "CONSOLIDATION: all victims' funds pass here before A-7/A-8/A-9 (\u00b6\u00b673-79)"
+        "role": "CONSOLIDATION: all victims' funds pass here before A-7/A-8/A-9 (\u00b6\u00b673-79)",
+        "address": "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb"
       },
       {
         "label": "B-2",
         "prefix": "0x212",
-        "suffix": "4d9c794"
+        "suffix": "4d9c794",
+        "address": "0x212a021291a4a4007bc8892b2176c41204d9c794"
       },
       {
         "label": "B-3",
         "prefix": "0x447",
         "suffix": "eb6911a",
-        "role": "B-branch FIFO lands here, then to A-6 (\u00b673)"
+        "role": "B-branch FIFO lands here, then to A-6 (\u00b673)",
+        "address": "0x447190fc07d5d9d0552077f6942fd3131eb6911a"
       },
       {
         "label": "B-4",
         "prefix": "0x28b",
-        "suffix": "fd17376"
+        "suffix": "fd17376",
+        "address": "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376"
       }
     ],
     "finals": [
@@ -215,5 +226,43 @@
     "consolidation": "A-6",
     "finals": 3,
     "totals_paragraphs": "\u00b6\u00b683-85"
+  },
+  "all_holdout_addresses": [
+    "0x07fbb418aac62abc4ca3e7ee8ccf8ce7693e9d53",
+    "0x212a021291a4a4007bc8892b2176c41204d9c794",
+    "0x28b877f1c8e6a4bdf0407a6a77eb83346fd17376",
+    "0x447190fc07d5d9d0552077f6942fd3131eb6911a",
+    "0x4e5cda8f0d772ac57e947545192a0657ad47abb5",
+    "0x58e99d9413bb6ce05748a84f76e5fff4bb2d0dcb",
+    "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+    "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+    "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+    "0xa327e6cfdd29022a530950079877861636f4dbb8",
+    "0xafd770d8898a0e323c607fe91358345e7b2378a5",
+    "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+    "0xdf6fa72c71577c3a3209db202d4815021f0ed53f",
+    "0xe799442b78b502cfa156895099ae26709c2d6ad0"
+  ],
+  "observed_flows_usdt": {
+    "A-6->A-7": 4210000,
+    "A-6->A-8": 2289999,
+    "A-6->A-9": 2559654,
+    "A-3->A-6": 4462486,
+    "B-3->A-6": 4097751,
+    "A-2->A-3": 7497486,
+    "A-4->A-3": 5466001,
+    "A-5->A-2": 3497949,
+    "A-1->A-2": 1638563,
+    "A-4->A-2": 3210825,
+    "B-2->B-3": 3830000,
+    "C-1->B-2": 1367384,
+    "B-1->B-2": 953410,
+    "B-4->B-2": 1144110,
+    "finals_back_to_A-6": {
+      "A-7": 3000000,
+      "A-8": 2000000,
+      "A-9": 1040001
+    },
+    "note": "aggregate USDT per (from,to) from Blockscout; finals also sent USDT BACK to A-6 (circular)"
   }
 }
