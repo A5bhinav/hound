@@ -60,10 +60,15 @@ def test_scoreboard_full_credit_from_fixture_and_amount_bands():
     res = load_resolved()
     hold = set(res.values())
     tr = json.load(open(ROOT / "data" / "doj" / "usdt_transfers_holdout.json"))["transfers"]
-    edges = [{"from": t["from"], "to": t["to"], "attributed_amount": 0} for t in tr if t["from"] in hold and t["to"] in hold]
-    endpoints = [{"address": res["A-7"], "victim_inflow": 314657 * 1.03, "reason": "frozen"},
-                 {"address": res["A-8"], "victim_inflow": 11954 * 1.15, "reason": "frozen"},
-                 {"address": res["A-9"], "victim_inflow": 43071 * 0.5, "reason": "frozen"}]
+    edges = [{"from": t["from"], "to": t["to"], "token": "USDT", "attributed_amount": None} for t in tr if t["from"] in hold and t["to"] in hold]
+    # amount tier = money traced INTO each final (edge attributed_amount), split across two edges for A-7
+    edges += [{"from": res["A-6"], "to": res["A-7"], "token": "USDT", "attributed_amount": 314657 * 1.03 / 2},
+              {"from": res["A-6"], "to": res["A-7"], "token": "USDT", "attributed_amount": 314657 * 1.03 / 2},
+              {"from": res["A-6"], "to": res["A-8"], "token": "USDT", "attributed_amount": 11954 * 1.15},
+              {"from": res["A-6"], "to": res["A-9"], "token": "USDT", "attributed_amount": 43071 * 0.5}]
+    endpoints = [{"address": res["A-7"], "victim_inflow": 1.0, "reason": "frozen"},  # remaining balance, must NOT be scored
+                 {"address": res["A-8"], "victim_inflow": 1.0, "reason": "frozen"},
+                 {"address": res["A-9"], "victim_inflow": 1.0, "reason": "frozen"}]
     s = doj_scoreboard({"source": "engine", "nodes": [], "edges": edges, "endpoints": endpoints})
     assert s["summary"]["intermediates_reached"] == len(INTERMEDIATES) == 8
     assert s["summary"]["finals_reached"] == len(FINALS) == 3

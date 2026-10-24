@@ -5,7 +5,7 @@ Case: US v. 4,340,000 Tether et al., N.D. Ohio 1:25-cv-00386.
 Tier 1 REACH   : DOJ wallets the engine was NOT given. Intermediates A-2..A-6, B-2..B-4
                  (x/8) and finals A-7..A-9 (x/3). Inputs d95/A-1/B-1/C-1 never count.
 Tier 2 AMOUNT  : A.H.'s ¶74 row only (A-7 314,657 / A-8 11,954 / A-9 43,071 USDT), compared
-                 with what the engine attributed to each final. ≤5% green, 5-20% amber, >20% red.
+                 with money the engine traced INTO each final (sum of edge attributed_amount). ≤5% green, 5-20% amber, >20% red.
 Context only   : ¶¶83-85 totals (38 victims/accounts, mixed LIFO/PIFO/FIFO, subpoena data).
 
 Matching uses FULL addresses from data/doj/resolved.json only. No prefix/suffix regex, so
@@ -50,17 +50,24 @@ def _trace_addresses(trace: dict[str, Any]) -> set[str]:
 
 
 def _attributed_to(trace: dict[str, Any], address: str) -> float | None:
-    """USDT the engine attributes to `address`: endpoint victim_inflow, else summed attributed edge amounts."""
-    for ep in trace.get("endpoints", []):
-        if ep.get("address", "").lower() == address and ep.get("victim_inflow") is not None:
-            return float(ep["victim_inflow"])
+    """Money traced INTO `address`: the sum of attributed_amount on USDT edges ending there.
+
+    That is what DOJ's "traced to ADDRESS A-7" means in ¶74 (inflow attributable to A.H.),
+    not the balance left at the end. Falls back to endpoint.victim_inflow only when the trace
+    has no attributed edges into the address.
+    """
     tot = 0.0
     seen = False
     for e in trace.get("edges", []):
-        if e.get("to", "").lower() == address and e.get("attributed_amount") is not None:
+        if e.get("to", "").lower() == address and e.get("attributed_amount") is not None and e.get("token", "USDT") == "USDT":
             tot += float(e["attributed_amount"])
             seen = True
-    return tot if seen else None
+    if seen:
+        return tot
+    for ep in trace.get("endpoints", []):
+        if ep.get("address", "").lower() == address and ep.get("victim_inflow") is not None:
+            return float(ep["victim_inflow"])
+    return None
 
 
 def _band(ours: float | None, doj: float) -> str:
