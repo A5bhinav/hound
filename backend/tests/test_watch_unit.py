@@ -110,34 +110,45 @@ def test_freeze_api_down_still_answers(wl, monkeypatch):
 
 PAYER = "0x3333333333333333333333333333333333333333"
 PASS_THROUGH = "0x5555555555555555555555555555555555555555"
+HER_EXCHANGE = "0x6666666666666666666666666666666666666666"  # the victim's own wallet upstream
 COINBASE10 = "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43"
 
 
 def test_other_payers_count_payments_into_the_entry_layer(monkeypatch):
+    """Entry layer = the scam wallet the victim paid (A1) + outside senders into the next layer
+    (HOP2). Payments into the victim's own wallet, and her own upstream paying the scam, never count."""
     def fake_transfers(ch, address, token="USDT", as_of=None, after=None):
         if token != "USDT":
             return []
-        if address == A1:  # first-swap layer: an outside pass-through sends in
-            return [{"from": PASS_THROUGH, "to": A1, "amount": 4000.0, "time": "2024-05-02T00:00:00Z",
-                     "tx_hash": "0xs1", "token": "USDT"}]
-        if address == VICTIM:  # depth-0 entry node
-            return [{"from": COINBASE10, "to": VICTIM, "amount": 300.0, "time": "2024-05-02T00:00:00Z",
+        if address == VICTIM:  # her own exchange account funding her wallet: not another payer
+            return [{"from": HER_EXCHANGE, "to": VICTIM, "amount": 9000.0, "time": "2024-05-01T00:00:00Z",
+                     "tx_hash": "0xself", "token": "USDT"}]
+        if address == A1:  # the entry wallet the victim paid
+            return [{"from": COINBASE10, "to": A1, "amount": 300.0, "time": "2024-05-02T00:00:00Z",
                      "tx_hash": "0xc1", "token": "USDT"},
-                    {"from": COINBASE10, "to": VICTIM, "amount": 500.0, "time": "2024-05-03T00:00:00Z",
+                    {"from": COINBASE10, "to": A1, "amount": 500.0, "time": "2024-05-03T00:00:00Z",
                      "tx_hash": "0xc2", "token": "USDT"},
-                    {"from": PAYER, "to": VICTIM, "amount": 50.0, "time": "2024-05-03T00:00:00Z",
-                     "tx_hash": "0xdust", "token": "USDT"}]
+                    {"from": PAYER, "to": A1, "amount": 50.0, "time": "2024-05-03T00:00:00Z",
+                     "tx_hash": "0xdust", "token": "USDT"},
+                    {"from": HER_EXCHANGE, "to": A1, "amount": 700.0, "time": "2024-05-03T00:00:00Z",
+                     "tx_hash": "0xherself", "token": "USDT"}]
+        if address == HOP2:  # next layer: an outside pass-through sends in
+            return [{"from": PASS_THROUGH, "to": HOP2, "amount": 4000.0, "time": "2024-05-02T00:00:00Z",
+                     "tx_hash": "0xs1", "token": "USDT"}]
         if address == PASS_THROUGH:
             return [{"from": COINBASE10, "to": PASS_THROUGH, "amount": 4100.0, "time": "2024-05-01T12:00:00Z",
                      "tx_hash": "0xc3", "token": "USDT"},
-                    {"from": HOP2, "to": PASS_THROUGH, "amount": 900.0, "time": "2024-05-01T12:00:00Z",
+                    {"from": HOP3, "to": PASS_THROUGH, "amount": 900.0, "time": "2024-05-01T12:00:00Z",
                      "tx_hash": "0xinternal", "token": "USDT"}]
         return []
 
     monkeypatch.setattr(chain, "get_transfers", fake_transfers)
+    monkeypatch.setattr(chain, "get_native_txs", lambda *a, **k: [], raising=False)
     rows = op_mod.payments(FIXTURE, window_days=7)
-    assert [r["tx_hash"] for r in rows] == ["0xc3", "0xc1", "0xc2"]  # dust and trace-internal excluded
-    assert {r["entry_address"] for r in rows} == {VICTIM, PASS_THROUGH}
+    # dust, trace-internal, the victim's own wallet and her own upstream are all excluded
+    assert [r["tx_hash"] for r in rows] == ["0xc3", "0xc1", "0xc2"]
+    assert {r["entry_address"] for r in rows} == {A1, PASS_THROUGH}
+    assert VICTIM not in {r["entry_address"] for r in rows}
     assert all(r["source_exchange"] == "Coinbase" for r in rows)
     assert op_mod.summary(rows)["text"] == "3 payments in from 1 exchange into 2 entry addresses"
     schema_rows = op_mod.other_payers(FIXTURE, window_days=7)
@@ -358,3 +369,14 @@ def test_path_hops_say_which_token_they_are_in(no_chain, not_frozen):
     assert hops[0]["from"] == V and (hops[0]["amount"], hops[0]["token"]) == (0.3, "ETH")
     hops = check_mod.check("ethereum", FIN, watch=w)["evidence"]["path"]
     assert hops[-1]["token"] == "USDT"
+
+
+def test_path_hop_counts_each_victim_dollar_once(no_chain, not_frozen):
+    t = _r2_trace()
+    # the loop's second pass makes the engine's per-seed figure on E1 -> LOOP twice the send
+    t["edges"][2]["attributed_amount"] = 2000.0
+    t["edges"][2]["attributed_by_seed"] = {"s1": 2000.0}
+    w = Watchlist()
+    w.add_trace(t)
+    hops = check_mod.check("ethereum", LOOP, watch=w)["evidence"]["path"]
+    assert [h["amount"] for h in hops if h["to"] == LOOP] == [1000.0]

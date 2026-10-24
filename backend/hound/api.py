@@ -112,18 +112,28 @@ def mark_verified(case_id):
     TRUSTED.add(case_id)
 
 
+SKIPPED_CASES = []  # invalid curated files: listed in /health instead of crashing startup
+
+
 def _load_curated():
     live = sorted((ROOT / "data" / "cases_live").glob("*.case.json"))  # gitignored, demo laptop only
     files = (sorted((ROOT / "data" / "cases").glob("*.case.json")) + live
              + [ROOT / "examples" / "ohnd_replay.case.json"])
+    SKIPPED_CASES.clear()
     for f in files:
-        if f.exists():
+        if not f.exists():
+            continue
+        try:
             c = validate_case(json.loads(f.read_text()))
-            CASES[c["case_id"]] = c
-            TRUSTED.add(c["case_id"])
-            if f in live:
-                LIVE_CASES.add(c["case_id"])
-    log.info("loaded %d curated cases", len(CASES))
+        except Exception as e:  # noqa: BLE001 - one bad file must never stop the server (demo laptop)
+            SKIPPED_CASES.append({"file": f.name, "error": f"{type(e).__name__}: {str(e)[:200]}"})
+            log.error("skipping invalid curated case %s: %s", f.name, e)
+            continue
+        CASES[c["case_id"]] = c
+        TRUSTED.add(c["case_id"])
+        if f in live:
+            LIVE_CASES.add(c["case_id"])
+    log.info("loaded %d curated cases, skipped %d invalid", len(CASES), len(SKIPPED_CASES))
 
 
 _load_curated()
@@ -629,6 +639,27 @@ def _route_paths(routes):
     return paths
 
 
+def _include_intake_router(target=None):
+    """Include hound.intake.routes.router (CK's /intake/* routes) if the module exists.
+
+    Same contract as the watch router: missing module = no intake routes (logged); a module that
+    exists but is broken or has no APIRouter named router fails loudly at startup.
+    """
+    target = target or app
+    try:
+        mod = importlib.import_module("hound.intake.routes")
+    except ModuleNotFoundError as e:
+        if e.name != "hound.intake.routes":
+            raise
+        log.warning("hound.intake.routes not found: /intake/* routes are not served (web /intake and /c/[code] will 404)")
+        return
+    router = getattr(mod, "router", None)
+    if not isinstance(router, APIRouter):
+        raise RuntimeError("hound.intake.routes exists but has no FastAPI APIRouter named 'router'")
+    target.include_router(router)
+    log.info("included hound.intake.routes.router (%d routes)", len(router.routes))
+
+
 def _include_watch_router(target=None):
     """Include hound.watch.routes.router (Jinka's /check) if it exists; else serve the fallback GET /check.
 
@@ -653,6 +684,7 @@ def _include_watch_router(target=None):
 
 
 _include_watch_router()
+_include_intake_router()
 
 
 @app.get("/proof/scoreboard")
@@ -677,4 +709,5 @@ def scan():
 
 @app.get("/health")
 def health():
-    return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS), "example": bool(example("ohnd_replay.trace"))}
+    return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS),
+            "example": bool(example("ohnd_replay.trace")), "skipped_cases": [s["file"] for s in SKIPPED_CASES]}

@@ -370,3 +370,12 @@ def test_readonly_falls_through_to_a_cached_source(monkeypatch):
     monkeypatch.setattr(eth, "_transfers_v1", miss)
     with pytest.raises(cache.CacheMiss):
         eth.get_transfers(A7)
+
+
+
+def test_public_exchange_wallets_never_block_a_pack(tmp_path):
+    from hound.chain import snapshot
+    coinbase10 = "0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43"
+    cache.cached("eth_rpc", {"method": "cb"}, lambda: {"to": coinbase10}, ttl=None)
+    (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([coinbase10]))
+    assert snapshot.pack(out_dir=tmp_path / "snap") == {"eth_rpc": 1}
