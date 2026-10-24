@@ -5,6 +5,7 @@ USDT balanceOf and isBlackListed via eth_call on public RPCs. Deterministic, no 
 from __future__ import annotations
 
 import json
+import re
 import time
 import urllib.request
 
@@ -34,8 +35,15 @@ def rpc(method: str, params: list, tries: int = 6) -> dict:
     raise RuntimeError(f"eth rpc {method} failed: {last}")
 
 
+ADDR_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+
+
 def _pad(addr: str) -> str:
-    return addr.lower().replace("0x", "").rjust(64, "0")
+    """ABI-encode an address argument. Rejects anything that is not a 20-byte hex address
+    so untrusted strings (e.g. from Chainabuse reports) cannot alter calldata."""
+    if not ADDR_RE.match(addr):
+        raise ValueError(f"not an Ethereum address: {addr!r}")
+    return addr[2:].lower().rjust(64, "0")
 
 
 def usdt_balance(address: str) -> float:
