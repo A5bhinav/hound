@@ -56,20 +56,41 @@ def _b58decode(s: str) -> bytes:
     return full
 
 
+_HEX = re.compile(r"^[0-9a-f]+$")
+
+
 def hex_to_base58(h: str) -> str:
-    """0x-hex (20 bytes) or 41-prefixed hex -> T... address."""
-    h = h.lower().removeprefix("0x")
-    raw = bytes.fromhex("41" + h[-40:])
+    """0x-hex (20 bytes), 41-prefixed hex, or a 32-byte zero-padded word -> T... address.
+    Anything else (wrong length, non-hex, non-zero padding) raises ValueError instead of
+    silently keeping the last 40 characters."""
+    s = str(h or "").strip().lower().removeprefix("0x")
+    if not _HEX.match(s):
+        raise ValueError(f"not a hex Tron address: {h!r}")
+    if len(s) == 42 and s.startswith("41"):
+        s = s[2:]
+    elif len(s) == 64 and s[:24].strip("0") in ("", "41"):
+        s = s[-40:]
+    if len(s) != 40:
+        raise ValueError(f"not a 20-byte Tron address: {h!r} ({len(s)} hex chars)")
+    raw = bytes.fromhex("41" + s)
     chk = hashlib.sha256(hashlib.sha256(raw).digest()).digest()[:4]
     return _b58encode(raw + chk)
 
 
-def base58_to_hex20(a: str) -> str:
-    raw = _b58decode(norm(a))
+def _payload(a: str) -> bytes:
+    """The 21-byte payload of a base58 T... address; ValueError on a bad checksum or prefix."""
+    try:
+        raw = _b58decode(a)
+    except OverflowError:
+        raise ValueError(f"not a Tron address (too large): {a!r}") from None
     payload, chk = raw[:21], raw[21:]
-    if hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4] != chk:
-        raise ValueError(f"bad Tron address checksum: {a}")
-    return payload[1:].hex()
+    if payload[0] != 0x41 or hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4] != chk:
+        raise ValueError(f"bad Tron address checksum: {a!r}")
+    return payload
+
+
+def base58_to_hex20(a: str) -> str:
+    return _payload(norm(a))[1:].hex()
 
 
 def norm(address: str) -> str:
@@ -78,6 +99,7 @@ def norm(address: str) -> str:
         a = hex_to_base58(a)
     if not _ADDR.match(a):
         raise ValueError(f"not a Tron address: {address!r}")
+    _payload(a)  # a typo in one character fails the checksum: never look up a near-miss address
     return a
 
 

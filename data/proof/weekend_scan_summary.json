@@ -2,11 +2,11 @@
  "status": "ok",
  "scanned_at": "2026-10-24T05:46:26.924010+00:00",
  "label": "reported, not proven",
- "method": "Chainabuse public reports (PIGBUTCHERING, FAKE_RETURNS, OTHER_INVESTMENT_SCAM, ROMANCE; ETH) pulled from the website, each address checked on-chain: USDT balanceOf + isBlackListed; exchange hot wallets, contracts, >2,000-transfer wallets excluded.",
+ "method": "We took every Ethereum address that members of the public reported to Chainabuse as a pig butchering, romance, fake returns or other investment scam. For each address we read two things straight from the USDT token contract: how much USDT it holds now, and whether Tether has frozen it. We then left out exchanges, payment services and shared infrastructure, the USDT contract itself, and any wallet with more than 2,000 token transfers in its lifetime, because a wallet that busy belongs to a business, not to one scam. A wallet is also left out if we could not count its transfers. Each remaining wallet counts the smaller of its balance and the losses its reporters claimed. These are reports, not proven cases.",
  "addresses": 963,
- "usdt_unfrozen": 104741.74,
- "addresses_unfrozen": 20,
- "already_frozen": 2,
+ "usdt_unfrozen": 91217.87,
+ "addresses_unfrozen": 14,
+ "already_frozen": 1,
  "cases": [
   {
    "address": "0x6f72\u202622a1",
@@ -101,52 +101,6 @@
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0x0000\u202605fa",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "categories": [
-    "FAKE_RETURNS"
-   ],
-   "reported_at": "2026-09-04T12:20:15.323Z",
-   "last_reported": "2026-09-04T12:20:15.323Z",
-   "report_count": 1,
-   "confidence": 0.5,
-   "balance_usdt": 4986.36,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 4986.36,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0xc7e7\u20268afd",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "categories": [
-    "PIGBUTCHERING"
-   ],
-   "reported_at": "2026-09-28T18:12:10.571Z",
-   "last_reported": "2026-09-28T18:12:10.571Z",
-   "report_count": 1,
-   "confidence": 0.5,
-   "balance_usdt": 3735.93,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 3735.93,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
    "address": "0x0de7\u2026741b",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
@@ -187,29 +141,6 @@
    "transfer_count": 146,
    "label": null,
    "capped_usdt": 3012.48,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x3f69\u2026a1a1",
-   "chain": "ethereum",
-   "category": "ROMANCE",
-   "categories": [
-    "ROMANCE"
-   ],
-   "reported_at": "2026-04-06T14:14:28.656Z",
-   "last_reported": "2026-04-06T14:14:28.656Z",
-   "report_count": 1,
-   "confidence": 0.5,
-   "balance_usdt": 2132.73,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 2132.73,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [],
    "row_label": "reported, not proven",
@@ -262,29 +193,6 @@
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
-   "address": "0xc654\u202628d8",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "categories": [
-    "FAKE_RETURNS"
-   ],
-   "reported_at": "2026-10-06T14:25:59.661Z",
-   "last_reported": "2026-10-06T14:25:59.661Z",
-   "report_count": 1,
-   "confidence": 0.5,
-   "balance_usdt": 1558.37,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 1558.37,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
    "address": "0xca56\u20265156",
    "chain": "ethereum",
    "category": "PIGBUTCHERING",
@@ -325,29 +233,6 @@
    "transfer_count": 209,
    "label": null,
    "capped_usdt": 1042.41,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x1481\u2026db70",
-   "chain": "ethereum",
-   "category": "PIGBUTCHERING",
-   "categories": [
-    "PIGBUTCHERING"
-   ],
-   "reported_at": "2026-09-14T10:55:33.438Z",
-   "last_reported": "2026-09-14T11:02:44.292Z",
-   "report_count": 2,
-   "confidence": 0.5,
-   "balance_usdt": 1000.0,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 1000.0,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [],
    "row_label": "reported, not proven",
@@ -417,29 +302,6 @@
    "transfer_count": 7,
    "label": null,
    "capped_usdt": 131.14,
-   "cap_basis": "balance (no claimed-loss figure stored for this row)",
-   "excluded_reasons": [],
-   "row_label": "reported, not proven",
-   "as_of": "2026-10-24T05:46:26.924010+00:00"
-  },
-  {
-   "address": "0x9277\u20263bee",
-   "chain": "ethereum",
-   "category": "FAKE_RETURNS",
-   "categories": [
-    "FAKE_RETURNS"
-   ],
-   "reported_at": "2026-09-24T12:56:18.907Z",
-   "last_reported": "2026-09-24T12:56:18.907Z",
-   "report_count": 1,
-   "confidence": 0.5,
-   "balance_usdt": 110.48,
-   "is_frozen": false,
-   "excluded_as_exchange_or_infra": false,
-   "freezable_now": true,
-   "transfer_count": 1000,
-   "label": null,
-   "capped_usdt": 110.48,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [],
    "row_label": "reported, not proven",
@@ -523,7 +385,8 @@
    "capped_usdt": 79780657.24,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -609,7 +472,8 @@
    "capped_usdt": 47954372.46,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -726,6 +590,7 @@
    "capped_usdt": 1178547.12,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
+    "the USDT token contract itself",
     "transfer count not checked"
    ],
    "row_label": "reported, not proven",
@@ -755,7 +620,8 @@
    "capped_usdt": 853611.7,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -807,7 +673,8 @@
    "capped_usdt": 210927.49,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -887,6 +754,31 @@
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   },
   {
+   "address": "0x0000\u202605fa",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-04T12:20:15.323Z",
+   "last_reported": "2026-09-04T12:20:15.323Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 4986.36,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 4986.36,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
    "address": "0x2dca\u202668cb",
    "chain": "ethereum",
    "category": "ROMANCE",
@@ -911,7 +803,33 @@
    "capped_usdt": 4121.37,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xc7e7\u20268afd",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-28T18:12:10.571Z",
+   "last_reported": "2026-09-28T18:12:10.571Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 3735.93,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 3735.93,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -941,7 +859,8 @@
    "capped_usdt": 3579.46,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
@@ -971,11 +890,112 @@
    "capped_usdt": 2843.37,
    "cap_basis": "balance (no claimed-loss figure stored for this row)",
    "excluded_reasons": [
-    "exchange/service/infra label"
+    "exchange/service/infra label",
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x3f69\u2026a1a1",
+   "chain": "ethereum",
+   "category": "ROMANCE",
+   "categories": [
+    "ROMANCE"
+   ],
+   "reported_at": "2026-04-06T14:14:28.656Z",
+   "last_reported": "2026-04-06T14:14:28.656Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 2132.73,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 2132.73,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0xc654\u202628d8",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-10-06T14:25:59.661Z",
+   "last_reported": "2026-10-06T14:25:59.661Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 1558.37,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 1558.37,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x1481\u2026db70",
+   "chain": "ethereum",
+   "category": "PIGBUTCHERING",
+   "categories": [
+    "PIGBUTCHERING"
+   ],
+   "reported_at": "2026-09-14T10:55:33.438Z",
+   "last_reported": "2026-09-14T11:02:44.292Z",
+   "report_count": 2,
+   "confidence": 0.5,
+   "balance_usdt": 1000.0,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 1000.0,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
+   ],
+   "row_label": "reported, not proven",
+   "as_of": "2026-10-24T05:46:26.924010+00:00"
+  },
+  {
+   "address": "0x9277\u20263bee",
+   "chain": "ethereum",
+   "category": "FAKE_RETURNS",
+   "categories": [
+    "FAKE_RETURNS"
+   ],
+   "reported_at": "2026-09-24T12:56:18.907Z",
+   "last_reported": "2026-09-24T12:56:18.907Z",
+   "report_count": 1,
+   "confidence": 0.5,
+   "balance_usdt": 110.48,
+   "is_frozen": false,
+   "excluded_as_exchange_or_infra": false,
+   "freezable_now": false,
+   "transfer_count": 1000,
+   "label": null,
+   "capped_usdt": 110.48,
+   "cap_basis": "balance (no claimed-loss figure stored for this row)",
+   "excluded_reasons": [
+    "transfer count saturated at the explorer's 1,000-row cap"
    ],
    "row_label": "reported, not proven",
    "as_of": "2026-10-24T05:46:26.924010+00:00"
   }
  ],
- "note": "Two multi-million wallets (auextrade.com 8.96M, Telegram 3.09M) excluded from the headline until their flows are verified; Blockscout timed out on them."
+ "note": "The two multi-million wallets (8.96M and 3.09M USDT) carry exchange labels (MEXC and FixedFloat) and are left out of the headline."
 }

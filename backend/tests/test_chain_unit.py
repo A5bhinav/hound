@@ -273,6 +273,52 @@ def test_tx_sends_rejects_bad_hash():
         eth.tx_sends("0x1234")
 
 
+def test_tron_address_validation():
+    from hound.chain import tron
+    usdt = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"  # the TRC-20 USDT contract
+    h = tron.base58_to_hex20(usdt)
+    assert tron.norm(usdt) == usdt
+    assert tron.hex_to_base58(h) == tron.hex_to_base58("0x" + h) == tron.hex_to_base58("41" + h) == usdt
+    assert tron.hex_to_base58("0" * 24 + h) == usdt  # a zero-padded 32-byte topic word
+    for bad in ("0x" + h[:-2], h + "00", "41" + h[:-1], "zz" + h[2:], "11" * 12 + h, ""):
+        with pytest.raises(ValueError):
+            tron.hex_to_base58(bad)
+    typo = usdt[:-1] + ("u" if usdt[-1] != "u" else "v")  # one wrong character: checksum fails
+    for bad in (typo, "T" + "1" * 33, "Tzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"):
+        with pytest.raises(ValueError):
+            tron.norm(bad)
+
+
+def test_tx_sends_outage_is_not_a_bad_hash(monkeypatch):
+    """Every RPC down -> ChainAPIError (intake says 'try again'); every RPC null -> ValueError (bad hash)."""
+    def down(*a, **k):
+        raise net.ChainAPIError("HTTP 503")
+    monkeypatch.setattr(eth, "request_json", down)
+    with pytest.raises(net.ChainAPIError) as ei:
+        eth.tx_sends("0x" + "ab" * 32)
+    assert not isinstance(ei.value, ValueError) and not isinstance(ei.value, eth.NullResult)
+
+    monkeypatch.setattr(eth, "request_json", lambda *a, **k: {"jsonrpc": "2.0", "id": 1, "result": None})
+    with pytest.raises(ValueError, match="not found on any RPC"):
+        eth.tx_sends("0x" + "cd" * 32)
+
+
+def test_tx_sends_mixed_null_and_outage_is_an_outage(monkeypatch):
+    answers = iter([{"jsonrpc": "2.0", "id": 1, "result": None}])
+
+    def first_null_then_down(*a, **k):
+        try:
+            return next(answers)
+        except StopIteration:
+            raise net.ChainAPIError("HTTP 503")
+    monkeypatch.setattr(eth, "request_json", first_null_then_down)
+    monkeypatch.setattr(eth, "ETH_ARCHIVE_RPC_URLS", ["https://a.example"])
+    monkeypatch.setattr(eth, "ETH_RPC_URLS", ["https://a.example", "https://b.example"])
+    with pytest.raises(net.ChainAPIError) as ei:
+        eth.tx_sends("0x" + "ef" * 32)
+    assert not isinstance(ei.value, eth.NullResult)
+
+
 def test_rpc_errors_never_include_url_paths(monkeypatch):
     _mock_client(monkeypatch, lambda req: httpx.Response(200, json={"jsonrpc": "2.0", "id": 1,
                                                                     "error": {"message": "boom"}}))

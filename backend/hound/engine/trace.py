@@ -315,7 +315,9 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 audit("classify", f"{c['kind']} ({c['confidence']:.2f}): {'; '.join(c['reasons'])}", addr)
                 if c["kind"] in EXCHANGE_KINDS and c["confidence"] >= 0.7 and top_lab \
                         and top_lab.get("kind") in EXCHANGE_KINDS:
-                    labels[addr] = {"name": f"unlabelled {c['kind'].replace('_', ' ')}", "kind": c["kind"], "source": "classifier"}
+                    # named after the hot wallet it sweeps into: 'Binance 14' -> 'Binance deposit (inferred)'
+                    ex = re.sub(r"\s*\d+$", "", str(top_lab.get("name") or "").split(":", 1)[0].strip()) or "exchange"
+                    labels[addr] = {"name": f"{ex} deposit (inferred)", "kind": c["kind"], "source": "classifier"}
                     stopped[addr] = "exchange"
                     audit("stop", f"proven sweep into a labelled exchange: {c['kind']}", addr)
                     continue

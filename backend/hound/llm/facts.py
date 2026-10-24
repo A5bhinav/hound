@@ -45,8 +45,10 @@ _DOTTED = re.compile(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z0-9])")
 _DOTTED_SPACED = re.compile(r"(?<=[A-Za-z0-9])\s*\.\s*(?=[A-Za-z0-9])")
 # Etherscan label names carry a sub-label and a wallet number: 'Binance: Hot Wallet 20', 'OKX 7'
 _LABEL_NUMBER = re.compile(r"\s*\d+$")
+_INFERRED = re.compile(r"\s+deposit \(inferred\)$")
 ACCUSE = re.compile(r"\b(scam\w*|criminals?|fraud\w*|thief|thieves|launder\w*|crooks?|hackers?|perpetrators?"
-                    r"|con\s+artists?|stolen|theft)\b", re.I)
+                    r"|con\s+artists?|con\s+men|con\s+man|stolen|theft|swindl\w*|extort\w*|illicit|illegal\w*"
+                    r"|money\s+mules?|culprits?|suspects?|bad\s+actors?|offenders?|gangs?|cartels?)\b", re.I)
 
 
 class WriterInputError(ValueError):
@@ -75,6 +77,7 @@ def sanitize_label(text):
     if text is None:
         return None
     label = " ".join(str(text).split(":", 1)[0].split())
+    label = _INFERRED.sub("", label)  # the engine's 'Binance deposit (inferred)': the kind is in exchange_kind
     label = _LABEL_NUMBER.sub("", label)
     if not _LABEL.fullmatch(label) or ACCUSE.search(label) or _DOTTED.search(label):
         log.warning("facts: dropping exchange label %r (not in the label allowlist)", text)
@@ -189,6 +192,13 @@ def _incomplete(trace):
 
 def _endpoint_rows(trace, fetch_failed=frozenset()):
     nodes = {_norm_addr(n.get("address")): n for n in trace.get("nodes", [])}
+    # a swap_unresolved endpoint holds ETH the engine could not match to USDT: its USDT fields are 0,
+    # the ETH amount is in swaps.unresolved. The row carries it so a packet never prints "0.00 USDT".
+    eth_out = {}
+    for j, u in enumerate((trace.get("swaps") or {}).get("unresolved") or []):
+        a, v = _addr(u.get("address"), f"swaps.unresolved.{j}.address"), _num(u.get("eth_out"), f"swaps.unresolved.{j}.eth_out")
+        if a and v is not None:
+            eth_out[a] = eth_out.get(a, 0.0) + v
     rows = []
     for i, e in enumerate(trace.get("endpoints", [])):
         addr = _addr(e.get("address"), f"endpoints.{i}.address")
@@ -214,18 +224,26 @@ def _endpoint_rows(trace, fetch_failed=frozenset()):
         # dead_end or limit stop was never expanded, so its balance proves nothing about victim funds.
         balance = None if leftover or reason == "high_volume" else _num(e.get("balance_usdt"), f"endpoints.{i}.balance_usdt")
         freezable = bool(e.get("freezable")) and reason == "holding"
+        node = nodes.get(addr) or {}
+        exchange_kind = None  # how we know it is an exchange: a listed hot wallet, a listed deposit, or a sweep pattern
+        if reason == "exchange" and not leftover:
+            exchange_kind = ("inferred_deposit" if node.get("label_source") == "classifier"
+                             else {"exchange_hot": "hot", "exchange_deposit": "deposit"}.get(node.get("kind")))
         if bool(e.get("freezable")) and not freezable:
             log.warning("facts: endpoint %s reason %s marked freezable by the engine; not freezable in the packet",
                         addr, reason)
         rows.append({
+            # no pre-shortened copy: cite {{...address|short}} (a shortened string fails the short formatter)
             "address": addr,
-            "short": short_addr(addr),
             "reason": reason,
             "leftover": leftover,
             "victim_inflow": inflow,
             "victim_funds": remaining if remaining is not None else inflow,
             "balance_usdt": balance,
             "freezable": freezable,
+            "exchange_kind": exchange_kind,
+            "token": "ETH" if reason == "swap_unresolved" else "USDT",
+            "eth_amount": round(eth_out[addr], 9) if reason == "swap_unresolved" and addr in eth_out else None,
             "is_frozen": bool(frozen.get("is_frozen")),
             "frozen_at": _iso(frozen.get("frozen_at"), f"nodes[{addr}].frozen_at"),
             "freeze_tx": _tx(frozen.get("freeze_tx"), f"nodes[{addr}].freeze_tx"),

@@ -37,7 +37,7 @@ def claude(monkeypatch):
     def install(*outputs):
         queue = list(outputs)
 
-        def fake(messages):
+        def fake(messages, deadline=None):
             calls.append(copy.deepcopy(messages))
             out = queue.pop(0)
             if isinstance(out, Exception):
@@ -773,6 +773,48 @@ def test_claude_client_is_bounded(monkeypatch):
     assert seen == {"timeout": writer.CLAUDE_TIMEOUT_S, "max_retries": 0} and writer.CLAUDE_TIMEOUT_S <= 30
 
 
+def test_one_claude_deadline_covers_both_attempts(monkeypatch):
+    """The retry gets only what is left of a single monotonic budget; too little left means template."""
+    clock = [1000.0]
+    monkeypatch.setattr(writer.time, "monotonic", lambda: clock[0])
+    deadlines = []
+
+    def slow_reject(messages, deadline=None):
+        deadlines.append(deadline)
+        clock[0] += writer.CLAUDE_DEADLINE_S - writer.CLAUDE_MIN_RETRY_S + 1  # first attempt eats the budget
+        return json.dumps({"paragraphs": ["It went to one wallet."]})  # number word: rejected
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(writer, "_call_claude", slow_reject)
+    out = write_case(TRACE, CASE, "victim")
+    assert out["source"] == "template" and deadlines == [1000.0 + writer.CLAUDE_DEADLINE_S]
+
+
+def test_claude_stream_is_cut_at_the_deadline(monkeypatch):
+    import anthropic
+    clock = [0.0]
+    monkeypatch.setattr(writer.time, "monotonic", lambda: clock[0])
+
+    class Stream:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def __iter__(self):
+            for _ in range(100):
+                clock[0] += 1  # a trickle of events, each well inside any per-read timeout
+                yield object()
+
+    class Fake:
+        def __init__(self, **kw):
+            self.beta = type("B", (), {"messages": type("M", (), {"stream": staticmethod(lambda **k: Stream())})()})()
+    monkeypatch.setattr(anthropic, "Anthropic", Fake)
+    with pytest.raises(TimeoutError):
+        writer._call_claude([{"role": "user", "content": "x"}], deadline=10.0)
+    assert clock[0] == 11.0
+
+
 def test_claude_network_error_is_not_retried(claude, monkeypatch):
     calls = claude(TimeoutError("read timed out"), fixture("good_detective.json"))
     out = write_case(TRACE, CASE, "detective")
@@ -807,3 +849,120 @@ def test_done_trace_with_only_limit_stops_says_incomplete_branches():
     assert "PARTIAL TRACE" not in det and ("0x" + "07" * 20) in head
     vhead = write_case(t, c, "victim")["text"].split("\n\n")[0]
     assert vhead.startswith("THIS TRACE IS INCOMPLETE. The trace hit a limit")
+
+
+_NO_ADDR_ERRORS = ["fetch failed: timeout", "could not load the swap history: timeout", "seed s1: only part arrived",
+                   "transfer without no log_index", "other_payers lookup failed: timeout", "other_payers: read timed out"]
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("replay", [True, False])
+def test_unaddressed_audit_errors_never_break_the_packet(audience, replay):
+    """An audit error with address=None (e.g. an other_payers timeout) must still write a packet."""
+    t, c = (copy.deepcopy(TRACE), copy.deepcopy(CASE)) if replay else live()
+    t["status"] = "partial"
+    t["audit_log"] = list(t.get("audit_log") or []) + [
+        {"t": "x", "step": "error", "address": None, "detail": d} for d in _NO_ADDR_ERRORS]
+    out = write_case(t, c, audience)
+    assert out["source"] == "template" and "not tied to a single wallet" in out["text"]
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("what", sorted(writer._INCOMPLETE) + ["unknown_kind"])
+def test_every_incomplete_kind_without_an_address_renders(audience, what):
+    facts = build_facts(copy.deepcopy(TRACE), copy.deepcopy(CASE))
+    facts["derived"].update(partial=True, incomplete_count=1, audit_error_count=1,
+                            incomplete=[{"what": what, "address": None, "seed_id": "s1", "send_number": 1}])
+    for tpl in writer._status_block(facts, audience):
+        render(tpl, facts, audience=audience)
+
+
+def test_every_short_formattable_path_offered_to_claude_validates():
+    """Claude picks paths from the FACTS list: no endpoint field may be a pre-shortened string that
+    fails the short formatter (the old derived.endpoints.N.short), and every address passes |short."""
+    facts = build_facts(TRACE, CASE)
+    for p, v in citable(facts).items():
+        assert not p.endswith(".short")
+        if p.endswith(".address") and isinstance(v, str):
+            validate(f"It reached {{{{{p}|short}}}}.", facts)
+
+
+def test_prompt_lists_every_banned_word_and_rule():
+    s = writer.SYSTEM_PROMPT
+    for w in writer._NUMBER_WORDS.pattern.replace("\\b", "").strip("()").split("|"):
+        assert w in s
+    for phrase in ('"get ... back"', "third person", "leftover true", "sent on"):
+        assert phrase in s
+    assert "%" not in s
+
+
+def _exchange_trace():
+    """Live copy of the replay trace with its top endpoints turned into an inferred deposit and a hot wallet."""
+    t, c = live()
+    ends = sorted(t["endpoints"], key=lambda e: -e["victim_remaining"])
+    nodes = {n["address"].lower(): n for n in t["nodes"]}
+    for e, name, kind, src in ((ends[0], "Binance deposit (inferred)", "exchange_deposit", "classifier"),
+                               (ends[1], "Binance 14", "exchange_hot", "exchange_list")):
+        e.update(reason="exchange", exchange=name, freezable=False)
+        n = nodes[e["address"].lower()]
+        n.update(kind=kind, label=name, label_source=src, frozen={"is_frozen": False, "frozen_at": None, "freeze_tx": None})
+    return t, c, ends[0]["address"].lower(), ends[1]["address"].lower()
+
+
+def test_inferred_deposit_and_hot_wallet_are_worded_apart():
+    t, c, dep, hot = _exchange_trace()
+    rows = {r["address"]: r for r in build_facts(t, c)["derived"]["endpoints"]}
+    assert rows[dep]["exchange_kind"] == "inferred_deposit" and rows[hot]["exchange_kind"] == "hot"
+    assert sanitize_label("Binance deposit (inferred)") == "Binance"
+    vic = write_case(t, c, "victim")["text"]
+    assert f"reached a likely Binance deposit address: {short_addr(dep)}" in vic
+    assert f"reached an exchange hot wallet (Binance): {short_addr(hot)}" in vic
+    det = write_case(t, c, "detective")["text"]
+    dep_line = next(ln for ln in det.splitlines() if ln.startswith(f"- {dep}"))
+    hot_line = next(ln for ln in det.splitlines() if ln.startswith(f"- {hot}"))
+    assert "exchange label Binance, inferred deposit address" in dep_line
+    assert "exchange label Binance, labelled exchange hot wallet" in hot_line
+
+
+def test_swap_unresolved_endpoint_prints_eth_never_zero_usdt():
+    swap = next(e["address"] for e in TRACE["endpoints"] if e["reason"] == "swap_unresolved")
+    facts = build_facts(TRACE, CASE)
+    i, row = next((i, r) for i, r in enumerate(facts["derived"]["endpoints"]) if r["address"] == swap)
+    assert row["token"] == "ETH" and row["eth_amount"] == 0.075531024
+    for audience in ("victim", "detective"):
+        text = write_case(TRACE, CASE, audience)["text"]
+        line = next(ln for ln in text.splitlines() if swap in ln or short_addr(swap) in ln and ln.startswith("- "))
+        assert "0.075531024 ETH" in line and "0.00 USDT" not in line, line
+    with pytest.raises(TemplateError, match="holds ETH"):
+        validate(f"Some went to {{{{derived.endpoints.{i}.address|short}}}} ({{{{derived.endpoints.{i}.victim_funds|usdt}}}}).",
+                 facts)
+    assert writer._fmt_eth(1234.5) == "1,234.5 ETH" and writer._fmt_eth(0.0) == "0 ETH"
+
+
+@pytest.mark.parametrize("audience", ["victim", "detective"])
+@pytest.mark.parametrize("para,why", [
+    ("Most of this money is recoverable through the right channels.", "banned"),
+    ("Your money is safe now that the wallet is listed.", "banned"),
+    ("We froze the main wallet before it could move.", "banned"),
+    ("We have seized the funds at the last hop.", "banned"),
+    ("The wallet {{derived.endpoints.0.address|short}} is owned by Wang Lei.", "banned"),
+    ("The receiving wallet is operated by Huione Group.", "banned"),
+    ("Mr Chen moved the money on the same day.", "banned"),
+    ("The sender is known as the boss of the ring.", "banned"),
+    ("The suspect moved it to {{derived.endpoints.0.address|short}}.", "accusation"),
+    ("A money mule wallet received it: {{derived.endpoints.0.address|short}}.", "accusation"),
+    ("It ended at {{derived.endpoints.0.address|short}}, an illicit wallet.", "accusation"),
+])
+def test_more_promises_accusations_and_identities_rejected(audience, para, why):
+    with pytest.raises(TemplateError, match=why):
+        validate(para, build_facts(TRACE, CASE), audience=audience)
+
+
+@pytest.mark.parametrize("para", [
+    "A freeze only stops the money from moving. It does not decide who it belongs to.",
+    "Tether froze the wallet. Only law enforcement can ask Tether to act.",
+    "The trace does not identify anyone; it follows money on a public ledger.",
+    "Most of it went to a wallet run by an exchange.",
+])
+def test_neutral_wording_near_the_new_bans_passes(para):
+    validate(para, build_facts(TRACE, CASE), audience="victim")
