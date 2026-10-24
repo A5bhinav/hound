@@ -1,7 +1,7 @@
 "use client";
 
 import type { Chain, Trace, TraceEdge, TraceNode } from "@/lib/types";
-import { KIND_LABEL, explorerUrl, pct, shortAddr, usdt } from "@/lib/format";
+import { KIND_LABEL, explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import styles from "./TraceGraph.module.css";
 
 function Ext({ href, children }: { href: string | null; children: React.ReactNode }) {
@@ -28,9 +28,12 @@ export default function NodeDetail({
   const incoming = trace.edges.filter((e) => e.to === node.address);
   const outgoing = trace.edges.filter((e) => e.from === node.address);
   const endpoint = trace.endpoints.find((p) => p.address === node.address);
-  // Live case: never put the victim's own wallet in full on a projected screen (§0, review contracts-11).
-  // Full addresses stay in the detective packet.
-  const hideAddress = !trace.replay && node.kind === "victim";
+  const revealedFrozen = freezesShown && !!node.frozen?.is_frozen;
+  // Live cases: no full address on a projected screen (§0, DEMO.md, review security-r2-4). Replays and wallets
+  // Tether has frozen (a public on-chain record) are shown in full. Full addresses stay in the printed packet.
+  const showFull = !!trace.replay || revealedFrozen;
+  const hideFreezable = trace.method.freeze_visibility === "hidden" && !freezesShown;
+  const swaps = (trace.swaps?.resolved ?? []).filter((s) => s.address === node.address);
 
   return (
     <aside className={styles.detail} aria-label="Address details">
@@ -42,14 +45,14 @@ export default function NodeDetail({
       </p>
       <h2 className={styles.detailTitle}>{node.label ?? shortAddr(node.address)}</h2>
       <p className="mono">
-        {hideAddress ? (
-          `${shortAddr(node.address)} (victim's wallet, shortened)`
-        ) : (
+        {showFull ? (
           <Ext href={explorerUrl(node.chain, "address", node.address)}>{node.address}</Ext>
+        ) : (
+          `${shortAddr(node.address)} (live case, shortened on screen)`
         )}
       </p>
 
-      {freezesShown && node.frozen?.is_frozen && (
+      {revealedFrozen && node.frozen && (
         <p className={styles.frozenBadge}>
           Tether froze this address{node.frozen.frozen_at ? ` on ${node.frozen.frozen_at.slice(0, 10)}` : ""}.
           {node.frozen.freeze_tx && (
@@ -79,8 +82,19 @@ export default function NodeDetail({
                 <dd>{usdt(endpoint.victim_remaining)}</dd>
               </>
             )}
-            <dt>Freezable</dt>
-            <dd>{endpoint.freezable ? "Yes, balance covers the victim's inflow" : "No"}</dd>
+            {/* Before a replay's reveal, "No" would leak that Tether already froze it (review web-integration-8). */}
+            {!hideFreezable && (
+              <>
+                <dt>Freezable</dt>
+                <dd>
+                  {revealedFrozen
+                    ? "Already frozen by Tether"
+                    : endpoint.freezable
+                      ? "Yes, balance covers the victim's money"
+                      : "No"}
+                </dd>
+              </>
+            )}
           </>
         )}
         {node.label && (
@@ -102,6 +116,29 @@ export default function NodeDetail({
         </>
       )}
 
+      {swaps.length > 0 && (
+        <>
+          <p className="eyebrow">Swapped ETH to USDT here</p>
+          <ul className={styles.flows}>
+            {swaps.map((s) => {
+              const eth = Object.values(s.victim_eth).reduce((a, b) => a + b, 0);
+              const usdtIn = Object.values(s.victim_usdt).reduce((a, b) => a + b, 0);
+              return (
+                <li key={s.tx_hash}>
+                  <span>
+                    Victim {tok(eth, "ETH")} → {tok(usdtIn, "USDT")}
+                  </span>
+                  <span className={styles.flowMeta}>{s.time.slice(0, 10)} · same transaction</span>
+                  <span className="mono">
+                    <Ext href={explorerUrl(node.chain, "tx", s.tx_hash)}>{shortAddr(s.tx_hash)}</Ext>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
       <Flows title="Money in" side="from" edges={incoming} chain={node.chain} />
       <Flows title="Money out" side="to" edges={outgoing} chain={node.chain} />
     </aside>
@@ -117,7 +154,7 @@ function Flows({ title, side, edges, chain }: { title: string; side: "from" | "t
         {edges.map((e) => (
           <li key={`${e.from}${e.to}`}>
             <span>
-              {usdt(e.attributed_amount)} {side} <span className="mono">{shortAddr(e[side])}</span>
+              {tok(e.attributed_amount, e.token)} {side} <span className="mono">{shortAddr(e[side])}</span>
             </span>
             <span className={styles.flowMeta}>
               {pct(e.confidence)} · {e.method} · {e.tx_hashes.length} tx

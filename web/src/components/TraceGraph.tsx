@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Core, ElementDefinition } from "cytoscape";
 import type { Trace, TraceNode } from "@/lib/types";
-import { KIND_LABEL, daysBetween, pct, shortAddr, tone, usdt0 } from "@/lib/format";
+import { KIND_LABEL, daysBetween, pct, shortAddr, tok0, tone } from "@/lib/format";
 import NodeDetail from "./NodeDetail";
 import styles from "./TraceGraph.module.css";
 
 const COL_W = 340;
 const ROW_H = 104;
 const STEP_MS = 900;
-const FREEZE_REVEAL_MS = 1200;
 
 const TONE_COLOR = {
   trace: "#2c5a86",
@@ -28,13 +27,14 @@ const TONE_FILL = {
 } as const;
 
 /** Label and colours for a node; frozen styling waits until freezes are revealed. */
-function nodeLook(n: TraceNode, freezesShown: boolean) {
+function nodeLook(n: TraceNode, freezesShown: boolean, swapped: boolean) {
   const full = n.label ?? shortAddr(n.address);
   const name = full.length > 22 ? `${full.slice(0, 21)}…` : full;
   const frozen = freezesShown && n.frozen?.is_frozen;
   const t = tone(n, freezesShown);
+  const sub = frozen ? "TETHER FROZE THIS" : swapped ? "SWAP ETH → USDT" : KIND_LABEL[n.kind].toUpperCase();
   return {
-    text: `${name}\n${frozen ? "TETHER FROZE THIS" : KIND_LABEL[n.kind].toUpperCase()}`,
+    text: `${name}\n${sub}`,
     color: TONE_COLOR[t],
     fill: TONE_FILL[t],
     dead: t === "dead",
@@ -43,8 +43,10 @@ function nodeLook(n: TraceNode, freezesShown: boolean) {
 
 /** Deterministic column layout: x = depth, rows sorted by inflow (largest on top). */
 function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[] {
+  const swapped = swapAddresses(trace);
+  const toUsdt = usdtPerUnit(trace);
   const inflow = new Map<string, number>();
-  for (const e of trace.edges) inflow.set(e.to, (inflow.get(e.to) ?? 0) + e.attributed_amount);
+  for (const e of trace.edges) inflow.set(e.to, (inflow.get(e.to) ?? 0) + e.attributed_amount * toUsdt(e.token));
 
   const byDepth = new Map<number, TraceNode[]>();
   for (const n of trace.nodes) byDepth.set(n.depth, [...(byDepth.get(n.depth) ?? []), n]);
@@ -63,7 +65,7 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
       grabbable: false,
     });
     col.forEach((n, i) => {
-      const { dead, ...look } = nodeLook(n, freezesShown);
+      const { dead, ...look } = nodeLook(n, freezesShown, swapped.has(n.address));
       els.push({
         group: "nodes",
         data: { id: n.address, depth, ...look },
@@ -80,13 +82,24 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
         source: e.from,
         target: e.to,
         hop: e.hop,
-        text: `${usdt0(e.attributed_amount)}\n${pct(e.confidence)} · ${e.method}`,
-        width: 1.5 + Math.log10(Math.max(e.attributed_amount, 10)) * 0.9,
+        text: `${tok0(e.attributed_amount, e.token)}\n${pct(e.confidence)} · ${e.method}`,
+        // Thickness compares value, so non-USDT flows are converted at the trace's own swap rate.
+        width: 1.5 + Math.log10(Math.max(e.attributed_amount * toUsdt(e.token), 10)) * 0.9,
       },
       classes: e.confidence < 0.6 ? "weak" : "",
     });
   }
   return els;
+}
+
+const swapAddresses = (trace: Trace) => new Set((trace.swaps?.resolved ?? []).map((s) => s.address));
+
+/** USDT per unit of a token, from the trace's resolved swaps (ETH only); 1 for USDT or when unknown. */
+function usdtPerUnit(trace: Trace) {
+  const sw = trace.swaps?.resolved ?? [];
+  const eth = sw.reduce((s, x) => s + x.eth_out, 0);
+  const rate = eth > 0 ? sw.reduce((s, x) => s + x.usdt_in, 0) / eth : 1;
+  return (token: string) => (token === "ETH" ? rate : 1);
 }
 
 /** asOf: the case's story date (replay: the victim's report), used to say how long after it Tether froze. */
@@ -112,12 +125,7 @@ export default function TraceGraph({
   const [freezesShown, setFreezesShown] = useState(!hideFreezes);
   const frozen = useMemo(() => trace.nodes.filter((n) => n.frozen?.is_frozen && n.frozen.frozen_at), [trace]);
 
-  // Replay: freezes appear only after the last hop has unfolded (§0, AUDIT N1).
-  useEffect(() => {
-    if (!hideFreezes || shownHop < maxHop) return;
-    const t = setTimeout(() => setFreezesShown(true), FREEZE_REVEAL_MS);
-    return () => clearTimeout(t);
-  }, [hideFreezes, shownHop, maxHop]);
+  // Replay: freezes stay hidden until the presenter clicks "Reveal what Tether did" after the last hop (§0, AUDIT N1).
 
   useEffect(() => {
     onFreezesShown?.(freezesShown);
@@ -126,9 +134,10 @@ export default function TraceGraph({
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
+    const swapped = swapAddresses(trace);
     cy.batch(() => {
       for (const n of trace.nodes) {
-        const { dead, ...look } = nodeLook(n, freezesShown);
+        const { dead, ...look } = nodeLook(n, freezesShown, swapped.has(n.address));
         cy.getElementById(n.address).data(look).toggleClass("dead", dead);
       }
     });
@@ -282,6 +291,17 @@ export default function TraceGraph({
           Show all hops
         </button>
         <button type="button" onClick={() => cyRef.current?.fit(undefined, 40)}>Fit to screen</button>
+        {hideFreezes && !freezesShown && frozen.length > 0 && (
+          <button
+            type="button"
+            className={styles.reveal}
+            onClick={() => setFreezesShown(true)}
+            disabled={shownHop < maxHop}
+            title={shownHop < maxHop ? "Available once the last hop has unfolded" : undefined}
+          >
+            Reveal what Tether did
+          </button>
+        )}
       </div>
       {hideFreezes && freezesShown && frozen.length > 0 && (
         <p className={styles.freezeReveal} role="status">

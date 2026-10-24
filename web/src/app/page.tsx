@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ApiError, Bar } from "@/components/Chrome";
+import ResetDemo from "@/components/ResetDemo";
 import { HoundApiError, listCases, usingFixtures } from "@/lib/api";
 import type { CaseSummary } from "@/lib/types";
 import styles from "./home.module.css";
@@ -49,6 +50,7 @@ export default async function Home() {
             </li>
           ))}
         </ul>
+        {!usingFixtures && <ResetDemo />}
       </main>
     </>
   );

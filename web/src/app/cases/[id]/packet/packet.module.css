@@ -162,3 +162,13 @@
     max-width: none;
   }
 }
+
+.printOnly {
+  display: none;
+}
+
+@media print {
+  .printOnly {
+    display: inline;
+  }
+}
