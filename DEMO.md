@@ -3,7 +3,7 @@
 One laptop runs the demo (Ishaan's). Hard deadline for Devpost is **9:00 AM**; be at the venue by 8 AM. Judging **10:30 AM to 12:30 PM**, all four of us at the table.
 
 ## Sun 8 AM checklist
-- [ ] `git pull` on main; `make test` is green.
+- [ ] `git pull` on main; `make test` is green; `make e2e` ends with `0 warn, 0 fail` (needs `cd web && npm ci` once).
 - [ ] Repo-root `.env` has `ANTHROPIC_API_KEY`. After `make demo`, run the replay once and GET `/cases/ohnd-replay-ah/packet`: expect `"source": "claude"`. If it says `template`, the key is not loaded; the packet is still correct, but do not say "Claude wrote this".
 - [ ] Phone hotspot is the primary network. Venue Wi-Fi is the backup.
 - [ ] `caffeinate -dims` running (the laptop must not sleep).
@@ -21,7 +21,7 @@ One laptop runs the demo (Ishaan's). Hard deadline for Devpost is **9:00 AM**; b
 make demo                                   # HOUND_CACHE_MODE=prefer_cache on :8000
 
 # terminal 2: web
-cd web && npm run build && npm run start    # http://localhost:3000 (rebuild after any env change)
+cd web && npm ci && npm run build && npm run start    # http://localhost:3000 (npm ci once per clone; rebuild after any env change)
 ```
 `web/.env.local` must have `HOUND_DATA=` (empty) and `HOUND_API_URL=http://localhost:8000`.
 Health check: open http://localhost:8000/health and expect `"ok": true`.
@@ -45,7 +45,7 @@ Health check: open http://localhost:8000/health and expect `"ok": true`.
 | No internet at all | Both the DOJ replay (committed snapshot) and the live case (local bundle) run with zero network calls |
 | Claude API down / no key | Packets fall back to the deterministic template (`source: template`) within about 20 seconds; every number is still verified. Wallet explanations keep their rule text. With a key set, each trace also asks Claude to reword those explanations, so a stalled network slows the trace too: unset the key if the venue network is bad |
 | UI shows OFFLINE | `HOUND_DATA=fixture` is set in `web/.env.local`; clear it and rebuild |
-| Intake page says "intake backend isn't running" | Expected until CK's intake routes ship (issue #19). Use **Replay intake** |
+| Intake page says "intake backend isn't running" | The backend is down or was started without the intake routes: `curl localhost:8000/health`, restart `make demo`. Meanwhile use **Replay intake** |
 | "Reveal what Tether did" is greyed out | The hops are still unfolding; wait for the last column, or click **Show all hops** |
 
 ## Never on screen
