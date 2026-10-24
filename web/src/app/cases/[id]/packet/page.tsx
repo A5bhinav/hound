@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PendingHint from "@/components/PendingHint";
 import { ApiError, Bar } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
 import { HoundApiError, getPacket, usingFixtures, type Packet } from "@/lib/api";
@@ -55,9 +56,11 @@ export default async function PacketPage({ params, searchParams }: PageProps<"/c
           <span className={styles.toggle} role="group" aria-label="Packet version">
             <Link href="?audience=detective" aria-current={audience === "detective" ? "page" : undefined}>
               For the detective
+              <PendingHint />
             </Link>
             <Link href="?audience=victim" aria-current={audience === "victim" ? "page" : undefined}>
               For the victim
+              <PendingHint />
             </Link>
           </span>
           <PrintButton />

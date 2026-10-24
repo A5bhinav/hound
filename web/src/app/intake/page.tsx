@@ -1,6 +1,6 @@
 import { Bar } from "@/components/Chrome";
 import LiveIntake from "@/components/LiveIntake";
-import { HoundApiError, listCases, usingFixtures } from "@/lib/api";
+import { getPublicBase, HoundApiError, listCases, usingFixtures } from "@/lib/api";
 import type { CaseSummary } from "@/lib/types";
 
 export default async function IntakePage() {
@@ -15,7 +15,7 @@ export default async function IntakePage() {
   return (
     <>
       <Bar offline={usingFixtures}>Intake</Bar>
-      <LiveIntake replayCase={replayCase} />
+      <LiveIntake replayCase={replayCase} publicBase={await getPublicBase()} />
     </>
   );
 }

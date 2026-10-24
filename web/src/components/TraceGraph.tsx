@@ -265,7 +265,15 @@ export default function TraceGraph({
           <button
             type="button"
             className={styles.reveal}
-            onClick={() => setFreezesShown(true)}
+            onClick={() => {
+              setFreezesShown(true);
+              // On a short screen (720p projector) the last column ends below the fold: bring the graph's bottom into view.
+              requestAnimationFrame(() => {
+                const svg = scrollRef.current?.querySelector("svg");
+                const r = svg?.getBoundingClientRect();
+                if (r && r.bottom > window.innerHeight) window.scrollBy({ top: r.bottom - window.innerHeight + 16, behavior: "smooth" });
+              });
+            }}
             disabled={shownHop < maxHop}
             title={shownHop < maxHop ? "Available once the last hop has unfolded" : undefined}
           >

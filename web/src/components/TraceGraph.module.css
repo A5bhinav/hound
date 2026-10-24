@@ -88,7 +88,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 560px;
 }
 
 .scroller {
@@ -98,6 +97,10 @@
 
 .flow {
   display: block;
+  /* 560 units tall, scaled down on short screens (720p projector) so the last column stays in view.
+     width: auto keeps the viewBox aspect ratio, so the columns shrink with it. */
+  height: clamp(420px, calc(100svh - 220px), 560px);
+  width: auto;
 }
 
 .colHead {

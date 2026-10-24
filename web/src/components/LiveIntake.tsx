@@ -23,7 +23,7 @@ const STEPS: { status: IntakeSession["status"][]; label: string }[] = [
 ];
 
 /** Polls GET /intake/active (AUDIT §5). Replay plays the same steps from a curated case, no backend involved. */
-export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | null }) {
+export default function LiveIntake({ replayCase, publicBase }: { replayCase: CaseSummary | null; publicBase?: string | null }) {
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
   const replaying = useRef(false);
   const replayTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -104,7 +104,8 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
     endReplay();
     replaying.current = true;
     replayIgnoreCode.current = lastLiveCode.current;
-    const base = `${window.location.origin}/c/REPLAY`;
+    // The QR must open on a judge's phone: the public host, not this laptop's localhost.
+    const base = `${publicBase || window.location.origin}/c/REPLAY`;
     const story = replayCase.story ?? {};
     const frames: IntakeSession[] = [
       { case_code: "REPLAY", upload_url: base, status: "story", story: { platform: story.platform } },

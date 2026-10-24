@@ -861,4 +861,6 @@ app.router.on_startup.append(_start_prewarm)  # served app only (not CLI imports
 @app.get("/health")
 def health():
     return {"ok": True, "cases": len(CASES), "traces": len(TRACES), "jobs": len(JOBS),
-            "example": bool(example("ohnd_replay.trace")), "skipped_cases": [s["file"] for s in SKIPPED_CASES]}
+            "example": bool(example("ohnd_replay.trace")), "skipped_cases": [s["file"] for s in SKIPPED_CASES],
+            # The web host victims open (upload links, the replay QR); a public URL, not a secret.
+            "public_base_url": os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or None}

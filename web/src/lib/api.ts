@@ -83,6 +83,17 @@ async function example<T>(name: string): Promise<T> {
   }
 }
 
+/** The public web host from the backend's PUBLIC_BASE_URL, or null (then the page uses its own origin). */
+export async function getPublicBase(): Promise<string | null> {
+  if (usingFixtures) return null;
+  try {
+    return (await call<{ public_base_url?: string | null }>("GET", "/health")).public_base_url ?? null;
+  } catch (err) {
+    console.error("[hound-web] public base from /health:", err);
+    return null;
+  }
+}
+
 export async function listCases(): Promise<CaseSummary[]> {
   if (usingFixtures) return [await example<Case>("ohnd_replay.case.json")];
   return call<CaseSummary[]>("GET", "/cases");
