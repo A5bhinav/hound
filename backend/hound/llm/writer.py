@@ -22,7 +22,7 @@ import os
 import re
 from datetime import datetime
 
-from hound.llm.facts import ACCUSE, WriterInputError, build_facts, citable, contact_values, flatten, short_addr
+from hound.llm.facts import ACCUSE, LIMIT_REASONS, WriterInputError, build_facts, citable, contact_values, flatten, short_addr
 
 log = logging.getLogger("hound.writer")
 
@@ -303,6 +303,11 @@ _INCOMPLETE = {
 }
 
 
+def _pl(n, one, many=None):
+    """Code-chosen singular or plural word for a count the template prints."""
+    return one if n == 1 else (many or one + "s")
+
+
 def _status_block(facts, audience):
     """Code-written PARTIAL banner, both audiences, shown before any narrative (Claude or template)."""
     d = facts["derived"]
@@ -317,16 +322,27 @@ def _status_block(facts, audience):
             text = "an error was logged that is not tied to one wallet"
         text = text.replace("{A}", f"{{{{{p}.address|{fmt}}}}}").replace("{S}", f"{{{{{p}.seed_id|raw}}}}")
         lines.append(f"- {text}.")
+    n_inc, n_err = d["incomplete_count"], d["audit_error_count"]
+    errs = f"{{{{derived.audit_error_count|int}}}} {_pl(n_err, 'error')} in the audit log"
+    # a clean 'done' whose only gaps are limit stops: say that, not "partial, 0 errors"
+    limits_only = (facts["trace"]["status"] == "done" and n_err == 0 and bool(d["incomplete"])
+                   and all(it["what"] in LIMIT_REASONS for it in d["incomplete"]))
     if audience == "victim":
-        head = ("THIS TRACE IS INCOMPLETE. Some blockchain data could not be loaded or the trace hit a limit, so "
+        head = ("THIS TRACE IS INCOMPLETE. The trace hit a limit on some branches, so the amounts below may be "
+                "missing money.") if limits_only else (
+                "THIS TRACE IS INCOMPLETE. Some blockchain data could not be loaded or the trace hit a limit, so "
                 "the amounts below may be missing money.")
+    elif limits_only:
+        head = (f"INCOMPLETE BRANCHES: the trace stopped at a limit on {{{{derived.incomplete_count|int}}}} "
+                f"{_pl(n_inc, 'branch', 'branches')}. Totals and endpoints below may be incomplete.")
     else:
-        head = ("PARTIAL TRACE: status {{trace.status|raw}}, {{derived.audit_error_count|int}} errors in the audit "
-                "log. Totals and endpoints below may be incomplete.") if facts["trace"]["status"] else (
-                "PARTIAL TRACE: {{derived.audit_error_count|int}} errors in the audit log. Totals and endpoints "
-                "below may be incomplete.")
-    if lines:
+        head = (f"PARTIAL TRACE: status {{{{trace.status|raw}}}}, {errs}. Totals and endpoints below may be "
+                "incomplete.") if facts["trace"]["status"] else (
+                f"PARTIAL TRACE: {errs}. Totals and endpoints below may be incomplete.")
+    if lines and not (limits_only and audience == "detective"):
         head += " Incomplete branches ({{derived.incomplete_count|int}}):\n" + "\n".join(lines)
+    elif lines:
+        head += "\n" + "\n".join(lines)
     return [head]
 
 
@@ -336,7 +352,7 @@ def fallback_paragraphs(facts, audience):
     if audience == "victim":
         who = "the money sent from the victim wallets" if replay else "the money you sent"
         paras.append(f"We followed {{{{derived.traced_usdt|usdt}}}} of {who} through {{{{derived.wallet_count|int}}}} "
-                     "wallets on the public blockchain. Here is where it ended up.")
+                     f"{_pl(d['wallet_count'], 'wallet')} on the public blockchain. Here is where it ended up.")
         lines = []
         for i, r in enumerate(d["endpoints"]):
             p = f"derived.endpoints.{i}"
@@ -367,9 +383,14 @@ def fallback_paragraphs(facts, audience):
         if m["min_amount"] is not None:
             s += ", branches below {{trace.method.min_amount|usdt}} not expanded"
         paras.append(s + ".")
-        s = ("Victim funds traced: {{derived.traced_usdt|usdt}} from {{derived.seed_count|int}} seed transfers, across "
-             "{{derived.wallet_count|int}} wallets and {{derived.tx_count|int}} underlying transactions, to a maximum "
-             "depth of {{derived.max_depth|int}} hops.")
+        seeds = f"{{{{derived.found_seed_count|int}}}} {_pl(d['found_seed_count'], 'seed transfer')}"
+        if d["missing_seed_count"]:
+            seeds += " ({{derived.missing_seed_count|int}} more reported but not found on chain)"
+        # depth counts wallets from the victim; a loop-back edge in the hop table can carry a higher hop number
+        s = (f"Victim funds traced: {{{{derived.traced_usdt|usdt}}}} from {seeds}, across "
+             f"{{{{derived.wallet_count|int}}}} {_pl(d['wallet_count'], 'wallet')} and {{{{derived.tx_count|int}}}} "
+             f"underlying {_pl(d['tx_count'], 'transaction')}; the furthest wallet is {{{{derived.max_depth|int}}}} "
+             f"{_pl(d['max_depth'], 'hop')} from a victim wallet.")
         if m["as_of_block"] is not None:
             s += " Chain data cut off at block {{trace.method.as_of_block|raw}}."
         paras.append(s)
@@ -377,7 +398,7 @@ def fallback_paragraphs(facts, audience):
             paras.append("Tether-frozen endpoints: {{derived.frozen_count|int}}, holding {{derived.frozen_usdt|usdt}} "
                          "of attributed victim funds.")
         if d["freezable_count"]:
-            paras.append("Freezable now: {{derived.freezable_count|int}} endpoints, {{derived.freezable_usdt|usdt}} "
+            paras.append(f"Freezable now: {{{{derived.freezable_count|int}}}} {_pl(d['freezable_count'], 'endpoint')}, {{{{derived.freezable_usdt|usdt}}}} "
                          "attributed. Send freeze requests to {{const.contacts.tether|raw}}.")
         if replay:
             paras.append("DOJ context only, not scored: the complaint in {{doj.case_number|raw}} traced "
@@ -430,7 +451,8 @@ def _hop_section(facts):
         amt = (f"{{{{{p}.attributed_amount|usdt}}}}" if h["token"] == "USDT"
                else f"{{{{{p}.attributed_amount|raw}}}} {{{{{p}.token|raw}}}}")
         line = ("- " + (f"hop {{{{{p}.hop|int}}}}: " if h["hop"] is not None else "")
-                + f"{{{{{p}.from|raw}}}} to {{{{{p}.to|raw}}}}, {amt} attributed, {{{{{p}.tx_count|int}}}} transactions")
+                + f"{{{{{p}.from|raw}}}} to {{{{{p}.to|raw}}}}, {amt} attributed, {{{{{p}.tx_count|int}}}} "
+                + _pl(h["tx_count"], "transaction"))
         if h["confidence"] is not None:
             line += f", confidence {{{{{p}.confidence|raw}}}}"
         if h["method"]:
@@ -521,7 +543,8 @@ def _parse(raw):
 
 
 def _claude_paragraphs(facts, audience):
-    """Up to two attempts. Returns validated paragraphs or None (caller falls back)."""
+    """Up to two attempts, the second only after a validator rejection. A network, credit or
+    refusal error returns None at once, so a dead network costs one timeout, not two."""
     messages = [{"role": "user", "content": _prompt(facts, audience)}]
     for attempt in (1, 2):
         raw = None
@@ -538,7 +561,8 @@ def _claude_paragraphs(facts, audience):
                              {"role": "user", "content": "Rejected by the validator: " + "; ".join(e.errors[:10])
                               + ". Rewrite the whole JSON following the hard rules."}]
         except Exception as e:  # network, credits, refusal: never break the packet
-            log.error("writer: Claude call failed (attempt %d): %s", attempt, e)
+            log.error("writer: Claude call failed (attempt %d), not retrying: %s", attempt, e)
+            return None
     return None
 
 

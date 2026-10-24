@@ -727,7 +727,8 @@ def test_detective_packet_lists_every_hop_with_tx_counts():
     assert len(hop_lines) == len(TRACE["edges"])
     for e in TRACE["edges"]:
         n = len(set(e["tx_hashes"]))
-        assert any(e["from"].lower() in l and e["to"].lower() in l and f"{n:,} transactions" in l for l in hop_lines), e
+        assert any(e["from"].lower() in l and e["to"].lower() in l and (f"{n:,} transactions" if n != 1 else "1 transaction,") in l for l in hop_lines), e
+    assert not any(" 1 transactions" in l for l in hop_lines)
     eth = [l for l in hop_lines if " ETH attributed" in l]
     assert len(eth) == sum(1 for e in TRACE["edges"] if e["token"] == "ETH")
     assert "Contacts for a live case: freeze requests to Tether via law enforcement" in det
@@ -769,3 +770,39 @@ def test_claude_client_is_bounded(monkeypatch):
     with pytest.raises(RuntimeError, match="stop here"):
         writer._call_claude([{"role": "user", "content": "x"}])
     assert seen == {"timeout": writer.CLAUDE_TIMEOUT_S, "max_retries": 0} and writer.CLAUDE_TIMEOUT_S <= 30
+
+
+def test_claude_network_error_is_not_retried(claude, monkeypatch):
+    calls = claude(TimeoutError("read timed out"), fixture("good_detective.json"))
+    out = write_case(TRACE, CASE, "detective")
+    assert out["source"] == "template" and len(calls) == 1
+
+
+def test_detective_summary_depth_wording_and_plurals():
+    det = write_case(TRACE, CASE, "detective")["text"]
+    assert "maximum depth" not in det and "the furthest wallet is " in det and "from a victim wallet." in det
+    f = build_facts(TRACE, CASE)
+    assert f"from {f['derived']['found_seed_count']:,} seed transfer" in det
+
+
+def test_partial_banner_plural_and_missing_seed_note():
+    t, c = live()
+    t["status"] = "partial"
+    t["audit_log"] = list(t.get("audit_log") or []) + [
+        {"t": "x", "step": "error", "address": None, "detail": "seed s1 not found on chain: no transfer"}]
+    det = write_case(t, c, "detective")["text"]
+    assert det.split("\n\n")[0].startswith("PARTIAL TRACE: status partial, 1 error in the audit log.")
+    n = len(t["seeds"])
+    assert f"from {n - 1:,} seed transfer" in det and "(1 more reported but not found on chain)" in det
+
+
+def test_done_trace_with_only_limit_stops_says_incomplete_branches():
+    t, c = live()
+    _with_endpoint(t, address="0x" + "07" * 20, reason="max_hops", victim_inflow=500.0, victim_remaining=500.0)
+    assert t["status"] == "done" and not [a for a in (t.get("audit_log") or []) if a.get("step") == "error"]
+    det = write_case(t, c, "detective")["text"]
+    head = det.split("\n\n")[0]
+    assert head.startswith("INCOMPLETE BRANCHES: the trace stopped at a limit on 1 branch.")
+    assert "PARTIAL TRACE" not in det and ("0x" + "07" * 20) in head
+    vhead = write_case(t, c, "victim")["text"].split("\n\n")[0]
+    assert vhead.startswith("THIS TRACE IS INCOMPLETE. The trace hit a limit")

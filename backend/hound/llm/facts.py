@@ -139,7 +139,7 @@ def _tx(v, where):
 # the PARENT wallet's address (the money was sent on from there, not held there). They never take
 # on the parent's freeze, balance or freezable flag.
 LEFTOVER_REASONS = ("dust", "capped")
-_LIMIT_REASONS = ("budget", "time_cap", "max_hops")
+LIMIT_REASONS = ("budget", "time_cap", "max_hops")
 _SEED_MISSING = re.compile(r"^seed (s\d+) not found on chain")
 _SEED_SHORT = re.compile(r"^seed (s\d+): only ")
 
@@ -181,7 +181,7 @@ def _incomplete(trace):
         else:
             add("other_error", addr)
     for i, e in enumerate(trace.get("endpoints", [])):
-        if e.get("reason") in _LIMIT_REASONS:
+        if e.get("reason") in LIMIT_REASONS:
             add(e["reason"], _addr(e.get("address"), f"endpoints.{i}.address"))
     return items, errors, missing, fetch_failed
 
@@ -328,6 +328,7 @@ def build_facts(trace, case):
     d = {
         "traced_usdt": round(sum(r["victim_funds"] for r in rows), 6),
         "seed_count": len(seeds),
+        "found_seed_count": max(len(seeds) - len(missing_seeds), 0),
         "send_count": len(sends),
         "first_send": min(times) if times else None,
         "last_send": max(times) if times else None,
