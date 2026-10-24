@@ -330,6 +330,19 @@ def test_hash_every_rpc_says_null_is_a_real_not_found(monkeypatch):
     assert "did not check out" in msg and "null" not in msg and "rpc" not in msg.lower()
 
 
+def test_voice_story_reads_wrapped_tool_args():
+    import json
+    story = {"scam_app": "MindChainSwap", "summary": "lost savings"}
+    for body in ({"args": {"story": story, "victim": {"alias": "Ann"}}},
+                 {"arguments": json.dumps({"story": story, "victim": {"alias": "Ann"}})},
+                 {"parameters": {"story": story, "victim": {"alias": "Ann"}}}):
+        intake.SESSIONS.clear()
+        intake._ACTIVE.clear()
+        assert client.post("/intake/voice/story", json=body).status_code == 200
+        a = client.get("/intake/active").json()
+        assert a["story"]["scam_app"] == "MindChainSwap" and a["victim"]["alias"] == "Ann", body
+
+
 def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     msgs = _fake_anthropic(monkeypatch, "{}")
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16

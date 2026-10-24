@@ -127,6 +127,25 @@ def open_session(story: dict[str, Any] | None, victim: dict[str, Any] | None) ->
     return s
 
 
+def _tool_arg(body: dict[str, Any], key: str) -> Any:
+    """body[key], or the same key under args / arguments / parameters (Cartesia may wrap tool args,
+    sometimes as a JSON string)."""
+    if key in body:
+        return body[key]
+    for wrap in ("args", "arguments", "parameters"):
+        inner = body.get(wrap)
+        if isinstance(inner, str):
+            try:
+                inner = json.loads(inner)
+            except json.JSONDecodeError:
+                continue
+        if isinstance(inner, dict) and key in inner:
+            log.info("intake voice tool: %r found under %r", key, wrap)
+            return inner[key]
+    log.warning("intake voice tool: no %r in the tool call body", key)
+    return None
+
+
 # ---------- routes ----------
 
 @router.post("/intake/voice/story")
@@ -141,7 +160,8 @@ async def voice_story(request: Request):
         body = {}
     if not isinstance(body, dict):
         raise HTTPException(422, "body must be a JSON object")
-    s = open_session(body.get("story"), body.get("victim"))
+    log.info("intake voice tool call: body keys %s", sorted(body.keys()))
+    s = open_session(_tool_arg(body, "story"), _tool_arg(body, "victim"))
     spoken = " ".join(s["case_code"])  # "K 7 M 2 P Q" reads better than "K7M2PQ"
     return {"case_code": s["case_code"], "upload_url": s["upload_url"],
             "say": f"I have opened case {spoken}. The Hound team will help you open a short web page with this case code, where you can add a picture of the payment screen or type in the details."}
