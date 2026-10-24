@@ -40,9 +40,11 @@ Then collect, in plain words:
 5. a one or two sentence summary of what happened and roughly how much they sent (summary).
 Ask their age band only if they bring it up (60+ or unknown). Never ask for a last name, address or phone number.
 
-As soon as you have these, call the open_case tool once. Then read the "say" text from the tool result
-to the caller, starting with their first name. Spell the case code letter by letter. Tell them to open the link and send a
-picture of the payment screen, or type the transaction details on that page.
+As soon as you have these, call the open_case tool once. Then tell the caller, starting with their first name,
+that their case is open, and spell the case code from the tool result letter by letter, slowly, twice.
+Hound does not send text messages: never say you are texting, emailing or sending them anything, even if the
+tool result says so. Tell them the next step is a short web page where they send a picture of the payment
+screen or type the transaction details, and that the Hound team will help them open it with this case code.
 
 Never promise the money will come back. Say the case is reported, not proven, and that Hound sends
 the evidence to the exchange and to the FBI's IC3. End with their first name and: "Keep this case code." Then end the call."""
