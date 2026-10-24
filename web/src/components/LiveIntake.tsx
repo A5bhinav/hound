@@ -304,7 +304,7 @@ function Approve({ code, caseId, approved }: { code: string; caseId: string; app
   );
 }
 
-/** +19898008367 reads as (989) 800-8367; anything else is shown as given. */
+/** +15014431471 reads as (501) 443-1471; anything else is shown as given. */
 function formatPhone(p: string) {
   const m = p.replace(/\D/g, "").match(/^1?(\d{3})(\d{3})(\d{4})$/);
   return m ? `(${m[1]}) ${m[2]}-${m[3]}` : p;

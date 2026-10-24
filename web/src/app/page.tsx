@@ -6,7 +6,7 @@ import styles from "./home.module.css";
 
 export const metadata = { title: "Hound: help after a crypto scam" };
 
-/** +19898008367 reads as (989) 800-8367. */
+/** +15014431471 reads as (501) 443-1471. */
 function formatPhone(p: string) {
   const m = p.replace(/\D/g, "").match(/^1?(\d{3})(\d{3})(\d{4})$/);
   return m ? `(${m[1]}) ${m[2]}-${m[3]}` : p;
