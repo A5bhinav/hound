@@ -285,6 +285,22 @@ def test_older_open_session_never_hides_a_newer_validated_one(monkeypatch):
     api.TRUSTED.discard(cid)
 
 
+def test_check_evidence_from_a_live_case_is_redacted_beyond_localhost(monkeypatch):
+    from hound.watch import routes as watch_routes
+    victim, scam = "0x" + "1" * 40, "0x" + "2" * 40
+    fake = {"decision": "hold", "reasons": [f"paid by victim {victim}"], "confidence": 0.9,
+            "evidence": {"case_ids": ["intake-abc123-ff"], "path": [{"from": victim, "to": scam, "tx_hash": TX}]}}
+    monkeypatch.setattr(watch_routes, "check", lambda c, a: fake)
+    local = client.get("/check", params={"chain": "ethereum", "address": scam}).json()
+    assert local["evidence"]["path"][0]["tx_hash"] == TX
+    remote = TestClient(api.app, client=("203.0.113.9", 40000))
+    far = remote.get("/check", params={"chain": "ethereum", "address": scam}).json()
+    hop = far["evidence"]["path"][0]
+    assert far["decision"] == "hold" and hop["tx_hash"] != TX and victim not in hop["from"] and victim not in far["reasons"][0]
+    fake["evidence"]["case_ids"] = ["curated-demo"]  # a curated replay case stays public
+    assert remote.get("/check", params={"chain": "ethereum", "address": scam}).json()["evidence"]["path"][0]["tx_hash"] == TX
+
+
 def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     msgs = _fake_anthropic(monkeypatch, "{}")
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16
