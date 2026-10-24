@@ -1,5 +1,7 @@
-import type { Case, CaseSummary, EndpointReason, Trace } from "@/lib/types";
+import type { Case, CaseSummary, Endpoint, EndpointReason, Trace } from "@/lib/types";
 import { explorerUrl, shortAddr, usdt } from "@/lib/format";
+
+const amount = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
 import styles from "./CaseCard.module.css";
 
 const REASON: Record<EndpointReason, string> = {
@@ -26,10 +28,22 @@ const FACTS: [string, (c: CaseSummary) => string | null | undefined][] = [
 ];
 
 /** trace is null while it is still running. */
-export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: Trace | null }) {
+export default function CaseCard({
+  c,
+  trace,
+  freezesShown = true,
+}: {
+  c: CaseSummary | Case;
+  trace: Trace | null;
+  /** false while a replay is still hiding freezes (the graph reveals them after the last hop). */
+  freezesShown?: boolean;
+}) {
   // GET /cases has no sends; the trace's seeds are the same transfers.
   const sendList = "sends" in c ? c.sends : (trace?.seeds ?? []);
-  const total = sendList.reduce((s, x) => s + x.amount, 0);
+  // Sends can be ETH (replay) or USDT; never label one token as another. Sum per token.
+  const totals = new Map<string, number>();
+  for (const s of sendList) totals.set(s.token, (totals.get(s.token) ?? 0) + s.amount);
+  const totalText = [...totals].map(([tok, n]) => `${amount(n)} ${tok}`).join(" + ");
   const chain = trace?.nodes[0]?.chain ?? ("sends" in c ? c.sends[0]?.chain : undefined) ?? "ethereum";
   const facts = FACTS.map(([k, get]) => [k, get(c)] as const).filter(([, v]) => v && v !== "unknown");
   const asOf = "as_of" in c ? c.as_of : null;
@@ -45,7 +59,7 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
       </h1>
       {sendList.length > 0 && (
         <p className={styles.sent}>
-          {usdt(total)} in {sendList.length} sends
+          {totalText} in {sendList.length} sends
         </p>
       )}
       {replay && asOf && <p className={styles.replay}>Traced as of {asOf.slice(0, 10)}, the date the victim reported.</p>}
@@ -66,7 +80,9 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
       <ul className={`${styles.list} ${styles.sends}`}>
         {sendList.map((s) => (
           <li key={s.tx_hash}>
-            <span>{usdt(s.amount)}</span>
+            <span>
+              {amount(s.amount)} {s.token}
+            </span>
             <span className={styles.meta}>
               {"time" in s && <>{s.time.slice(0, 10)} · </>}
               <a className="mono" href={explorerUrl(chain, "tx", s.tx_hash) ?? undefined} target="_blank" rel="noreferrer">
@@ -77,30 +93,48 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
         ))}
       </ul>
 
-      {trace && <Endpoints trace={trace} />}
+      {trace && <Endpoints trace={trace} freezesShown={freezesShown} />}
     </aside>
   );
 }
 
-function Endpoints({ trace }: { trace: Trace }) {
+function stopLabel(p: Endpoint, trace: Trace, frozenAt: string | null) {
+  if (frozenAt) return `Tether froze it on ${frozenAt.slice(0, 10)}`;
+  if (p.reason === "holding" && trace.replay) return "Was sitting here at cutoff";
+  return `${REASON[p.reason] ?? p.reason}${p.exchange ? `: ${p.exchange}` : ""}`;
+}
+
+/** Exchanges: money that reached it. Everything else: money still there, so stops never double-count (review contracts-9). */
+function stopAmount(p: Endpoint, replay: boolean | undefined) {
+  if (p.reason === "exchange" || p.victim_remaining == null) return `${usdt(p.victim_inflow)} of victim money reached it`;
+  const passed = p.victim_inflow - p.victim_remaining;
+  return `${usdt(p.victim_remaining)} of victim money still here${replay ? " at cutoff" : ""}${
+    passed >= 0.01 ? ` (${usdt(passed)} passed through)` : ""
+  }`;
+}
+
+function Endpoints({ trace, freezesShown }: { trace: Trace; freezesShown: boolean }) {
+  const frozenAt = (addr: string) => {
+    const n = trace.nodes.find((x) => x.address === addr);
+    return freezesShown && n?.frozen?.is_frozen ? (n.frozen.frozen_at ?? "") : null;
+  };
   return (
     <>
       <p className="eyebrow">Where the money stopped</p>
       <ul className={styles.list}>
-        {trace.endpoints.map((p) => (
-          <li key={p.address} data-reason={p.reason} data-freezable={p.freezable || undefined}>
-            <span>
-              {REASON[p.reason] ?? p.reason}
-              {p.exchange ? `: ${p.exchange}` : ""}
-            </span>
-            <span className={styles.meta}>
-              {usdt(p.victim_inflow)} of victim money in
-              {p.victim_remaining != null && <>, {usdt(p.victim_remaining)} still there{trace.replay ? " at cutoff" : ""}</>}
-              {" · "}
-              <span className="mono">{shortAddr(p.address)}</span>
-            </span>
-          </li>
-        ))}
+        {trace.endpoints.map((p) => {
+          const fz = frozenAt(p.address);
+          return (
+            <li key={p.address} data-reason={fz !== null ? "frozen" : p.reason} data-freezable={p.freezable || undefined}>
+              <span>{stopLabel(p, trace, fz || null)}</span>
+              <span className={styles.meta}>
+                {stopAmount(p, trace.replay)}
+                {" · "}
+                <span className="mono">{shortAddr(p.address)}</span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
       <p className={styles.method}>
         {trace.method.accounting} · max {trace.method.max_hops} hops

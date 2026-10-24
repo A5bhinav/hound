@@ -28,6 +28,9 @@ export default function NodeDetail({
   const incoming = trace.edges.filter((e) => e.to === node.address);
   const outgoing = trace.edges.filter((e) => e.from === node.address);
   const endpoint = trace.endpoints.find((p) => p.address === node.address);
+  // Live case: never put the victim's own wallet in full on a projected screen (§0, review contracts-11).
+  // Full addresses stay in the detective packet.
+  const hideAddress = !trace.replay && node.kind === "victim";
 
   return (
     <aside className={styles.detail} aria-label="Address details">
@@ -39,7 +42,11 @@ export default function NodeDetail({
       </p>
       <h2 className={styles.detailTitle}>{node.label ?? shortAddr(node.address)}</h2>
       <p className="mono">
-        <Ext href={explorerUrl(node.chain, "address", node.address)}>{node.address}</Ext>
+        {hideAddress ? (
+          `${shortAddr(node.address)} (victim's wallet, shortened)`
+        ) : (
+          <Ext href={explorerUrl(node.chain, "address", node.address)}>{node.address}</Ext>
+        )}
       </p>
 
       {freezesShown && node.frozen?.is_frozen && (

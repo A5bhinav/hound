@@ -58,6 +58,77 @@ export async function getCase(id: string): Promise<CaseSummary | Case> {
   return found;
 }
 
+/** GET /proof/scoreboard, /proof/backtest, /scan/latest (CK). Fields the proof page reads. */
+export interface Scoreboard {
+  case: string;
+  docket: string;
+  source_pdf: string;
+  trace_source: string | null;
+  targets: { label: string; address: string; group: "intermediate" | "final"; reached: boolean }[];
+  amount: { label: string; address: string; doj_ah_para74_usdt: number; ours_attributed_usdt: number | null; pct_error: number | null; band: string }[];
+  holdout: string[];
+  context: { para83_85_totals_usdt?: Record<string, number | string>; note?: string };
+  summary: {
+    status: string;
+    refused_reason: string | null;
+    intermediates_reached: number;
+    intermediates_total: number;
+    finals_reached: number;
+    finals_total: number;
+    blind: boolean;
+    start_disclosure: string;
+  };
+}
+
+export interface Backtest {
+  status?: string;
+  n: number;
+  n_skipped?: number;
+  population?: number;
+  detection_lag_median_h: number | null;
+  p90_h: number | null;
+  escape_share_median: number | null;
+  method: string;
+}
+
+export interface Scan {
+  status?: string;
+  label: string;
+  scanned_at?: string;
+  addresses: number;
+  usdt_unfrozen: number;
+  addresses_unfrozen: number;
+  already_frozen?: number;
+  cases: { address: string; chain?: string; category?: string; balance_usdt: number; is_frozen: boolean; freezable_now?: boolean }[];
+  method?: string;
+}
+
+export async function getProof(): Promise<{ scoreboard: Scoreboard; backtest: Backtest; scan: Scan }> {
+  if (usingFixtures) throw new HoundApiError("The proof panel reads the backend (GET /proof/*, /scan/latest). Unset HOUND_DATA to use it.");
+  const [scoreboard, backtest, scan] = await Promise.all([
+    call<Scoreboard>("GET", "/proof/scoreboard"),
+    call<Backtest>("GET", "/proof/backtest"),
+    call<Scan>("GET", "/scan/latest"),
+  ]);
+  return { scoreboard, backtest, scan };
+}
+
+export interface Packet {
+  packet: { text: string; cited: string[]; source?: string; citations_verified?: boolean };
+  trace: Trace;
+}
+
+/** GET /cases/{id}/packet. Null when the case has no finished trace yet (409). */
+export async function getPacket(id: string, audience: "detective" | "victim"): Promise<Packet | null> {
+  if (usingFixtures) throw new HoundApiError("The packet is written by the backend (GET /cases/{id}/packet). Unset HOUND_DATA to use it.");
+  try {
+    return await call<Packet>("GET", `/cases/${encodeURIComponent(id)}/packet?audience=${audience}`);
+  } catch (err) {
+    if (err instanceof HoundApiError && err.message.includes("returned 409")) return null;
+    throw err;
+  }
+}
+
 /** Fixture mode only. Live traces are started and polled from the browser (useTrace) via the /api proxy. */
 export async function fixtureTrace(id: string): Promise<Trace> {
   const trace = await example<Trace>("ohnd_replay.trace.json");
