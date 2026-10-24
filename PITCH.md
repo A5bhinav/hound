@@ -11,7 +11,7 @@ Every number below is verified (source in brackets). Don't say anything that isn
 "This is a real federal case: US versus 4.34 million Tether, Northern District of Ohio. The DOJ printed the wallets truncated, like 0xa17-dot-dot-dot. We recovered every full address from public chain data.
 We start from one victim, A.H., and her six real ETH sends. Hound sees nothing else: no DOJ labels, and Tether's freezes are hidden from it.
 Watch it work: her ETH is swapped to USDT in the same transaction at three wallets, then it moves through a laundering loop, then a consolidation wallet.
-Hound reaches all 11 intermediate wallets the FBI named, and two of the three wallets the DOJ seized."
+Hound reaches all 11 intermediate wallets the FBI named, and all three wallets the DOJ seized."
 [engine test: test_reaches_doj_seized_wallets_blind]
 
 **1:00 The reveal (15 s).** Click reveal.
@@ -21,7 +21,7 @@ Hound reaches all 11 intermediate wallets the FBI named, and two of the three wa
 "The save happens at the exchange. A victim tries to send to a wallet in this cluster, and Hound says hold, with the evidence. One report protects the next person."
 
 **1:35 Proof and honesty (20 s). Screen: proof panel.**
-"Scored against the DOJ's own numbers for A.H.: A-7 within 17 percent, A-9 within 11 percent. We miss A-8 and we show that. Every hop has a confidence, every dead end is on screen, and the packet can only cite numbers that are in the trace. A test fails the build otherwise."
+"Scored against the DOJ's own numbers for A.H.: two of the three seized wallets within 1 percent, the third within 11. Every victim dollar is accounted for. Every hop has a confidence, every dead end is on screen, and the packet can only cite numbers that are in the trace. A test fails the build otherwise."
 
 **1:55 Close (5 s).** "Hound. The 911 call for crypto scam victims."
 
@@ -37,8 +37,8 @@ Hound reaches all 11 intermediate wallets the FBI named, and two of the three wa
 **"How did you get the start address? Isn't that cheating?"**
 "The DOJ printed it in paragraph 69, truncated. We resolved it on chain by amount and date. The engine got nothing else: the other 14 DOJ addresses are a holdout, and a test fails the build if any of them appears in engine code or the label database."
 
-**"Why does it miss A-8?"**
-"The consolidation wallet only starts paying A-8 on May 30, after A.H.'s money has passed through under first-in-first-out. The DOJ also used other accounting methods for some victims (LIFO, PIFO). We show the miss instead of tuning it away."
+**"Why is A-9 off by 11 percent?"**
+"We use first-in-first-out, the DOJ's method for its named victims, on public data only. The DOJ also had subpoena data and used other methods for some victims (LIFO, PIFO). We show the gap instead of tuning it away: A-7 is within 0.9 percent and A-8 within 1.0."
 
 **"What's FIFO and why that?"**
 "First in, first out: the oldest money in a wallet leaves first. It's the method the DOJ used for its named victims in this case."
