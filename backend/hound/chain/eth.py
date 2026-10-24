@@ -191,6 +191,11 @@ _SIZE_ERRORS = ("more than", "too many", "exceed", "limit", "range", "too large"
 _NULL_IS_MISSING = ("eth_getTransactionByHash", "eth_getTransactionReceipt", "eth_getBlockByNumber")
 
 
+class NullResult(ChainAPIError):
+    """An RPC answered null for a tx / receipt / block: not there (or pruned). When EVERY RPC says so,
+    rpc() raises this too, so callers can tell a real not-found from a transport or API failure."""
+
+
 def _rpc_once(url: str, method: str, params: list) -> Any:
     body = request_json("POST", url, json_body={"jsonrpc": "2.0", "id": 1, "method": method, "params": params},
                         retries=3)
@@ -203,7 +208,7 @@ def _rpc_once(url: str, method: str, params: list) -> Any:
         raise ChainAPIError(f"{safe_url(url)} {method}: malformed response {str(body)[:200]}")
     if body["result"] is None and method in _NULL_IS_MISSING:
         # pruned nodes answer null for old data: try the next RPC instead of believing it
-        raise ChainAPIError(f"{safe_url(url)} {method}: null result (pruned node?)")
+        raise NullResult(f"{safe_url(url)} {method}: null result (pruned node?)")
     return body["result"]
 
 
@@ -213,12 +218,15 @@ def rpc(method: str, params: list, ttl: Any = RECENT_TTL, urls: list[str] | None
 
     def fetch():
         errors = []
-        size_errors = 0
+        size_errors = nulls = 0
         for url in urls:
             try:
                 return _rpc_once(url, method, params)
             except RangeTooBig as e:
                 size_errors += 1
+                errors.append(str(e))
+            except NullResult as e:
+                nulls += 1
                 errors.append(str(e))
             except ChainAPIError as e:
                 errors.append(str(e))
@@ -226,6 +234,8 @@ def rpc(method: str, params: list, ttl: Any = RECENT_TTL, urls: list[str] | None
         if size_errors and size_errors == len(errors):
             # remembered, so cached / readonly replays split the range the same way
             return {TOO_BIG_MARKER: " | ".join(errors)[:300]}
+        if nulls and nulls == len(errors):
+            raise NullResult(f"every RPC answered null for {method}: {' | '.join(errors)}")
         raise ChainAPIError(f"every RPC failed for {method}: {' | '.join(errors)}")
 
     parts = {"method": method, "params": params}
@@ -908,8 +918,11 @@ def tx_sends(tx_hash: str, to: str | None = None, sender: str | None = None) -> 
     try:
         tx = rpc("eth_getTransactionByHash", [h], ttl=None, urls=urls)
         rc = rpc("eth_getTransactionReceipt", [h], ttl=None, urls=urls)
-    except ChainAPIError as e:
+    except NullResult as e:  # every RPC answered null: the hash really is not on this chain
         raise ValueError(f"tx {h} not found on any RPC (wrong chain, or not mined yet): {e}") from e
+    # any other ChainAPIError (RPCs down, rate limited, malformed) propagates: an outage is not a bad hash
+    if not isinstance(tx, dict) or not isinstance(rc, dict):
+        raise ChainAPIError(f"tx {h}: malformed tx or receipt from RPC")
     if not tx.get("blockNumber"):
         raise ValueError(f"tx {h} is still pending")
     if int(rc.get("status", "0x0"), 16) != 1:
