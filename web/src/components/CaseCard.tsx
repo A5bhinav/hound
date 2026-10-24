@@ -1,5 +1,7 @@
 import type { Case, CaseSummary, EndpointReason, Trace } from "@/lib/types";
 import { explorerUrl, shortAddr, usdt } from "@/lib/format";
+
+const amount = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 4 });
 import styles from "./CaseCard.module.css";
 
 const REASON: Record<EndpointReason, string> = {
@@ -29,7 +31,10 @@ const FACTS: [string, (c: CaseSummary) => string | null | undefined][] = [
 export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: Trace | null }) {
   // GET /cases has no sends; the trace's seeds are the same transfers.
   const sendList = "sends" in c ? c.sends : (trace?.seeds ?? []);
-  const total = sendList.reduce((s, x) => s + x.amount, 0);
+  // Sends can be ETH (replay) or USDT; never label one token as another. Sum per token.
+  const totals = new Map<string, number>();
+  for (const s of sendList) totals.set(s.token, (totals.get(s.token) ?? 0) + s.amount);
+  const totalText = [...totals].map(([tok, n]) => `${amount(n)} ${tok}`).join(" + ");
   const chain = trace?.nodes[0]?.chain ?? ("sends" in c ? c.sends[0]?.chain : undefined) ?? "ethereum";
   const facts = FACTS.map(([k, get]) => [k, get(c)] as const).filter(([, v]) => v && v !== "unknown");
   const asOf = "as_of" in c ? c.as_of : null;
@@ -45,7 +50,7 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
       </h1>
       {sendList.length > 0 && (
         <p className={styles.sent}>
-          {usdt(total)} in {sendList.length} sends
+          {totalText} in {sendList.length} sends
         </p>
       )}
       {replay && asOf && <p className={styles.replay}>Traced as of {asOf.slice(0, 10)}, the date the victim reported.</p>}
@@ -66,7 +71,9 @@ export default function CaseCard({ c, trace }: { c: CaseSummary | Case; trace: T
       <ul className={`${styles.list} ${styles.sends}`}>
         {sendList.map((s) => (
           <li key={s.tx_hash}>
-            <span>{usdt(s.amount)}</span>
+            <span>
+              {amount(s.amount)} {s.token}
+            </span>
             <span className={styles.meta}>
               {"time" in s && <>{s.time.slice(0, 10)} · </>}
               <a className="mono" href={explorerUrl(chain, "tx", s.tx_hash) ?? undefined} target="_blank" rel="noreferrer">
