@@ -39,15 +39,38 @@ SUMMARY = ROOT / "data" / "proof" / "weekend_scan_summary.json"  # committed, re
 CATEGORIES = ("PIGBUTCHERING", "ROMANCE", "FAKE_RETURNS", "OTHER_INVESTMENT_SCAM")
 MAX_LIFETIME_TRANSFERS = 2000  # AUDIT 24: above this the wallet is exchange/service sized, never a scam wallet we can claim
 ROW_LABEL = "reported, not proven"
+_COUNT_NOT_MEASURED = {"transfer count not checked", "transfer count unavailable"}
+METHOD = ("We took every Ethereum address that members of the public reported to Chainabuse as a pig butchering, "
+          "romance, fake returns or other investment scam. For each address we read two things straight from the "
+          "USDT token contract: how much USDT it holds now, and whether Tether has frozen it. We then left out "
+          "exchanges, payment services and shared infrastructure, the USDT contract itself, and any wallet with more "
+          "than 2,000 token transfers in its lifetime, because a wallet that busy belongs to a business, not to one "
+          "scam. A wallet is also left out if we could not count its transfers. Each remaining wallet counts the "
+          "smaller of its balance and the losses its reporters claimed. These are reports, not proven cases.")
 _FULL_ADDR = re.compile(r"^0x[0-9a-fA-F]{40}$")
 
 
+EXPLORER_ROW_CAP = 1000  # Etherscan-style APIs return at most this many rows per call, whatever offset asks for
+USDT_CONTRACT = "0xdac17f958d2ee523a2206206994597c13d831ec7"  # reports name the token itself; it is never a scam wallet
+
+
 def transfer_count(address: str) -> int:
-    """Lifetime ERC-20 transfers of `address`, counted up to MAX_LIFETIME_TRANSFERS + 1 (one explorer call)."""
-    from hound.chain.eth import explorer
-    params = {"module": "account", "action": "tokentx", "address": address, "startblock": 0, "endblock": 99999999,
-              "page": 1, "offset": MAX_LIFETIME_TRANSFERS + 1, "sort": "asc"}
-    return len(explorer(params)["result"] or [])
+    """Lifetime ERC-20 transfers of `address`, counted exactly up to MAX_LIFETIME_TRANSFERS + 1.
+
+    Pages of EXPLORER_ROW_CAP rows (one call returns at most that many, so a single call reads a
+    capped 1,000 as a real count), Blockscout first, Etherscan as the fallback."""
+    from hound.chain.eth import explorer, v1_sources
+    sources = ["blockscout"] + [s for s in v1_sources() if s != "blockscout"]
+    n, page = 0, 1
+    while n <= MAX_LIFETIME_TRANSFERS:
+        params = {"module": "account", "action": "tokentx", "address": address, "startblock": 0,
+                  "endblock": 99999999, "page": page, "offset": EXPLORER_ROW_CAP, "sort": "asc"}
+        got = len(explorer(params, sources=sources)["result"] or [])
+        n += got
+        if got < EXPLORER_ROW_CAP:
+            break
+        page += 1
+    return n
 
 
 def _short(address: str) -> str:
@@ -59,7 +82,8 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
     headline is always exactly the sum of the freezable rows' capped amounts.
 
     Fail closed. A row is excluded when it carries an exchange/service/infra/sanctioned label, has
-    more than MAX_LIFETIME_TRANSFERS lifetime transfers, has no transfer count (never measured, or
+    more than MAX_LIFETIME_TRANSFERS lifetime transfers, is the USDT contract, has an unpaged count of
+    exactly EXPLORER_ROW_CAP (saturated, not measured), has no transfer count (never measured, or
     the read failed), or arrived with freezable_now false and is not frozen (the source scan or an
     earlier finalize excluded it; a row is never promoted here). Each row counts
     min(balance, claimed losses); when no claimed-loss figure was stored (older summaries), it
@@ -71,11 +95,17 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
         c = dict(c)
         bal = float(c.get("balance_usdt") or 0.0)
         reasons = []
+        addr = str(c.get("address") or "").lower()
         if c.get("label") or c.get("excluded_as_exchange_or_infra"):
             reasons.append("exchange/service/infra label")
+        if addr in (USDT_CONTRACT, _short(USDT_CONTRACT).lower()):  # summaries keep only the truncated form
+            reasons.append("the USDT token contract itself")
         tc = c.get("transfer_count")
         if tc is not None and tc > MAX_LIFETIME_TRANSFERS:
             reasons.append(f">{MAX_LIFETIME_TRANSFERS:,} lifetime transfers")
+        elif tc == EXPLORER_ROW_CAP and not c.get("transfer_count_paged"):
+            # a single explorer call stops at 1,000 rows: this count is the cap, not a measurement
+            reasons.append(f"transfer count saturated at the explorer's {EXPLORER_ROW_CAP:,}-row cap")
         if c.get("transfer_count_error"):
             reasons.append("transfer count unavailable")
         elif tc is None:
@@ -102,7 +132,11 @@ def finalize(result: dict[str, Any], min_usdt: float = 100.0) -> dict[str, Any]:
         "label": ROW_LABEL,
         "usdt_unfrozen": round(sum(c["capped_usdt"] for c in unfrozen), 2),
         "addresses_unfrozen": len(unfrozen),
-        "already_frozen": sum(bool(c.get("is_frozen")) for c in cases),
+        # frozen rows are never counted (only unfrozen candidates pay for it), so a missing count is
+        # not a reason to drop them here; any other exclusion (a label, the USDT contract) is
+        "already_frozen": sum(bool(c.get("is_frozen")) and set(c["excluded_reasons"]) <= _COUNT_NOT_MEASURED
+                              for c in cases),
+        "method": METHOD,
         "cases": cases,
     }
 
@@ -144,6 +178,7 @@ def weekend_scan(categories: tuple[str, ...] = CATEGORIES, since: str | None = N
         if bal >= min_usdt and not frozen and lab is None:
             try:  # AUDIT 24: only candidates pay for the count; a failed count excludes the row in finalize()
                 r["transfer_count"] = transfer_count(addr)
+                r["transfer_count_paged"] = True  # exact up to the limit, so 1,000 is a real count here
             except Exception as e:  # noqa: BLE001
                 print(f"[scan] transfer count failed for {addr}: {e}")
                 r["transfer_count_error"] = str(e)[:200]
@@ -166,7 +201,8 @@ def serve() -> dict[str, Any]:
         if path.exists():
             return redact(finalize({"status": "ok", **json.load(open(path))}))
     return {"status": "not_computed", "label": "reported, not proven", "addresses": 0, "usdt_unfrozen": 0.0,
-            "addresses_unfrozen": 0, "cases": [], "method": "run `python -m hound.proof.scan` to write the result"}
+            "addresses_unfrozen": 0, "cases": [],
+            "method": "No scan has been run on this machine yet. Run python -m hound.proof.scan to produce one."}
 
 
 if __name__ == "__main__":

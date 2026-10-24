@@ -43,7 +43,42 @@ def test_committed_summary_headline_equals_shown_rows(monkeypatch, tmp_path):
 
 
 def test_committed_file_is_already_consistent():
-    _check_consistent(json.loads(scan.SUMMARY.read_text()))
+    res = json.loads(scan.SUMMARY.read_text())
+    _check_consistent(res)
+    assert res == scan.redact(scan.finalize(res)) | {"note": res["note"]}  # re-finalizing changes nothing
+    assert all(c["transfer_count"] != scan.EXPLORER_ROW_CAP for c in _shown(res))
+
+
+def test_saturated_counts_and_the_usdt_contract_are_excluded():
+    res = scan.finalize({"scanned_at": "2026-10-24T00:00:00+00:00", "addresses": 5, "cases": [
+        _row("0x" + "1" * 40, 5_000.0, claimed_losses_usd=5_000.0, transfer_count=1000),   # the explorer's cap
+        _row("0x" + "2" * 40, 4_000.0, claimed_losses_usd=4_000.0, transfer_count=1000, transfer_count_paged=True),
+        _row("0x" + "3" * 40, 3_000.0, claimed_losses_usd=3_000.0, transfer_count=1392),
+        _row(scan.USDT_CONTRACT, 1e6, is_frozen=True),                                     # the token itself
+        _row("0x" + "5" * 40, 9_000.0, is_frozen=True),                                    # a real frozen wallet
+    ]})
+    _check_consistent(res)
+    assert res["usdt_unfrozen"] == 7_000.0 and res["addresses_unfrozen"] == 2
+    assert res["already_frozen"] == 1
+    by = {c["address"]: c for c in res["cases"]}
+    assert any("saturated" in r for r in by["0x" + "1" * 40]["excluded_reasons"])
+    assert "the USDT token contract itself" in by[scan.USDT_CONTRACT]["excluded_reasons"]
+    redacted = scan.finalize(scan.redact({"cases": [_row(scan.USDT_CONTRACT, 1e6, is_frozen=True)]}))
+    assert redacted["already_frozen"] == 0
+
+
+def test_transfer_count_pages_past_the_explorer_cap(monkeypatch):
+    from hound.chain import eth
+    seen = []
+
+    def fake(params, ttl=None, sources=None):
+        seen.append((params["page"], params["offset"], tuple(sources)))
+        return {"result": [{}] * (1000 if params["page"] < 2 else 392)}
+    monkeypatch.setattr(eth, "explorer", fake)
+    assert scan.transfer_count("0x" + "1" * 40) == 1392
+    assert [s[:2] for s in seen] == [(1, 1000), (2, 1000)] and seen[0][2][0] == "blockscout"
+    monkeypatch.setattr(eth, "explorer", lambda params, ttl=None, sources=None: {"result": [{}] * 1000})
+    assert scan.transfer_count("0x" + "1" * 40) == 3000  # stops once past the limit
 
 
 def _row(addr, bal, **kw):
