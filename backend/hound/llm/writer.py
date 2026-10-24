@@ -285,6 +285,18 @@ _WHERE = {
 }
 
 
+def _exchange_where(facts, i, r):
+    """A listed hot wallet and a deposit address inferred from a sweep pattern are worded apart.
+    The exchange name is a sanitized label, cited from case.untrusted (code-written template only)."""
+    nm = f"{{{{case.untrusted.endpoint_exchange.{i}|raw}}}}" if facts["case"]["untrusted"]["endpoint_exchange"][i] else None
+    kind = r.get("exchange_kind")
+    if kind == "inferred_deposit":
+        return f"reached a likely {nm} deposit address" if nm else "reached a likely exchange deposit address"
+    if kind == "hot":
+        return f"reached an exchange hot wallet ({nm})" if nm else "reached an exchange hot wallet"
+    return f"reached a {nm} deposit address" if nm else _WHERE["exchange"]
+
+
 def _header(facts):
     if not facts["trace"]["replay"]:
         return []
@@ -367,6 +379,8 @@ def fallback_paragraphs(facts, audience):
                              "and we did not follow it further.")
                 continue
             where = _WHERE.get(r["reason"], "is where we stopped following it")
+            if r["reason"] == "exchange":
+                where = _exchange_where(facts, i, r)
             if r["is_frozen"] and r["reason"] == "holding":
                 where = "ended up in a wallet"
             line = f"- {{{{{p}.victim_funds|usdt}}}} {where}: {{{{{p}.address|short}}}}"
@@ -443,6 +457,10 @@ def _endpoint_section(facts):
             line += ", FREEZABLE NOW"
         if facts["case"]["untrusted"]["endpoint_exchange"][i]:
             line += f", exchange label {{{{case.untrusted.endpoint_exchange.{i}|raw}}}}"
+        if r.get("exchange_kind") == "inferred_deposit":
+            line += ", inferred deposit address (its outflow sweeps to that exchange's labelled hot wallet)"
+        elif r.get("exchange_kind") == "hot":
+            line += ", labelled exchange hot wallet"
         lines.append(line + ".")
     return "\n".join(lines)
 
@@ -612,8 +630,10 @@ def write_case(trace, case, audience="victim"):
 
     blocks, cited = [], []
     try:
-        for tpl in _header(facts) + _status_block(facts, audience) + paras:
-            text, c = render(tpl, facts, audience=audience)
+        # only the code-written fallback may cite a sanitized exchange label; Claude's text never can
+        for tpl, untrusted in ([(t, False) for t in _header(facts) + _status_block(facts, audience)]
+                               + [(t, source == "template") for t in paras]):
+            text, c = render(tpl, facts, allow_untrusted=untrusted, audience=audience)
             blocks.append(text)
             cited += c
         if audience == "detective":

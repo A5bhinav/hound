@@ -894,3 +894,31 @@ def test_prompt_lists_every_banned_word_and_rule():
     for phrase in ('"get ... back"', "third person", "leftover true", "sent on"):
         assert phrase in s
     assert "%" not in s
+
+
+def _exchange_trace():
+    """Live copy of the replay trace with its top endpoints turned into an inferred deposit and a hot wallet."""
+    t, c = live()
+    ends = sorted(t["endpoints"], key=lambda e: -e["victim_remaining"])
+    nodes = {n["address"].lower(): n for n in t["nodes"]}
+    for e, name, kind, src in ((ends[0], "Binance deposit (inferred)", "exchange_deposit", "classifier"),
+                               (ends[1], "Binance 14", "exchange_hot", "exchange_list")):
+        e.update(reason="exchange", exchange=name, freezable=False)
+        n = nodes[e["address"].lower()]
+        n.update(kind=kind, label=name, label_source=src, frozen={"is_frozen": False, "frozen_at": None, "freeze_tx": None})
+    return t, c, ends[0]["address"].lower(), ends[1]["address"].lower()
+
+
+def test_inferred_deposit_and_hot_wallet_are_worded_apart():
+    t, c, dep, hot = _exchange_trace()
+    rows = {r["address"]: r for r in build_facts(t, c)["derived"]["endpoints"]}
+    assert rows[dep]["exchange_kind"] == "inferred_deposit" and rows[hot]["exchange_kind"] == "hot"
+    assert sanitize_label("Binance deposit (inferred)") == "Binance"
+    vic = write_case(t, c, "victim")["text"]
+    assert f"reached a likely Binance deposit address: {short_addr(dep)}" in vic
+    assert f"reached an exchange hot wallet (Binance): {short_addr(hot)}" in vic
+    det = write_case(t, c, "detective")["text"]
+    dep_line = next(ln for ln in det.splitlines() if ln.startswith(f"- {dep}"))
+    hot_line = next(ln for ln in det.splitlines() if ln.startswith(f"- {hot}"))
+    assert "exchange label Binance, inferred deposit address" in dep_line
+    assert "exchange label Binance, labelled exchange hot wallet" in hot_line

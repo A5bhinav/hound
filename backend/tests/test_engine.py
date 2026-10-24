@@ -389,6 +389,10 @@ def test_classifier_never_stops_without_a_labelled_sweep_target(monkeypatch):
     lab = lambda c, a: {"name": "Binance 14", "kind": "exchange_hot", "source": "list"} if a == hot else None
     t = run_trace(case, get_transfers=_chain(rows), label=lab)
     assert {e["address"]: e["reason"] for e in t["endpoints"]}[dep] == "exchange"
+    # the inferred deposit keeps the exchange's name, not 'unlabelled exchange deposit'
+    assert {e["address"]: e["exchange"] for e in t["endpoints"]}[dep] == "Binance deposit (inferred)"
+    node = {n["address"]: n for n in t["nodes"]}[dep]
+    assert node["label"] == "Binance deposit (inferred)" and node["label_source"] == "classifier"
 
 
 def test_back_edges_hop_after_their_source_and_path_confidence():
