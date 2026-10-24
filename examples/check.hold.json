@@ -3,12 +3,12 @@
  "reasons": [
   "part of a scam cluster traced from 1 victim case",
   "a victim paid straight into this address",
-  "path confidence 1.00, 20,061.62 USDT of victim money attributed"
+  "path confidence 1.00, 201,809.78 USDT of victim money attributed"
  ],
  "evidence": {
   "chain": "ethereum",
   "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-  "watchlist_version": "bd4b16ed4ca5",
+  "watchlist_version": "fd993ef41467",
   "rule_fired": "trace_node_high_confidence",
   "case_ids": [
    "ohnd-replay-ah"
@@ -18,15 +18,17 @@
    {
     "from": "0xd95da710ca21c985799a168109db702044be2cd4",
     "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
-    "amount": 33.004190307,
+    "amount": 59.622763503,
+    "token": "ETH",
     "tx_hashes": [
-     "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029"
+     "0x128a5f46accd0ba0f388fc6e800c2aa68a93754ecb53676e74dea0047541c029",
+     "0x4034caf04ffbfc2fb1d3a5a55c1a4155d022ef6b260a926b55c49c8b6da21b34"
     ],
     "confidence": 1.0,
     "method": "direct"
    }
   ],
-  "victim_inflow_usdt": 20061.622764,
+  "victim_inflow_usdt": 201809.7799,
   "frozen": {
    "is_frozen": false,
    "frozen_at": null,
@@ -39,10 +41,9 @@
    "report_count": 0,
    "latest_at": null
   },
-  "expires_at": "2026-10-25T05:18:09Z",
+  "expires_at": "2026-10-25T06:30:38Z",
   "disclaimer": "reported, not proven",
-  "elapsed_ms": 6.0
+  "elapsed_ms": 0.0
  },
- "confidence": 1.0,
- "_note": "GET /check?chain=ethereum&address=0xcf9bbfa762ef5a84ba3d25350de941a6db485027 on the DOJ replay watchlist (examples/ohnd_replay.trace.json)"
+ "confidence": 1.0
 }

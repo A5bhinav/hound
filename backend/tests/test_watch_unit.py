@@ -349,3 +349,12 @@ def test_reset_drops_the_saved_watchlist_and_old_files_are_ignored(no_chain, not
     w = Watchlist()
     assert w.load(wl_mod.watchlist_file()) == 0 and w.lookup("ethereum", FIN) is None
     wl_mod.reset()
+
+
+def test_path_hops_say_which_token_they_are_in(no_chain, not_frozen):
+    w = Watchlist()
+    w.add_trace(_r2_trace())
+    hops = check_mod.check("ethereum", E1, watch=w)["evidence"]["path"]
+    assert hops[0]["from"] == V and (hops[0]["amount"], hops[0]["token"]) == (0.3, "ETH")
+    hops = check_mod.check("ethereum", FIN, watch=w)["evidence"]["path"]
+    assert hops[-1]["token"] == "USDT"
