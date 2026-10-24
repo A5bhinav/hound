@@ -27,6 +27,10 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
   const replaying = useRef(false);
   const replayTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Last case code the poll returned, and the code that was already active when the replay started.
+  // /intake/active keeps any unvalidated session for its whole TTL, so an abandoned call must not end a replay.
+  const lastLiveCode = useRef<string | null>(null);
+  const replayIgnoreCode = useRef<string | null>(null);
 
   useEffect(() => {
     let stop = false;
@@ -34,13 +38,18 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
     const tick = async () => {
       if (stop) return;
       if (replaying.current) {
-        // A finished replay stays on screen until the presenter leaves it or a real call starts (review F15).
+        // A replay stays on screen until the presenter leaves it or a NEW call starts (a session whose
+        // case code differs from the one already active when the replay began).
         try {
           const res = await fetch("/api/intake/active", { cache: "no-store" });
           if (res.ok && res.status !== 204) {
-            console.info("[hound-web] live intake started; ending the replay");
-            endReplay();
-            setFeed({ k: "live", s: (await res.json()) as IntakeSession });
+            const live = (await res.json()) as IntakeSession;
+            if (live.case_code !== replayIgnoreCode.current) {
+              console.info("[hound-web] new live intake", live.case_code, "started; ending the replay");
+              endReplay();
+              lastLiveCode.current = live.case_code;
+              setFeed({ k: "live", s: live });
+            }
           }
         } catch (err) {
           console.error("[hound-web] intake poll failed during replay:", err);
@@ -48,8 +57,14 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
       } else {
         try {
           const res = await fetch("/api/intake/active", { cache: "no-store" });
-          if (res.status === 204) setFeed({ k: "waiting" });
-          else if (res.ok) setFeed({ k: "live", s: (await res.json()) as IntakeSession });
+          if (res.status === 204) {
+            lastLiveCode.current = null;
+            setFeed({ k: "waiting" });
+          } else if (res.ok) {
+            const live = (await res.json()) as IntakeSession;
+            lastLiveCode.current = live.case_code;
+            setFeed({ k: "live", s: live });
+          }
           else {
             const body = (await res.text()).slice(0, 160);
             const why =
@@ -88,6 +103,7 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
     if (!replayCase) return;
     endReplay();
     replaying.current = true;
+    replayIgnoreCode.current = lastLiveCode.current;
     const base = `${window.location.origin}/c/REPLAY`;
     const story = replayCase.story ?? {};
     const frames: IntakeSession[] = [

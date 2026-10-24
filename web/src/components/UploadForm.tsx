@@ -23,7 +23,7 @@ export function LinkNotActive() {
 }
 
 /** The victim's upload page (AUDIT N7): one big button, 18px+ text, ARIA, and a "type it instead" field. */
-export default function UploadForm({ code }: { code: string }) {
+export default function UploadForm({ code, heading }: { code: string; heading?: React.ReactNode }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<State>({ k: "idle" });
   const [typed, setTyped] = useState("");
@@ -81,72 +81,78 @@ export default function UploadForm({ code }: { code: string }) {
 
   if (state.k === "done") {
     return (
-      <div className={styles.done} role="status" aria-live="polite">
-        <p className={styles.big}>Thank you. We found your payment.</p>
-        <p>You can tell the person on the phone you&apos;re done. We&apos;ll follow where the money went.</p>
-        <p className={styles.small}>Your case number is {code}.</p>
-      </div>
+      <>
+        {heading}
+        <div className={styles.done} role="status" aria-live="polite">
+          <p className={styles.big}>Thank you. We found your payment.</p>
+          <p>You can tell the person on the phone you&apos;re done. We&apos;ll follow where the money went.</p>
+          <p className={styles.small}>Your case number is {code}.</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className={styles.wrap}>
-      <ol className={styles.steps}>
-        <li>Open the app you used to send the money.</li>
-        <li>Find that payment and take a screenshot of it.</li>
-        <li>Press the big button below and choose that picture.</li>
-      </ol>
+    <>
+      {heading}
+      <div className={styles.wrap}>
+        <ol className={styles.steps}>
+          <li>Open the app you used to send the money.</li>
+          <li>Find that payment and take a screenshot of it.</li>
+          <li>Press the big button below and choose that picture.</li>
+        </ol>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className={styles.hidden}
-        onChange={onFile}
-        aria-hidden="true"
-        tabIndex={-1}
-      />
-      <button
-        type="button"
-        className={styles.cta}
-        onClick={() => fileRef.current?.click()}
-        disabled={state.k === "sending"}
-        aria-describedby="upload-status"
-      >
-        {state.k === "sending" ? "Sending your picture…" : "Choose the picture of my payment"}
-      </button>
-
-      <div id="upload-status" className={styles.status} role="status" aria-live="polite">
-        {state.k === "retake" && (
-          <p className={styles.retake}>
-            <strong>We need another picture.</strong> {state.message}
-          </p>
-        )}
-        {state.k === "error" && (
-          <p className={styles.error}>
-            <strong>{state.message}</strong>
-            <span className={styles.small}>{state.detail}</span>
-          </p>
-        )}
-      </div>
-
-      {!showTyped ? (
-        <button type="button" className={styles.link} onClick={() => setShowTyped(true)}>
-          I can&apos;t take a picture. Let me type it instead.
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className={styles.hidden}
+          onChange={onFile}
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+        <button
+          type="button"
+          className={styles.cta}
+          onClick={() => fileRef.current?.click()}
+          disabled={state.k === "sending"}
+          aria-describedby="upload-status"
+        >
+          {state.k === "sending" ? "Sending your picture…" : "Choose the picture of my payment"}
         </button>
-      ) : (
-        <form className={styles.typed} onSubmit={onTyped}>
-          <label htmlFor="typed">
-            Type what you can see about the payment: the long code that starts with 0x, the address you sent to, and the amount.
-          </label>
-          <textarea id="typed" rows={4} value={typed} onChange={(e) => setTyped(e.target.value)} spellCheck={false} />
-          <button type="submit" className={styles.secondary} disabled={!typed.trim() || state.k === "sending"}>
-            Send what I typed
-          </button>
-        </form>
-      )}
 
-      <p className={styles.small}>We will never ask for your password, your PIN, or your recovery words.</p>
-    </div>
+        <div id="upload-status" className={styles.status} role="status" aria-live="polite">
+          {state.k === "retake" && (
+            <p className={styles.retake}>
+              <strong>We need another picture.</strong> {state.message}
+            </p>
+          )}
+          {state.k === "error" && (
+            <p className={styles.error}>
+              <strong>{state.message}</strong>
+              <span className={styles.small}>{state.detail}</span>
+            </p>
+          )}
+        </div>
+
+        {!showTyped ? (
+          <button type="button" className={styles.link} onClick={() => setShowTyped(true)}>
+            I can&apos;t take a picture. Let me type it instead.
+          </button>
+        ) : (
+          <form className={styles.typed} onSubmit={onTyped}>
+            <label htmlFor="typed">
+              Type what you can see about the payment: the long code that starts with 0x, the address you sent to, and the amount.
+            </label>
+            <textarea id="typed" rows={4} value={typed} onChange={(e) => setTyped(e.target.value)} spellCheck={false} />
+            <button type="submit" className={styles.secondary} disabled={!typed.trim() || state.k === "sending"}>
+              Send what I typed
+            </button>
+          </form>
+        )}
+
+        <p className={styles.small}>We will never ask for your password, your PIN, or your recovery words.</p>
+      </div>
+    </>
   );
 }

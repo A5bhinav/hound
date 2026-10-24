@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Chain, Trace, TraceEdge, TraceNode } from "@/lib/types";
+import type { Chain, Endpoint, Trace, TraceEdge, TraceNode } from "@/lib/types";
 import { KIND_LABEL, explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import styles from "./TraceGraph.module.css";
 
@@ -35,6 +35,8 @@ export default function NodeDetail({
   const showFull = !!trace.replay || revealedFrozen;
   const hideFreezable = trace.method.freeze_visibility === "hidden" && !freezesShown;
   const swaps = (trace.swaps?.resolved ?? []).filter((s) => s.address === node.address);
+
+  const stop = endpointKind(endpoint, outgoing.length > 0);
 
   // Escape closes the drawer, like the × button (review F8).
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function NodeDetail({
       <dl className={styles.facts}>
         <dt>Balance</dt>
         <dd>{usdt(node.balance_usdt)}</dd>
-        {endpoint && outgoing.length > 0 && (
+        {stop === "residual" && endpoint && (
           // The trace kept going from here; the endpoint is only what stayed behind (review F12).
           <>
             <dt>Left behind here</dt>
@@ -86,7 +88,13 @@ export default function NodeDetail({
             </dd>
           </>
         )}
-        {endpoint && outgoing.length === 0 && (
+        {stop === "swap" && (
+          <>
+            <dt>Trail</dt>
+            <dd>Swap not resolved here, part of the money could not be followed</dd>
+          </>
+        )}
+        {stop === "stop" && endpoint && (
           <>
             <dt>Trail stops here</dt>
             <dd>
@@ -188,4 +196,12 @@ function Flows({ title, side, edges, chain }: { title: string; side: "from" | "t
       </ul>
     </>
   );
+}
+
+/** How an endpoint node reads: a residual left behind on a trail that moved on, an unresolved swap, or a real stop. */
+function endpointKind(endpoint: Endpoint | undefined, movedOn: boolean): "residual" | "swap" | "stop" | null {
+  if (!endpoint) return null;
+  if (endpoint.reason === "swap_unresolved") return movedOn ? "swap" : "stop";
+  const residual = endpoint.reason === "dust" || endpoint.reason === "holding" || (endpoint.victim_remaining ?? 0) > 0;
+  return movedOn && residual ? "residual" : "stop";
 }

@@ -6,7 +6,8 @@ export const metadata = { title: "Hound: send us your payment" };
 
 /** Short link the phone agent reads out and the case card shows as a QR code (AUDIT §5). Victim-facing: no app chrome. */
 export default async function UploadPage({ params }: PageProps<"/c/[code]">) {
-  const { code } = await params;
+  const { code: raw } = await params;
+  const code = raw.toUpperCase(); // the backend upper-cases codes too
   const active = await intakeCodeActive(code);
   return (
     <main className={styles.page}>
@@ -17,10 +18,8 @@ export default async function UploadPage({ params }: PageProps<"/c/[code]">) {
       {active === false ? (
         <LinkNotActive />
       ) : (
-        <>
-          <h1 className={styles.h1}>Send us a picture of your payment</h1>
-          <UploadForm code={code} />
-        </>
+        // The heading lives in UploadForm so a 404 on upload can hide it along with the form.
+        <UploadForm code={code} heading={<h1 className={styles.h1}>Send us a picture of your payment</h1>} />
       )}
     </main>
   );

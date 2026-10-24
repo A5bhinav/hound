@@ -44,7 +44,7 @@ export default function ExchangeCheck() {
   const [amount, setAmount] = useState("2500");
   const [phase, setPhase] = useState<Phase>({ k: "form" });
   const amountN = Number(amount.trim());
-  const amountOk = amount.trim() !== "" && Number.isFinite(amountN) && amountN > 0;
+  const amountOk = /^\d+(\.\d+)?$/.test(amount.trim()) && amountN > 0; // plain decimals only, no 0x10 or 1e3
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

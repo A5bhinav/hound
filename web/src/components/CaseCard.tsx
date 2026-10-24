@@ -106,7 +106,11 @@ export default function CaseCard({
 function stopLabel(p: Endpoint, trace: Trace, frozenAt: string | null) {
   if (frozenAt) return `Tether froze it on ${frozenAt.slice(0, 10)}`;
   // The trail went on past this address; only a small residual stayed (review F12).
-  if (trace.edges.some((e) => e.from === p.address)) return "Small residual left behind, the money moved on";
+  // Not for swap_unresolved: there the signal is that the swap could not be followed.
+  const residual = p.reason === "dust" || p.reason === "holding" || (p.victim_remaining ?? 0) > 0;
+  if (p.reason !== "swap_unresolved" && residual && trace.edges.some((e) => e.from === p.address))
+    return "Small residual left behind, the money moved on";
+  if (p.reason === "swap_unresolved") return "Swap not resolved here, part of the money could not be followed";
   if (p.reason === "holding" && trace.replay) return "Was sitting here at cutoff";
   return `${REASON[p.reason] ?? p.reason}${p.exchange ? `: ${p.exchange}` : ""}`;
 }
