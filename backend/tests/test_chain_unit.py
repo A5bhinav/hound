@@ -256,3 +256,30 @@ def test_range_too_big_is_remembered_for_readonly_replays(monkeypatch):
     with pytest.raises(eth.RangeTooBig):  # not CacheMiss: the split is replayed offline
         eth.rpc("eth_getLogs", flt, ttl=None, urls=["https://a.test"])
     assert len(calls) == 1
+
+
+def test_snapshot_refuses_live_case_addresses(tmp_path, monkeypatch):
+    from hound.chain import snapshot
+    live = "0x" + "7830c87c" + "0" * 25 + "fa86f43"
+    cache.cached("eth_rpc", {"method": "z"}, lambda: {"to": live}, ttl=None)
+    (cache.cache_dir()).mkdir(parents=True, exist_ok=True)
+    (cache.cache_dir() / "live_addresses.json").write_text(json.dumps([live]))
+    with pytest.raises(RuntimeError, match="live-case"):
+        snapshot.pack(out_dir=tmp_path / "snap")
+
+
+def test_tx_sends_rejects_bad_hash():
+    with pytest.raises(ValueError):
+        eth.tx_sends("0x1234")
+
+
+def test_rpc_errors_never_include_url_paths(monkeypatch):
+    _mock_client(monkeypatch, lambda req: httpx.Response(200, json={"jsonrpc": "2.0", "id": 1,
+                                                                    "error": {"message": "boom"}}))
+    with pytest.raises(net.ChainAPIError) as ei:
+        eth._rpc_once("https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123", "eth_call", [])
+    assert "SECRETKEY123" not in str(ei.value)
+    _mock_client(monkeypatch, lambda req: httpx.Response(503, text="down"))
+    with pytest.raises(net.ChainAPIError) as ei:
+        net.request_json("POST", "https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123", retries=0)
+    assert "SECRETKEY123" not in str(ei.value)

@@ -76,8 +76,8 @@ def check(chain_name: str, address: str, watch: wl.Watchlist | None = None) -> d
 
     try:
         fz = chain.freeze_status(chain_name, addr, check_onchain=False)
-    except chain.ChainAPIError as e:
-        log.error("freeze lookup failed for %s: %s", addr, e)
+    except (chain.ChainAPIError, chain.CacheMiss) as e:
+        log.error("freeze lookup failed for %s: %s", addr, type(e).__name__)
         fz = None
         evidence["freeze_check_error"] = "freeze status unavailable"
     evidence["frozen"] = fz
@@ -97,7 +97,9 @@ def check(chain_name: str, address: str, watch: wl.Watchlist | None = None) -> d
         decision, rule, reasons = watch.decision(entry)
         return result(decision, rule, reasons, entry["confidence"])
 
-    reasons = ["no Hound data: not in any traced scam cluster, not frozen, not sanctioned"]
     if fz is None:
-        reasons.append("freeze status could not be checked")
-    return result("allow", "no_data", reasons, 0.5)
+        # fail closed-ish (REVIEW_TEAM security-public-4): unknown freeze state is a warning, never allow
+        return result("warn", "freeze_unknown", ["freeze status could not be checked: not checked, do not rely "
+                                                 "on this as clear"], 0.3)
+    return result("allow", "no_data", ["no Hound data: not in any traced scam cluster, not frozen, not sanctioned"],
+                  0.5)
