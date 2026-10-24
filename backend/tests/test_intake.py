@@ -352,3 +352,14 @@ def test_jpeg_labelled_octet_stream_is_sniffed(monkeypatch):
     jpg = b"\xff\xd8\xff\xe0" + b"\0" * 16
     intake.extract_from_image(jpg, intake._image_mime(jpg, "application/octet-stream"))
     assert msgs.calls[0]["messages"][0]["content"][0]["source"]["media_type"] == "image/jpeg"
+
+
+def test_scrub_keeps_amounts_and_dates_but_removes_phone_numbers():
+    story = "sent 11,082.48 USDT on 2026-10-15 at 2026-10-15T14:32, then 500 more; call +1 (415) 555-0134"
+    out = intake._scrub(story)
+    assert "11,082.48 USDT on 2026-10-15" in out and "2026-10-15T14:32" in out and "500 more" in out
+    assert "555" not in out and "[number removed]" in out
+    for phone in ("+1 (415) 555-0134", "415-555-0134", "(415) 555 0134", "+44 20 7946 0958", "415.555.0134", "+14155550134"):
+        assert intake._scrub(f"ring {phone} now") == "ring [number removed] now", phone
+    for keep in ("1,250,000.00 USDT", "11082.48", "block 21000000", "2026-10-15 14:32", "0.25 ETH"):
+        assert intake._scrub(f"x {keep} y") == f"x {keep} y", keep

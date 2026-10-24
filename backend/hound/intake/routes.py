@@ -50,7 +50,12 @@ TRUNC = re.compile(r"(0x[0-9a-fA-F]{3,12})\s*(?:…|\.\.\.+|\*+)\s*([0-9a-fA-F]{
 # Hashes and addresses are blanked before the amount scan (extract_from_text), so digits at the end
 # of one ("...ab1234 USDT") are never an amount, while "Amount11,082.48" still reads 11082.48.
 AMOUNT = re.compile(r"(?<![\d.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)\s*(USDT|USDⓈ|Tether|ETH)?", re.I)
-PHONE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
+# Phone-shaped runs only: digits with phone separators (space . - parentheses), optional +country.
+# _scrub_phones then keeps anything with fewer than 10 digits, plain decimals and ISO dates, so
+# "sent 11,082.48 USDT on 2026-10-15" survives while "+1 (415) 555-0134" is removed (AUDIT N9).
+PHONE = re.compile(r"(?<![\w.,+])\+?\(?\d[\d\s().-]{6,}\d(?![\w,]|\.\d)")
+ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+DECIMAL = re.compile(r"\d+\.\d+")
 
 
 def _now() -> str:
@@ -76,8 +81,16 @@ def _scrub(obj: Any) -> Any:
     if isinstance(obj, list):
         return [_scrub(v) for v in obj]
     if isinstance(obj, str):
-        return PHONE.sub("[number removed]", obj)
+        return PHONE.sub(_phone_or_keep, obj)
     return obj
+
+
+def _phone_or_keep(m: re.Match) -> str:
+    s = m.group(0)
+    digits = sum(c.isdigit() for c in s)
+    if not 10 <= digits <= 15 or ISO_DATE.search(s) or DECIMAL.fullmatch(s.strip()):
+        return s
+    return "[number removed]"
 
 
 def _session_view(s: dict[str, Any]) -> dict[str, Any]:
