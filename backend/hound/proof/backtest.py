@@ -29,6 +29,13 @@ from typing import Any
 
 from hound.proof.ethcall import ADDR_RE
 
+try:  # team chain adapters: cached, Etherscan/RPC/Blockscout fallbacks, poison-filtered
+    from hound.chain import get_transfers as chain_get_transfers
+    from hound.chain.net import ChainAPIError
+except Exception:  # noqa: BLE001
+    chain_get_transfers = None
+    ChainAPIError = RuntimeError
+
 ROOT = Path(__file__).resolve().parents[3]
 EVENTS_PATH = ROOT / "data" / "freezes_eth.json"  # chain team's public USDT event dump: {"_meta", "events": {addr: [{type, block, time, tx}]}}
 OFAC_PATH = ROOT / "data" / "labels" / "ofac.json"  # label DB: {"ethereum": [...], "tron": [...]}
@@ -89,8 +96,22 @@ def block_time(block: int) -> datetime:
     return _iso(_get(f"{BLOCKSCOUT}/blocks/{block}")["timestamp"])
 
 
-def measure(address: str, freeze_block: int) -> dict[str, Any]:
-    rows = usdt_transfers(address)
+def _transfers(address: str, freeze_block: int) -> list[dict[str, Any]] | None:
+    """USDT transfers touching address up to the freeze block. Team adapter first (it raises for
+    exchange-sized wallets, which is exactly the >5,000 skip rule), Blockscout as fallback."""
+    if chain_get_transfers is not None:
+        try:
+            rows = chain_get_transfers("ethereum", address, token="USDT", as_of=freeze_block)
+            return [{"from": r["from"].lower(), "to": r["to"].lower(), "block": r["block"], "time": r["time"], "amount": float(r["amount"]), "tx": r["tx_hash"]} for r in rows]
+        except ChainAPIError as e:
+            if "TooMany" in type(e).__name__ or "too many" in str(e).lower():
+                return None
+            print(f"[backtest] adapter failed for {address}: {type(e).__name__}; falling back to Blockscout")
+    return usdt_transfers(address)
+
+
+def measure(address: str, freeze_block: int, frozen_at: str | None = None) -> dict[str, Any]:
+    rows = _transfers(address, freeze_block)
     if rows is None:
         return {"skipped": "over_5000_transfers"}
     before = [r for r in rows if r["block"] < freeze_block]
@@ -100,7 +121,7 @@ def measure(address: str, freeze_block: int) -> dict[str, Any]:
     first = min(inflows, key=lambda r: r["block"])
     usdt_in = sum(r["amount"] for r in inflows)
     usdt_out = sum(r["amount"] for r in before if r["from"] == address)
-    ft = block_time(freeze_block)
+    ft = _iso(frozen_at) if frozen_at else block_time(freeze_block)
     lag_h = (ft - _iso(first["time"])).total_seconds() / 3600
     return {"first_inflow_time": first["time"], "frozen_at": ft.isoformat(), "detection_lag_hours": round(lag_h, 2),
             "usdt_in_before_freeze": round(usdt_in, 2), "usdt_out_before_freeze": round(usdt_out, 2),
@@ -128,12 +149,14 @@ def freeze_backtest(sample: int = 200, seed: int = SEED, events_path: Path = EVE
     raw = json.load(open(events_path))["events"]
     events = [ev for evs in (raw.values() if isinstance(raw, dict) else [raw]) for ev in (evs if isinstance(evs, list) else [evs])]
     uniq: dict[str, int] = {}
+    when: dict[str, str] = {}
     for ev in events:  # first 2025 freeze per address
         a = ev["address"].lower()
         if ev.get("type", "added") != "added" or not str(ev.get("time", "")).startswith(str(YEAR)):
             continue
         if ADDR_RE.match(a) and (a not in uniq or ev["block"] < uniq[a]):
             uniq[a] = ev["block"]
+            when[a] = ev["time"]
     addrs = sorted(uniq)
     rng = random.Random(seed)
     picked = rng.sample(addrs, min(sample, len(addrs)))
@@ -145,7 +168,7 @@ def freeze_backtest(sample: int = 200, seed: int = SEED, events_path: Path = EVE
     for a in picked:
         if a not in cache:
             try:
-                cache[a] = measure(a, uniq[a])
+                cache[a] = measure(a, uniq[a], when.get(a))
             except Exception as e:  # noqa: BLE001
                 cache[a] = {"skipped": f"error: {e}"}
                 print(f"[backtest] {a}: {e}")
