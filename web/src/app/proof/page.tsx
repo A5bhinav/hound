@@ -163,8 +163,9 @@ const SCAN_ROWS_SHOWN = 8;
 function ScanPanel({ scan }: { scan: Scan }) {
   const computed = scan.status !== "not_computed" && scan.addresses > 0;
   // Only rows the backend counted in the headline, at their capped amount, so the list adds up to it.
-  const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen);
   const amount = (c: ScanRow) => c.capped_usdt ?? c.balance_usdt;
+  // Largest first, whatever order the summary file was written in (review F1).
+  const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen).sort((a, b) => amount(b) - amount(a));
   const shown = rows.slice(0, SCAN_ROWS_SHOWN);
   const rest = rows.slice(SCAN_ROWS_SHOWN);
   const uncapped = rows.some((c) => c.cap_basis?.startsWith("balance"));

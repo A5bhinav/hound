@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import type { Chain, Trace, TraceEdge, TraceNode } from "@/lib/types";
 import { KIND_LABEL, explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import styles from "./TraceGraph.module.css";
@@ -35,6 +36,15 @@ export default function NodeDetail({
   const hideFreezable = trace.method.freeze_visibility === "hidden" && !freezesShown;
   const swaps = (trace.swaps?.resolved ?? []).filter((s) => s.address === node.address);
 
+  // Escape closes the drawer, like the × button (review F8).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <aside className={styles.detail} aria-label="Address details">
       <button type="button" className={styles.close} onClick={onClose} aria-label="Close details">
@@ -67,7 +77,16 @@ export default function NodeDetail({
       <dl className={styles.facts}>
         <dt>Balance</dt>
         <dd>{usdt(node.balance_usdt)}</dd>
-        {endpoint && (
+        {endpoint && outgoing.length > 0 && (
+          // The trace kept going from here; the endpoint is only what stayed behind (review F12).
+          <>
+            <dt>Left behind here</dt>
+            <dd>
+              {usdt(endpoint.victim_remaining ?? endpoint.victim_inflow)} residual ({endpoint.reason.replaceAll("_", " ")}), the rest moved on
+            </dd>
+          </>
+        )}
+        {endpoint && outgoing.length === 0 && (
           <>
             <dt>Trail stops here</dt>
             <dd>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ApiError, Bar } from "@/components/Chrome";
 import PrintButton from "@/components/PrintButton";
 import { HoundApiError, getPacket, usingFixtures, type Packet } from "@/lib/api";
-import { pct, shortAddr, usdt } from "@/lib/format";
+import { pct, shortAddr, tok, usdt } from "@/lib/format";
 import type { Trace } from "@/lib/types";
 import styles from "./packet.module.css";
 
@@ -198,7 +198,7 @@ function Tables({ trace }: { trace: Trace }) {
                         "Not frozen"
                       )}
                     </td>
-                    <td>{REASON_CONTACT[p.reason] ?? "—"}</td>
+                    <td>{REASON_CONTACT[n?.frozen?.is_frozen ? "frozen" : p.reason] ?? "—"}</td>
                   </tr>
                 );
               })}
@@ -231,7 +231,7 @@ function Tables({ trace }: { trace: Trace }) {
                     <Addr v={e.from} live={!trace.replay} />
                     <br />→ <Addr v={e.to} live={!trace.replay} />
                   </td>
-                  <td className="mono">{usdt(e.attributed_amount)}</td>
+                  <td className="mono">{tok(e.attributed_amount, e.token)}</td>
                   <td>
                     {pct(e.confidence)} · {e.method}
                   </td>

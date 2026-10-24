@@ -26,13 +26,26 @@ const STEPS: { status: IntakeSession["status"][]; label: string }[] = [
 export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | null }) {
   const [feed, setFeed] = useState<Feed>({ k: "waiting" });
   const replaying = useRef(false);
+  const replayTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
     let stop = false;
     let timer: ReturnType<typeof setTimeout>;
     const tick = async () => {
       if (stop) return;
-      if (!replaying.current) {
+      if (replaying.current) {
+        // A finished replay stays on screen until the presenter leaves it or a real call starts (review F15).
+        try {
+          const res = await fetch("/api/intake/active", { cache: "no-store" });
+          if (res.ok && res.status !== 204) {
+            console.info("[hound-web] live intake started; ending the replay");
+            endReplay();
+            setFeed({ k: "live", s: (await res.json()) as IntakeSession });
+          }
+        } catch (err) {
+          console.error("[hound-web] intake poll failed during replay:", err);
+        }
+      } else {
         try {
           const res = await fetch("/api/intake/active", { cache: "no-store" });
           if (res.status === 204) setFeed({ k: "waiting" });
@@ -60,8 +73,20 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
     };
   }, []);
 
+  function endReplay() {
+    replayTimers.current.forEach(clearTimeout);
+    replayTimers.current = [];
+    replaying.current = false;
+  }
+
+  function backToLive() {
+    endReplay();
+    setFeed({ k: "waiting" }); // the next poll shows a live call if one is in progress
+  }
+
   function replay() {
     if (!replayCase) return;
+    endReplay();
     replaying.current = true;
     const base = `${window.location.origin}/c/REPLAY`;
     const story = replayCase.story ?? {};
@@ -72,12 +97,7 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
       { case_code: "REPLAY", upload_url: base, status: "validating", story, victim: replayCase.victim },
       { case_code: "REPLAY", upload_url: base, status: "validated", story, victim: replayCase.victim, case_id: replayCase.case_id },
     ];
-    frames.forEach((s, i) =>
-      setTimeout(() => {
-        setFeed({ k: "replay", s });
-        if (i === frames.length - 1) setTimeout(() => (replaying.current = false), 15000);
-      }, i * REPLAY_STEP_MS),
-    );
+    replayTimers.current = frames.map((s, i) => setTimeout(() => setFeed({ k: "replay", s }), i * REPLAY_STEP_MS));
   }
 
   const s = feed.k === "live" || feed.k === "replay" ? feed.s : null;
@@ -88,9 +108,15 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
           <p className="eyebrow">{feed.k === "replay" ? "Replay of a recorded intake, not a live call" : "Live intake"}</p>
           <h1 className={styles.h1}>{s ? `Case ${s.case_code}` : "Waiting for a call"}</h1>
         </div>
-        <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase || feed.k === "replay"}>
-          Replay intake
-        </button>
+        {feed.k === "replay" ? (
+          <button type="button" className={styles.replay} onClick={backToLive}>
+            Back to live
+          </button>
+        ) : (
+          <button type="button" className={styles.replay} onClick={replay} disabled={!replayCase}>
+            Replay intake
+          </button>
+        )}
       </div>
 
       {feed.k === "unavailable" && (
@@ -130,7 +156,7 @@ export default function LiveIntake({ replayCase }: { replayCase: CaseSummary | n
               </Link>
             )}
           </section>
-          {s.status !== "story" && <UploadLink url={s.upload_url} code={s.case_code} />}
+          {s.status !== "story" && <UploadLink url={s.upload_url} code={s.case_code} sample={feed.k === "replay"} />}
         </div>
       )}
     </div>
@@ -147,7 +173,7 @@ function Fact({ k, v }: { k: string; v?: string | null }) {
   );
 }
 
-function UploadLink({ url, code }: { url: string; code: string }) {
+function UploadLink({ url, code, sample }: { url: string; code: string; sample?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
@@ -169,6 +195,7 @@ function UploadLink({ url, code }: { url: string; code: string }) {
       )}
       <p className={styles.url}>{url.replace(/^https?:\/\//, "")}</p>
       <p className={styles.codeBig}>{code}</p>
+      {sample && <p className={styles.url}>Sample link from the recorded intake. It does not take uploads.</p>}
     </section>
   );
 }

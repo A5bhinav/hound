@@ -9,7 +9,18 @@ type State =
   | { k: "sending" }
   | { k: "done"; caseId: string }
   | { k: "retake"; message: string }
-  | { k: "error"; message: string; detail: string };
+  | { k: "error"; message: string; detail: string }
+  | { k: "inactive" };
+
+/** Unknown or expired code (sessions last 2 hours): plain words, never the raw HTTP error (review F7). */
+export function LinkNotActive() {
+  return (
+    <div className={styles.done} role="alert">
+      <p className={styles.big}>This link is not active.</p>
+      <p>It may have expired, or the code may be mistyped. Ask the person on the phone for a new link.</p>
+    </div>
+  );
+}
 
 /** The victim's upload page (AUDIT N7): one big button, 18px+ text, ARIA, and a "type it instead" field. */
 export default function UploadForm({ code }: { code: string }) {
@@ -28,6 +39,10 @@ export default function UploadForm({ code }: { code: string }) {
       return setState({ k: "error", message: "We couldn't send it. Check your internet connection and try again.", detail: String(err) });
     }
     const text = await res.text();
+    if (res.status === 404) {
+      console.error(`[hound-web] upload -> 404 for code ${code}: ${text.slice(0, 300)}`);
+      return setState({ k: "inactive" });
+    }
     if (!res.ok) {
       console.error(`[hound-web] upload -> ${res.status}: ${text.slice(0, 300)}`);
       return setState({
@@ -61,6 +76,8 @@ export default function UploadForm({ code }: { code: string }) {
     fd.append("typed", typed.trim());
     void send(fd);
   }
+
+  if (state.k === "inactive") return <LinkNotActive />;
 
   if (state.k === "done") {
     return (

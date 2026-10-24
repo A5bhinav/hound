@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { explorerUrl, pct, shortAddr, usdt } from "@/lib/format";
+import { explorerUrl, pct, shortAddr, tok, usdt } from "@/lib/format";
 import type { Chain } from "@/lib/types";
 import styles from "./ExchangeCheck.module.css";
 
@@ -13,7 +13,7 @@ interface CheckResult {
     rule_fired?: string;
     case_ids?: string[];
     label?: { name: string; kind: string; exchange?: string } | null;
-    path?: { from: string; to: string; amount: number; tx_hashes: string[]; confidence: number; method: string }[];
+    path?: { from: string; to: string; amount: number; token?: string; tx_hashes: string[]; confidence: number; method: string }[];
     victim_inflow_usdt?: number;
     frozen?: { is_frozen: boolean; frozen_at: string | null; freeze_tx: string | null } | null;
     watchlist_version?: string;
@@ -23,7 +23,7 @@ interface CheckResult {
 type Phase =
   | { k: "form" }
   | { k: "checking" }
-  | { k: "result"; r: CheckResult; address: string; chain: Chain }
+  | { k: "result"; r: CheckResult; address: string; chain: Chain; amount: number }
   | { k: "error"; message: string };
 
 // Demo shortcuts: a wallet from the DOJ replay trace, and a labelled exchange hot wallet.
@@ -43,9 +43,12 @@ export default function ExchangeCheck() {
   const [address, setAddress] = useState("");
   const [amount, setAmount] = useState("2500");
   const [phase, setPhase] = useState<Phase>({ k: "form" });
+  const amountN = Number(amount.trim());
+  const amountOk = amount.trim() !== "" && Number.isFinite(amountN) && amountN > 0;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!amountOk) return;
     setPhase({ k: "checking" });
     const url = `/api/check?chain=${chain}&address=${encodeURIComponent(address.trim())}`;
     try {
@@ -56,7 +59,7 @@ export default function ExchangeCheck() {
         const hint = res.status >= 500 ? " Is the backend running at HOUND_API_URL?" : "";
         return setPhase({ k: "error", message: `${detail}${hint}` });
       }
-      setPhase({ k: "result", r: body as CheckResult, address: address.trim(), chain });
+      setPhase({ k: "result", r: body as CheckResult, address: address.trim(), chain, amount: amountN });
     } catch (err) {
       console.error("[hound-web] check failed:", err);
       setPhase({ k: "error", message: `Couldn't reach the web server: ${err}` });
@@ -94,9 +97,10 @@ export default function ExchangeCheck() {
           </label>
           <label className={styles.field}>
             <span>Amount (USDT)</span>
-            <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
+            <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" aria-invalid={!amountOk} />
+            {!amountOk && <span role="alert">Enter an amount above 0.</span>}
           </label>
-          <button type="submit" className={styles.send} disabled={phase.k === "checking" || !address.trim()}>
+          <button type="submit" className={styles.send} disabled={phase.k === "checking" || !address.trim() || !amountOk}>
             {phase.k === "checking" ? "Checking destination…" : "Withdraw"}
           </button>
           <div className={styles.samples}>
@@ -123,19 +127,19 @@ export default function ExchangeCheck() {
             <p>{phase.message}</p>
           </div>
         )}
-        {phase.k === "result" && <Result r={phase.r} address={phase.address} chain={phase.chain} amount={amount} />}
+        {phase.k === "result" && <Result r={phase.r} address={phase.address} chain={phase.chain} amount={phase.amount} />}
       </div>
     </div>
   );
 }
 
-function Result({ r, address, chain, amount }: { r: CheckResult; address: string; chain: Chain; amount: string }) {
+function Result({ r, address, chain, amount }: { r: CheckResult; address: string; chain: Chain; amount: number }) {
   const ev = r.evidence;
   return (
     <div className={styles.result} data-decision={r.decision} role={r.decision === "allow" ? "status" : "alert"}>
       <p className={styles.verdict}>{HEADLINE[r.decision]}</p>
       <p className={styles.lede}>
-        {r.decision === "hold" && `Your ${amount} USDT has not left your account. This address is part of a traced scam cluster.`}
+        {r.decision === "hold" && `Your ${usdt(amount)} has not left your account. This address is part of a traced scam cluster.`}
         {r.decision === "warn" && "This address is linked to reported scam activity. Confirm you know who you're paying before you send."}
         {r.decision === "allow" && "No Hound warning for this address. That doesn't prove it's safe."}
       </p>
@@ -204,7 +208,7 @@ function Result({ r, address, chain, amount }: { r: CheckResult; address: string
                       {shortAddr(h.from)} → {shortAddr(h.to)}
                     </span>
                     <span>
-                      {usdt(h.amount)} · {pct(h.confidence)} · {h.method}
+                      {h.token ? tok(h.amount, h.token) : usdt(h.amount)} · {pct(h.confidence)} · {h.method}
                     </span>
                     <span className="mono">
                       {h.tx_hashes.slice(0, 2).map((t) => (

@@ -87,6 +87,14 @@
 .legend li[data-tone="dead"]::before { border-color: var(--dead); border-style: dashed; }
 .legend li[data-tone="weak"]::before { border: 0; border-top: 2px dashed var(--ink-2); height: 0; width: 1.2rem; vertical-align: 0.2rem; }
 
+.stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+
 .canvas {
   flex: 1;
   min-height: 480px;
