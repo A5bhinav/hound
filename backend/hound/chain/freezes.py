@@ -176,7 +176,8 @@ def _before(e: dict, as_of: int | str) -> bool:
     return eth.parse_time(e["time"]) <= eth.parse_time(as_of)
 
 
-def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> dict[str, Any]:
+def freeze_status(chain: str, address: str, as_of: int | str | None = None,
+                  check_onchain: bool = True) -> dict[str, Any]:
     """-> {"is_frozen", "frozen_at", "freeze_tx", "status": frozen|unfrozen|destroyed|none} + extras
     ("frozen_block", "unfrozen_at", "destroyed_amount", "destroyed_tx", "destroyed_block", "destroyed_at").
 
@@ -193,7 +194,7 @@ def freeze_status(chain: str, address: str, as_of: int | str | None = None) -> d
         evs = [e for e in evs if _before(e, as_of)]
     status = _status_from(evs)
     onchain = None
-    if as_of is None:
+    if as_of is None and check_onchain:
         try:
             onchain = is_blacklisted_onchain(chain, address)
         except (cache.CacheMiss, ChainAPIError) as e:

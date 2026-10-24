@@ -1,25 +1,136 @@
 {
-  "_note": "TEST FIXTURE ONLY (not demo data). Real DOJ path addresses; amounts and tx hashes are placeholders.",
-  "trace_id": "fixture-trace-1",
-  "case_id": "fixture-case-1",
-  "created_at": "2026-10-24T03:00:00Z",
-  "method": {"accounting": "FIFO", "max_hops": 8, "max_branches_per_node": 12, "min_amount": 100},
-  "nodes": [
-    {"address": "0x1111111111111111111111111111111111111111", "chain": "ethereum", "kind": "victim", "depth": 0},
-    {"address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027", "chain": "ethereum", "kind": "intermediate", "depth": 1},
-    {"address": "0x78366b2f6c5321ac30629c078120385ae2da1a06", "chain": "ethereum", "kind": "intermediate", "depth": 2},
-    {"address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f", "chain": "ethereum", "kind": "intermediate", "depth": 3},
-    {"address": "0xa1770ead287dc8e91631a7a323390d5b744f0021", "chain": "ethereum", "kind": "holding", "depth": 4},
-    {"address": "0x28c6c06298d514db089934071355e5743bf21d60", "chain": "ethereum", "kind": "exchange_hot", "depth": 4}
-  ],
-  "edges": [
-    {"from": "0x1111111111111111111111111111111111111111", "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027", "token": "USDT", "amount": 1000, "attributed_amount": 1000, "tx_hashes": ["0xaaa1"], "first_time": "2024-05-01T00:00:00Z", "last_time": "2024-05-01T00:00:00Z", "hop": 1, "confidence": 0.95, "method": "direct"},
-    {"from": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027", "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06", "token": "USDT", "amount": 1000, "attributed_amount": 1000, "tx_hashes": ["0xaaa2"], "first_time": "2024-05-02T00:00:00Z", "last_time": "2024-05-02T00:00:00Z", "hop": 2, "confidence": 0.9, "method": "direct"},
-    {"from": "0x78366b2f6c5321ac30629c078120385ae2da1a06", "to": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f", "token": "USDT", "amount": 1000, "attributed_amount": 900, "tx_hashes": ["0xaaa3"], "first_time": "2024-05-03T00:00:00Z", "last_time": "2024-05-03T00:00:00Z", "hop": 3, "confidence": 0.55, "method": "consolidation"},
-    {"from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f", "to": "0xa1770ead287dc8e91631a7a323390d5b744f0021", "token": "USDT", "amount": 900, "attributed_amount": 900, "tx_hashes": ["0xaaa4"], "first_time": "2024-05-04T00:00:00Z", "last_time": "2024-05-04T00:00:00Z", "hop": 4, "confidence": 0.85, "method": "direct"},
-    {"from": "0x78366b2f6c5321ac30629c078120385ae2da1a06", "to": "0x28c6c06298d514db089934071355e5743bf21d60", "token": "USDT", "amount": 100, "attributed_amount": 100, "tx_hashes": ["0xaaa5"], "first_time": "2024-05-03T00:00:00Z", "last_time": "2024-05-03T00:00:00Z", "hop": 3, "confidence": 0.8, "method": "peel"}
-  ],
-  "endpoints": [],
-  "other_payers": [],
-  "stats": {"api_calls": 0, "cache_hits": 0, "empty_results": 0, "elapsed_ms": 0}
+ "_note": "TEST FIXTURE ONLY (not demo data). Real DOJ path addresses; amounts and tx hashes are placeholders.",
+ "trace_id": "fixture-trace-1",
+ "case_id": "fixture-case-1",
+ "created_at": "2026-10-24T03:00:00Z",
+ "method": {
+  "accounting": "FIFO",
+  "max_hops": 8,
+  "max_branches_per_node": 12,
+  "min_amount": 100
+ },
+ "nodes": [
+  {
+   "address": "0x1111111111111111111111111111111111111111",
+   "chain": "ethereum",
+   "kind": "victim",
+   "depth": 0
+  },
+  {
+   "address": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+   "chain": "ethereum",
+   "kind": "intermediate",
+   "depth": 1
+  },
+  {
+   "address": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+   "chain": "ethereum",
+   "kind": "intermediate",
+   "depth": 2
+  },
+  {
+   "address": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+   "chain": "ethereum",
+   "kind": "intermediate",
+   "depth": 3
+  },
+  {
+   "address": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+   "chain": "ethereum",
+   "kind": "holding",
+   "depth": 4
+  },
+  {
+   "address": "0x28c6c06298d514db089934071355e5743bf21d60",
+   "chain": "ethereum",
+   "kind": "exchange_hot",
+   "depth": 4
+  }
+ ],
+ "edges": [
+  {
+   "from": "0x1111111111111111111111111111111111111111",
+   "to": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+   "token": "USDT",
+   "amount": 1000,
+   "attributed_amount": 1000,
+   "tx_hashes": [
+    "0xaaa1"
+   ],
+   "first_time": "2024-05-01T00:00:00Z",
+   "last_time": "2024-05-01T00:00:00Z",
+   "hop": 1,
+   "confidence": 0.95,
+   "method": "direct"
+  },
+  {
+   "from": "0xcf9bbfa762ef5a84ba3d25350de941a6db485027",
+   "to": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+   "token": "USDT",
+   "amount": 1000,
+   "attributed_amount": 1000,
+   "tx_hashes": [
+    "0xaaa2"
+   ],
+   "first_time": "2024-05-02T00:00:00Z",
+   "last_time": "2024-05-02T00:00:00Z",
+   "hop": 2,
+   "confidence": 0.9,
+   "method": "direct"
+  },
+  {
+   "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+   "to": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+   "token": "USDT",
+   "amount": 1000,
+   "attributed_amount": 900,
+   "tx_hashes": [
+    "0xaaa3"
+   ],
+   "first_time": "2024-05-03T00:00:00Z",
+   "last_time": "2024-05-03T00:00:00Z",
+   "hop": 3,
+   "confidence": 0.55,
+   "method": "consolidation"
+  },
+  {
+   "from": "0x9eb0c71e79066552bdd05a69fc4dcac075db5e1f",
+   "to": "0xa1770ead287dc8e91631a7a323390d5b744f0021",
+   "token": "USDT",
+   "amount": 900,
+   "attributed_amount": 900,
+   "tx_hashes": [
+    "0xaaa4"
+   ],
+   "first_time": "2024-05-04T00:00:00Z",
+   "last_time": "2024-05-04T00:00:00Z",
+   "hop": 4,
+   "confidence": 0.85,
+   "method": "direct"
+  },
+  {
+   "from": "0x78366b2f6c5321ac30629c078120385ae2da1a06",
+   "to": "0x28c6c06298d514db089934071355e5743bf21d60",
+   "token": "USDT",
+   "amount": 100,
+   "attributed_amount": 100,
+   "tx_hashes": [
+    "0xaaa5"
+   ],
+   "first_time": "2024-05-03T00:00:00Z",
+   "last_time": "2024-05-03T00:00:00Z",
+   "hop": 3,
+   "confidence": 0.8,
+   "method": "peel"
+  }
+ ],
+ "endpoints": [],
+ "other_payers": [],
+ "stats": {
+  "api_calls": 0,
+  "cache_hits": 0,
+  "empty_results": 0,
+  "elapsed_ms": 0
+ },
+ "replay": true
 }
