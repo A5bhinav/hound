@@ -20,6 +20,7 @@ import logging
 import math
 import os
 import re
+import time
 from datetime import datetime
 
 from hound.llm.facts import ACCUSE, LIMIT_REASONS, WriterInputError, build_facts, citable, contact_values, flatten, short_addr
@@ -30,7 +31,9 @@ MODEL = os.environ.get("HOUND_WRITER_MODEL", "claude-opus-5-5")
 FORMATS = ("usdt", "short", "date", "int", "raw")
 MAX_PARAGRAPHS = 8
 MAX_PARAGRAPH_CHARS = 1200
-CLAUDE_TIMEOUT_S = 20
+CLAUDE_TIMEOUT_S = 20  # per read, inside the overall deadline
+CLAUDE_DEADLINE_S = 45  # whole Claude budget for one packet, both attempts together (monotonic clock)
+CLAUDE_MIN_RETRY_S = 8  # a retry with less time than this left is skipped: template at once
 
 FOOTER_REPORTED = "Reported, not proven."
 FOOTER_NEVER = "Hound never charges, never asks for keys or seed phrases; anyone offering paid recovery is a scam."
@@ -517,11 +520,18 @@ def _prompt(facts, audience):
             f"<untrusted_story>\n{story}\n</untrusted_story>")
 
 
-def _call_claude(messages):
-    """One Claude call. Returns the paragraphs list. Raises on any API, refusal or parse problem."""
+def _call_claude(messages, deadline=None):
+    """One Claude call. Returns the raw text. Raises on any API, refusal or parse problem, and
+    TimeoutError once time.monotonic() passes `deadline` (checked between stream events, so a
+    slow trickle of tokens can not outlive it the way a per-read timeout can)."""
     import anthropic
+    if deadline is None:
+        deadline = time.monotonic() + CLAUDE_DEADLINE_S
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("writer: Claude deadline already passed")
     # bounded: a stalled network must fall back to the template fast, never hang the packet route
-    client = anthropic.Anthropic(timeout=CLAUDE_TIMEOUT_S, max_retries=0)
+    client = anthropic.Anthropic(timeout=min(CLAUDE_TIMEOUT_S, remaining), max_retries=0)
     with client.beta.messages.stream(
         model=MODEL,
         max_tokens=8000,
@@ -531,6 +541,9 @@ def _call_claude(messages):
         betas=["server-side-fallback-2026-07-01"],
         fallbacks="default",
     ) as stream:
+        for _ in stream:
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"writer: Claude passed its {CLAUDE_DEADLINE_S}s deadline mid-stream")
         msg = stream.get_final_message()
     if msg.stop_reason != "end_turn":
         raise RuntimeError(f"writer: Claude stopped with {msg.stop_reason!r}"
@@ -555,10 +568,15 @@ def _claude_paragraphs(facts, audience):
     """Up to two attempts, the second only after a validator rejection. A network, credit or
     refusal error returns None at once, so a dead network costs one timeout, not two."""
     messages = [{"role": "user", "content": _prompt(facts, audience)}]
+    deadline = time.monotonic() + CLAUDE_DEADLINE_S  # one budget for both attempts together
     for attempt in (1, 2):
         raw = None
+        if attempt == 2 and deadline - time.monotonic() < CLAUDE_MIN_RETRY_S:
+            log.warning("writer: %.1fs left of the %ss Claude deadline, not retrying",
+                        max(deadline - time.monotonic(), 0), CLAUDE_DEADLINE_S)
+            return None
         try:
-            raw = _call_claude(messages)
+            raw = _call_claude(messages, deadline=deadline)
             paras = _parse(raw)
             for p in paras:
                 validate(p, facts, audience=audience)

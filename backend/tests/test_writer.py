@@ -37,7 +37,7 @@ def claude(monkeypatch):
     def install(*outputs):
         queue = list(outputs)
 
-        def fake(messages):
+        def fake(messages, deadline=None):
             calls.append(copy.deepcopy(messages))
             out = queue.pop(0)
             if isinstance(out, Exception):
@@ -771,6 +771,48 @@ def test_claude_client_is_bounded(monkeypatch):
     with pytest.raises(RuntimeError, match="stop here"):
         writer._call_claude([{"role": "user", "content": "x"}])
     assert seen == {"timeout": writer.CLAUDE_TIMEOUT_S, "max_retries": 0} and writer.CLAUDE_TIMEOUT_S <= 30
+
+
+def test_one_claude_deadline_covers_both_attempts(monkeypatch):
+    """The retry gets only what is left of a single monotonic budget; too little left means template."""
+    clock = [1000.0]
+    monkeypatch.setattr(writer.time, "monotonic", lambda: clock[0])
+    deadlines = []
+
+    def slow_reject(messages, deadline=None):
+        deadlines.append(deadline)
+        clock[0] += writer.CLAUDE_DEADLINE_S - writer.CLAUDE_MIN_RETRY_S + 1  # first attempt eats the budget
+        return json.dumps({"paragraphs": ["It went to one wallet."]})  # number word: rejected
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(writer, "_call_claude", slow_reject)
+    out = write_case(TRACE, CASE, "victim")
+    assert out["source"] == "template" and deadlines == [1000.0 + writer.CLAUDE_DEADLINE_S]
+
+
+def test_claude_stream_is_cut_at_the_deadline(monkeypatch):
+    import anthropic
+    clock = [0.0]
+    monkeypatch.setattr(writer.time, "monotonic", lambda: clock[0])
+
+    class Stream:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def __iter__(self):
+            for _ in range(100):
+                clock[0] += 1  # a trickle of events, each well inside any per-read timeout
+                yield object()
+
+    class Fake:
+        def __init__(self, **kw):
+            self.beta = type("B", (), {"messages": type("M", (), {"stream": staticmethod(lambda **k: Stream())})()})()
+    monkeypatch.setattr(anthropic, "Anthropic", Fake)
+    with pytest.raises(TimeoutError):
+        writer._call_claude([{"role": "user", "content": "x"}], deadline=10.0)
+    assert clock[0] == 11.0
 
 
 def test_claude_network_error_is_not_retried(claude, monkeypatch):
