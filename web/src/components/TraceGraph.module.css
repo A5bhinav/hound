@@ -6,15 +6,21 @@
   overflow: hidden;
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.5rem 0.75rem;
   flex-wrap: wrap;
-  padding: 0.75rem 1rem 0.25rem;
+  padding: 0.85rem 1.35rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* Box header: title, then the hop counter as a quiet caption. */
+.title {
+  font-size: 1.15rem;
 }
 
 .controls button {
@@ -41,28 +47,34 @@
   border-color: var(--red);
   background: var(--red);
   color: var(--white);
-  box-shadow: 0 8px 24px -10px rgba(224, 70, 76, 0.75);
 }
 
 .controls button.reveal:hover:not(:disabled) {
-  border-color: #b81d26;
-  background: #b81d26;
+  border-color: var(--red-2);
+  background: var(--red-2);
 }
 
 .progress {
-  font-size: 0.88rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-3);
   margin-right: auto;
   font-variant-numeric: tabular-nums;
 }
 
+/* The reveal: an ice-blue callout under the header, the one line the presenter reads out. */
 .freezeReveal {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  margin: 0.5rem 1rem 0;
-  padding: 0.9rem 0 0.75rem;
-  border-top: 1px solid var(--ice);
+  margin: 1rem 1.35rem 0;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid #1d3a55;
+  border-left: 4px solid var(--ice);
+  border-radius: var(--radius);
+  background: var(--ice-wash);
   color: var(--ink);
   animation: freeze-in 500ms cubic-bezier(0.2, 0, 0, 1);
 }
@@ -70,14 +82,14 @@
 .freezeReveal strong {
   font-family: var(--font-d);
   font-weight: 700;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
 .freezeReveal span {
-  font-size: 0.98rem;
-  color: var(--ink-2);
+  font-size: 0.9rem;
+  color: var(--ice-ink);
 }
 
 @keyframes freeze-in {
@@ -95,6 +107,7 @@
 .scroller {
   overflow-x: auto;
   overflow-y: hidden;
+  padding: 0 0.35rem;
 }
 
 .flow {
@@ -209,9 +222,10 @@
   align-items: center;
   gap: 0.4rem 1.25rem;
   margin: 0;
-  padding: 0.25rem 1rem 0.85rem;
+  padding: 0.7rem 1.35rem;
+  border-top: 1px solid var(--rule);
   list-style: none;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   color: var(--ink-2);
 }
 
@@ -245,9 +259,10 @@
   bottom: 0;
   width: min(380px, 100%);
   overflow-y: auto;
-  padding: 1.25rem;
+  padding: 1.25rem 1.35rem;
   background: var(--fog);
   border-left: 1px solid var(--rule-2);
+  box-shadow: -16px 0 32px -12px rgba(0, 0, 0, 0.7);
 }
 
 .close {
@@ -269,6 +284,7 @@
 
 .frozenBadge {
   padding: 0.55rem 0.7rem;
+  border: 1px solid #1d3a55;
   background: var(--ice-wash);
   border-radius: var(--radius);
   color: var(--ice-ink);
@@ -277,14 +293,17 @@
 
 .facts {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.3rem 1rem;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.45rem 1rem;
   margin: 1rem 0;
-  font-size: 0.9rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.88rem;
 }
 
 .facts dt {
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
 .facts dd {
@@ -296,8 +315,8 @@
 .reasons,
 .flows {
   margin: 0 0 1rem;
-  padding-left: 1.1rem;
-  font-size: 0.88rem;
+  padding-left: 0;
+  font-size: 0.86rem;
 }
 
 .flows {

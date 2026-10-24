@@ -21,26 +21,60 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
   const [freezesShown, setFreezesShown] = useState(false);
   const replay = trace?.replay ?? c.source === "doj_replay";
 
+  const facts = caseFacts(c, replay);
+
   return (
-    <main className={styles.page}>
-      <header className={styles.head}>
-        <StepLabel n={2}>Follow the money</StepLabel>
-        <h1 className={styles.title}>{title(c)}</h1>
-        <p className={styles.summary}>{summaryLine(c, replay)}</p>
+    <main className={`wrap ${styles.page}`}>
+      {/* Title left, the case's key numbers right: one compact band, so the ribbons still start high on a projector. */}
+      <header className={`page-head ${styles.head}`}>
+        <div>
+          <StepLabel n={2}>Follow the money</StepLabel>
+          <h1 className={styles.title}>{title(c)}</h1>
+          <p className="sub">
+            Case <span className="mono">{c.case_id}</span> · traced hop by hop from the victim&apos;s sends
+          </p>
+        </div>
+        <dl className={styles.stats}>
+          {facts.sends > 0 && (
+            <div className={styles.stat}>
+              <dt className="label">Sends</dt>
+              <dd>{facts.sends}</dd>
+            </div>
+          )}
+          {facts.sent && (
+            <div className={styles.stat}>
+              <dt className="label">Total sent</dt>
+              <dd>{facts.sent}</dd>
+            </div>
+          )}
+          {facts.when && (
+            <div className={styles.stat}>
+              <dt className="label">Dates</dt>
+              <dd className={styles.statSm}>{facts.when}</dd>
+            </div>
+          )}
+          <div className={styles.stat}>
+            <dt className="label">Source</dt>
+            <dd>
+              <span className={`badge ${replay ? "badge-ice" : "badge-red"}`}>{facts.source}</span>
+            </dd>
+          </div>
+        </dl>
       </header>
 
       {trace && trace.status !== "done" && (
-        <p className={styles.note} role="alert">
+        <p className={`badge badge-hold ${styles.note}`} role="alert">
           {trace.status === "partial" ? "Partial trace: some branches couldn't be fetched. Shown is everything reached." : "The trace failed."}
         </p>
       )}
       {trace?.source === "fixture" && (
-        <p className={styles.note} role="alert">Offline: this replay ran on the committed example data.</p>
+        <p className={`badge badge-hold ${styles.note}`} role="alert">Offline: this replay ran on the committed example data.</p>
       )}
 
       {state.phase === "running" && <Progress log={state.log} startedAt={state.startedAt} />}
       {state.phase === "error" && (
-        <div className={styles.panel} role="alert">
+        <div className={`box box-red ${styles.panel}`} role="alert">
+          <p className="label">Trace stopped</p>
           <p className={styles.lead}>The trace didn&apos;t finish.</p>
           <p className={styles.detail}>{state.message}</p>
         </div>
@@ -50,17 +84,20 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         <>
           <TraceGraph trace={trace} asOf={asOf} onFreezesShown={setFreezesShown} />
           {freezesShown && (
-            <div className={styles.after}>
+            <div className={`grid g2 ${styles.after}`}>
               <Stops trace={trace} freezesShown={freezesShown} />
               <OtherPayers trace={trace} />
             </div>
           )}
           {/* Always there once the trace is done: the demo comes back here to open the packet. */}
           {trace.endpoints.length === 0 ? (
-            <p className={styles.noEnd} role="alert">
-              Hound could not follow this payment anywhere, so there is no packet to write.{" "}
-              {lastProblem(trace) ?? "Check the transaction hash and the amount, then trace again."}
-            </p>
+            <div className={`box box-red ${styles.noEnd}`} role="alert">
+              <p className="label">No packet</p>
+              <ul className="checks no">
+                <li>Hound could not follow this payment anywhere, so there is no packet to write.</li>
+                <li>{lastProblem(trace) ?? "Check the transaction hash and the amount, then trace again."}</li>
+              </ul>
+            </div>
           ) : (
             <NextStep href="/exchange" label="Stop the next victim">
               These wallets are now on the warning list.{" "}
@@ -70,12 +107,18 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         </>
       )}
 
-      <details className={styles.more}>
-        <summary>Case details</summary>
-        <CaseCard c={c} trace={trace} />
-      </details>
-      {trace && <AuditLog log={trace.audit_log} />}
-      <p className={styles.footer}>Public chain data only. Reported, not proven. Hound never touches funds.</p>
+      <div className={`grid g2 ${styles.extras}`}>
+        <details className={`box ${styles.more}`}>
+          <summary>Case details</summary>
+          <CaseCard c={c} trace={trace} />
+        </details>
+        {trace && <AuditLog log={trace.audit_log} />}
+      </div>
+      <ul className={styles.footer} aria-label="About this data">
+        <li className="badge">Public chain data only</li>
+        <li className="badge">Reported, not proven</li>
+        <li className="badge badge-ok">Hound never touches funds</li>
+      </ul>
     </main>
   );
 }
@@ -86,7 +129,8 @@ function title(c: CaseSummary | Case) {
   return a.includes(" (") ? a.slice(0, a.indexOf(" (")) : a;
 }
 
-function summaryLine(c: CaseSummary | Case, replay: boolean) {
+/** The case's key numbers for the stat tiles: sends, total per token, date range, and where the case came from. */
+function caseFacts(c: CaseSummary | Case, replay: boolean) {
   const sends = "sends" in c ? c.sends : [];
   const totals = new Map<string, number>();
   for (const s of sends) totals.set(s.token, (totals.get(s.token) ?? 0) + s.amount);
@@ -94,11 +138,7 @@ function summaryLine(c: CaseSummary | Case, replay: boolean) {
   const times = sends.map((s) => s.time).filter(Boolean).sort();
   const fmt = (t: string) => new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
   const when = times.length ? (times.length > 1 && fmt(times[0]) !== fmt(times[times.length - 1]) ? `${fmt(times[0])} to ${fmt(times[times.length - 1])}` : fmt(times[0])) : null;
-  return [
-    sends.length ? `${sends.length} ${sends.length === 1 ? "send" : "sends"} · ${sent}` : null,
-    when,
-    replay ? "A real 2024 DOJ case, replayed" : "Live case",
-  ].filter(Boolean).join(" · ");
+  return { sends: sends.length, sent, when, source: replay ? "A real 2024 DOJ case, replayed" : "Live case" };
 }
 
 /** Where the victim's money ended, one quiet row per stop. Dust and pass-through residue stay in the details. */
@@ -110,38 +150,59 @@ function Stops({ trace, freezesShown }: { trace: Trace; freezesShown: boolean })
     .sort((a, b) => held(b) - held(a));
   if (!rows.length) return null;
   return (
-    <section className={styles.stops} aria-labelledby="stops-h">
-      <h2 id="stops-h" className={styles.h2}>Where it stopped</h2>
-      <ul>
-        {rows.map((p) => {
-          const n = trace.nodes.find((x) => x.address === p.address);
-          const t = n ? tone(n, freezesShown) : "trace";
-          const frozenAt = freezesShown && n?.frozen?.is_frozen ? n.frozen.frozen_at : null;
-          const status = frozenAt
-            ? `Tether froze it ${new Date(frozenAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
-            : p.reason === "exchange"
-              ? `At ${p.exchange ?? "an exchange"} · request ready`
-              : p.reason === "holding"
-                ? trace.replay ? "Holding at the cutoff" : "Still holding"
-                : p.reason === "swap_unresolved" ? "Swap not followed" : p.reason.replaceAll("_", " ");
-          return (
-            <li key={p.address} data-tone={t}>
-              <span className="mono">{n?.label ?? shortAddr(p.address)}</span>
-              <span className={styles.status}>{status}</span>
-              <span className={styles.amt}>{usdt(Math.round(held(p)))}</span>
-            </li>
-          );
-        })}
-      </ul>
+    <section className={`box ${styles.stops}`} aria-labelledby="stops-h">
+      <div className="box-h">
+        <h2 id="stops-h">Where it stopped</h2>
+        <span className="badge">{rows.length} {rows.length === 1 ? "wallet" : "wallets"}</span>
+      </div>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Wallet</th>
+            <th scope="col">Status</th>
+            <th scope="col" className={styles.num}>Victim money</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => {
+            const n = trace.nodes.find((x) => x.address === p.address);
+            const t = n ? tone(n, freezesShown) : "trace";
+            const frozenAt = freezesShown && n?.frozen?.is_frozen ? n.frozen.frozen_at : null;
+            const status = frozenAt
+              ? `Tether froze it ${new Date(frozenAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`
+              : p.reason === "exchange"
+                ? `At ${p.exchange ?? "an exchange"} · request ready`
+                : p.reason === "holding"
+                  ? trace.replay ? "Holding at the cutoff" : "Still holding"
+                  : p.reason === "swap_unresolved" ? "Swap not followed" : p.reason.replaceAll("_", " ");
+            return (
+              <tr key={p.address} data-tone={t}>
+                <td className="mono">{n?.label ?? shortAddr(p.address)}</td>
+                <td>
+                  <span className={`badge ${BADGE[t] ?? ""}`}>{status}</span>
+                </td>
+                <td className={`${styles.amt} ${styles.num}`}>{usdt(Math.round(held(p)))}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </section>
   );
 }
+
+/** Status badge colour follows the graph's tones, so a row reads the same as its ribbon. */
+const BADGE: Partial<Record<ReturnType<typeof tone>, string>> = {
+  frozen: "badge-ice",
+  hold: "badge-hold",
+  trace: "badge-red",
+};
 
 /** Every step the engine took, for the investigator. Addresses shortened. */
 function AuditLog({ log }: { log: AuditEntry[] }) {
   if (!log.length) return null;
   return (
-    <details className={styles.more}>
+    <details className={`box ${styles.more}`}>
       <summary>Engine log · {log.length} steps</summary>
       <ol className={styles.log}>
         {log.map((e, i) => (
@@ -165,7 +226,8 @@ function Progress({ log, startedAt }: { log: AuditEntry[]; startedAt: number }) 
   const hops = log.filter((e) => e.step === "hop").length;
   const last = log[log.length - 1];
   return (
-    <div className={styles.panel} role="status" aria-live="polite">
+    <div className={`box ${styles.panel}`} role="status" aria-live="polite">
+      <p className="label">Tracing</p>
       <p className={styles.lead}>
         Following the money{log.length ? ` · ${hops} hops` : ""} · {Math.max(0, Math.round((now - startedAt) / 1000))} s
       </p>

@@ -160,31 +160,24 @@ h3 {
   background: var(--fog);
 }
 
-/* The wordmark: a red square seal, then the name in caps. */
+/* The wordmark: the hound mark, then the name in wide caps (docs/brand). */
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.65rem;
   font-family: var(--font-d);
   font-weight: 700;
   font-size: 1.05rem;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
 }
 
-.wordmark::before {
-  content: "H";
-  display: inline-grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 6px;
-  background: var(--red);
-  color: var(--white);
-  font-size: 0.95rem;
-  letter-spacing: 0;
+.wordmark-mark {
+  width: 2.6rem;
+  height: auto;
+  color: var(--ink);
 }
 
 .wordmark:hover {

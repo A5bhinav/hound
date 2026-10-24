@@ -253,6 +253,7 @@ export default function TraceGraph({
   return (
     <section className={styles.wrap} aria-label="Money trail">
       <div className={styles.controls}>
+        <h2 className={styles.title}>Money trail</h2>
         <span className={styles.progress} aria-live="polite">
           {shownHop < maxHop ? `Transfer ${shownHop} of ${maxHop}` : "Width = victim money"}
         </span>

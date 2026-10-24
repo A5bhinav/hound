@@ -2,23 +2,18 @@
   min-width: 0;
 }
 
-.head {
-  font-size: 1.15rem;
-  margin: 0 0 0.6rem;
-  letter-spacing: -0.01em;
+.facts {
+  padding: 0.25rem 0 0.9rem;
+  border-bottom: 1px solid var(--rule);
 }
 
-.sub {
-  margin: 0;
-  padding: 0.7rem 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  color: var(--ink-2);
-  font-size: 0.95rem;
+.num {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .more {
-  margin-top: 0.6rem;
+  margin-top: 0.85rem;
 }
 
 .more summary {
@@ -29,9 +24,9 @@
 }
 
 .caveat {
-  margin: 0.6rem 0;
-  color: var(--ink-3);
+  margin: 0.85rem 0 1rem;
   font-size: 0.85rem;
+  color: var(--ink-2);
 }
 
 .table {
@@ -42,13 +37,29 @@
 }
 
 .table th {
+  padding: 0 0.75rem 0.5rem 0;
   text-align: left;
+  font-size: 0.72rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-3);
-  padding: 0.35rem 0.5rem 0.35rem 0;
+  border-bottom: 1px solid var(--rule-2);
 }
 
 .table td {
-  padding: 0.4rem 0.5rem 0.4rem 0;
-  border-top: 1px solid var(--rule);
+  padding: 0.45rem 0.75rem 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table .r {
+  text-align: right;
+}
+
+.table tr > :last-child {
+  padding-right: 0;
 }

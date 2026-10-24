@@ -12,38 +12,54 @@ export default function OtherPayers({ trace }: { trace: Trace }) {
   const exchanges = [...new Set(payers.map((p) => p.source_exchange).filter(Boolean))] as string[];
 
   return (
-    <section className={styles.wrap} aria-labelledby="others-h">
-      <h2 id="others-h" className={styles.head}>
-        {payers.length === 0 ? "No other wallets paying in" : `${wallets} other ${wallets === 1 ? "wallet" : "wallets"} paying in`}
-      </h2>
+    <section className={`box ${styles.wrap}`} aria-labelledby="others-h">
+      <div className="box-h">
+        <h2 id="others-h">
+          {payers.length === 0 ? "No other wallets paying in" : `${wallets} other ${wallets === 1 ? "wallet" : "wallets"} paying in`}
+        </h2>
+        {payers.length > 0 && <span className="badge badge-hold">Not confirmed victims</span>}
+      </div>
       {payers.length > 0 && (
         <>
-          <p className={styles.sub}>
-            {payers.length} {payers.length === 1 ? "payment" : "payments"} · {byToken(payers)}
-            {exchanges.length > 0 && <> · ask {list(exchanges)} to warn {exchanges.length === 1 ? "its user" : "their users"}</>}
-          </p>
+          <dl className={`kv ${styles.facts}`}>
+            <dt>Payments</dt>
+            <dd>{payers.length}</dd>
+            <dt>Total in</dt>
+            <dd className={styles.num}>{byToken(payers)}</dd>
+            <dt>Window</dt>
+            <dd>{trace.replay ? `${days} days before the cutoff` : `Last ${days} days`}</dd>
+            {exchanges.length > 0 && (
+              <>
+                <dt>Ask</dt>
+                <dd>
+                  {list(exchanges)} to warn {exchanges.length === 1 ? "its user" : "their users"}
+                </dd>
+              </>
+            )}
+          </dl>
           <details className={styles.more}>
             <summary>Show the payments</summary>
-            <p className={styles.caveat}>
-              {trace.replay ? `${days} days before the cutoff` : `Last ${days} days`}, into the scam&apos;s entry wallets, from wallets
-              other than this victim. On-chain payments, not confirmed victims.
-            </p>
+            <ul className={`checks ${styles.caveat}`}>
+              <li>Into the scam&apos;s entry wallets</li>
+              <li>From wallets other than this victim</li>
+              <li>On-chain payments, not confirmed victims</li>
+            </ul>
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th scope="col">From</th>
-                  <th scope="col">Amount</th>
+                  <th scope="col" className={styles.r}>Amount</th>
                   <th scope="col">Sent from</th>
-                  <th scope="col">Confidence</th>
+                  <th scope="col" className={styles.r}>Confidence</th>
                 </tr>
               </thead>
               <tbody>
                 {payers.map((p, i) => (
                   <tr key={`${p.address}-${i}`}>
                     <td className="mono">{shortAddr(p.address)}</td>
-                    <td>{amt(p.amount)} {p.token ?? "USDT"}</td>
+                    <td className={styles.r}>{amt(p.amount)} {p.token ?? "USDT"}</td>
                     <td>{p.source_exchange ?? "Unknown"}</td>
-                    <td>{pct(p.confidence)}</td>
+                    <td className={styles.r}>{pct(p.confidence)}</td>
                   </tr>
                 ))}
               </tbody>

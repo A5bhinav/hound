@@ -135,7 +135,7 @@ export default function NodeDetail({
       {node.classifier && (
         <>
           <p className="eyebrow">Why we think it&apos;s {node.classifier.kind} ({pct(node.classifier.confidence)})</p>
-          <ul className={styles.reasons}>
+          <ul className={`checks ${styles.reasons}`}>
             {node.classifier.reasons.map((r) => (
               <li key={r}>{r}</li>
             ))}
