@@ -64,6 +64,24 @@ def _refresh(e: dict[str, Any]) -> None:
     e["confidence"] = max([e.get("report_confidence", 0.0), *e["conf_by_case"].values()])
 
 
+def _seed_caps(trace: dict) -> dict[str, float]:
+    """USDT value of each seed (victim send): its USDT amount, or the USDT its ETH swapped into."""
+    cap: dict[str, float] = {}
+    for s in trace.get("seeds") or []:
+        if s.get("token") == "USDT" and s.get("seed_id"):
+            cap[s["seed_id"]] = cap.get(s["seed_id"], 0.0) + float(s.get("amount") or 0)
+    for row in (trace.get("swaps") or {}).get("resolved") or []:
+        for sid, v in (row.get("victim_usdt") or {}).items():
+            cap[sid] = cap.get(sid, 0.0) + float(v or 0)
+    return cap
+
+
+def _once(by_seed: dict, cap: dict[str, float]) -> float:
+    """Victim money on an edge with each victim dollar counted once: an edge's per-seed figure adds
+    up every pass of a laundering loop (A-2 -> ... -> A-6 -> A-2), so it can exceed the send itself."""
+    return sum(min(float(v or 0), cap[sid]) if sid in cap else float(v or 0) for sid, v in by_seed.items())
+
+
 def _victim_usdt_in(trace: dict) -> dict[str, float]:
     """USDT of victim money that reached each address in this trace.
 
@@ -72,14 +90,8 @@ def _victim_usdt_in(trace: dict) -> dict[str, float]:
     - Each seed (victim send) counts at most its own USDT value at one wallet, and the total never
       exceeds what the victims sent, so laundering loops (A-6 -> A-2 -> ... -> A-6) can't count the
       same dollar twice."""
-    cap: dict[str, float] = {}
-    for s in trace.get("seeds") or []:
-        if s.get("token") == "USDT" and s.get("seed_id"):
-            cap[s["seed_id"]] = cap.get(s["seed_id"], 0.0) + float(s.get("amount") or 0)
+    cap = _seed_caps(trace)
     swaps = (trace.get("swaps") or {}).get("resolved") or []
-    for row in swaps:
-        for sid, v in (row.get("victim_usdt") or {}).items():
-            cap[sid] = cap.get(sid, 0.0) + float(v or 0)
     total = sum(cap.values())
     per: dict[str, dict[str, float]] = {}
 
@@ -95,7 +107,7 @@ def _victim_usdt_in(trace: dict) -> dict[str, float]:
         add(row.get("recipient") or row.get("address"), row.get("victim_usdt") or {})
     out = {}
     for addr, m in per.items():
-        amt = sum(min(v, cap[sid]) if sid in cap else v for sid, v in m.items())
+        amt = _once(m, cap)
         out[addr] = min(amt, total) if total else amt
     return out
 
@@ -129,9 +141,16 @@ def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
     for e in trace.get("edges", []):
         by_to.setdefault(e.get("to"), []).append(e)
     amt = lambda e: float(e.get("attributed_amount") or e.get("amount") or 0)
+    cap = _seed_caps(trace)
+
+    def hop_amount(e):
+        by_seed = e.get("attributed_by_seed")
+        if (e.get("token") or "USDT") == "USDT" and by_seed and cap:
+            return round(_once(by_seed, cap), 6)  # never more victim money than the victims sent
+        return e.get("attributed_amount", e.get("amount"))
 
     def hop(e):
-        return {"from": e["from"], "to": e["to"], "amount": e.get("attributed_amount", e.get("amount")),
+        return {"from": e["from"], "to": e["to"], "amount": hop_amount(e),
                 "token": e.get("token") or "USDT",  # victim-side hops are ETH: never print them as USDT
                 "tx_hashes": (e.get("tx_hashes") or [])[:2], "confidence": e.get("confidence"),
                 "method": e.get("method")}
