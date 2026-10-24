@@ -17,7 +17,7 @@ npm run dev                    # http://localhost:3000
 
 - `/`: curated case picker (`GET /cases`, server-side)
 - `/cases/[id]`: case card + trace graph. The browser starts the trace with `POST /api/cases/{id}/trace`; if that returns `{trace_id, status: "running"}` (AUDIT N4) it polls `GET /api/traces/{id}` every second and shows the live audit log until the run ends.
-- `/api/*` is proxied to `HOUND_API_URL` (`next.config.ts`), with a 150 s proxy timeout for long synchronous traces.
+- Only `POST /api/cases/{id}/trace` and `GET /api/traces/{id}` are proxied to `HOUND_API_URL` (`next.config.ts`), with a 150 s proxy timeout for long synchronous traces. Everything else is fetched server-side.
 
 Fixture mode reads `../examples/ohnd_replay.case.json` and `ohnd_replay.trace.json` (real engine output) and skips the API. Replays (`method.freeze_visibility: "hidden"`) reveal Tether freezes only after the last hop unfolds (BRIEF §0).
 
