@@ -67,6 +67,14 @@ def get_native_txs(chain: str, address: str, as_of: int | str | None = None, aft
     return eth.get_native_txs(address, as_of=as_of, after=after)
 
 
+def tx_sends(chain: str, tx_hash: str, to: str | None = None) -> list[dict]:
+    """Case `sends` (schema shape) from a victim's tx hash: ETH value + USDT transfers by the sender."""
+    if chain != "ethereum":
+        raise ValueError(f"tx_sends is only supported on ethereum, not {chain}")
+    from . import eth
+    return eth.tx_sends(tx_hash, to=to)
+
+
 def is_contract(chain: str, address: str) -> bool:
     """True if `address` is a smart contract (Ethereum; Tron returns False: not supported yet)."""
     if chain != "ethereum":
@@ -107,5 +115,5 @@ def is_exchange(chain: str, address: str) -> bool:
     return _labels.is_exchange(chain, address)
 
 
-__all__ = ["get_transfers", "get_native_txs", "is_contract", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
+__all__ = ["get_transfers", "get_native_txs", "is_contract", "tx_sends", "get_balance", "freeze_status", "freeze_events", "label", "is_exchange",
            "ChainAPIError", "RateLimited", "CacheMiss", "TooManyTransfers", "stats", "reset_stats", "CHAINS"]

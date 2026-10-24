@@ -14,5 +14,7 @@ def get_check(chain_name: str = Query("ethereum", alias="chain"), address: str =
         return check(chain_name, address)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except chain.ChainAPIError as e:
-        raise HTTPException(status_code=502, detail=f"chain data unavailable: {e}")
+    except chain.CacheMiss:
+        raise HTTPException(status_code=503, detail="not checked: data not cached (offline mode)")
+    except chain.ChainAPIError:
+        raise HTTPException(status_code=502, detail="chain data unavailable")

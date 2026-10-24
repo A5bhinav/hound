@@ -24,7 +24,7 @@ from decimal import Decimal
 from typing import Any, Callable
 
 from . import cache
-from .net import ChainAPIError, TooManyTransfers, count_cache_hit, count_empty, request_json
+from .net import ChainAPIError, TooManyTransfers, count_cache_hit, count_empty, request_json, safe_url
 
 log = logging.getLogger("hound.chain.eth")
 
@@ -188,16 +188,22 @@ class RangeTooBig(ChainAPIError):
 _SIZE_ERRORS = ("more than", "too many", "exceed", "limit", "range", "too large", "response size", "10000")
 
 
+_NULL_IS_MISSING = ("eth_getTransactionByHash", "eth_getTransactionReceipt", "eth_getBlockByNumber")
+
+
 def _rpc_once(url: str, method: str, params: list) -> Any:
     body = request_json("POST", url, json_body={"jsonrpc": "2.0", "id": 1, "method": method, "params": params},
                         retries=3)
     if isinstance(body, dict) and "error" in body:
         msg = str(body["error"])
         if method == "eth_getLogs" and any(s in msg.lower() for s in _SIZE_ERRORS):
-            raise RangeTooBig(f"{url}: {msg[:200]}")
-        raise ChainAPIError(f"{url} {method}: {msg[:300]}")
+            raise RangeTooBig(f"{safe_url(url)}: {msg[:200]}")
+        raise ChainAPIError(f"{safe_url(url)} {method}: {msg[:300]}")
     if not isinstance(body, dict) or "result" not in body:
-        raise ChainAPIError(f"{url} {method}: malformed response {str(body)[:200]}")
+        raise ChainAPIError(f"{safe_url(url)} {method}: malformed response {str(body)[:200]}")
+    if body["result"] is None and method in _NULL_IS_MISSING:
+        # pruned nodes answer null for old data: try the next RPC instead of believing it
+        raise ChainAPIError(f"{safe_url(url)} {method}: null result (pruned node?)")
     return body["result"]
 
 
@@ -216,14 +222,18 @@ def rpc(method: str, params: list, ttl: Any = RECENT_TTL, urls: list[str] | None
                 errors.append(str(e))
             except ChainAPIError as e:
                 errors.append(str(e))
-                log.warning("rpc %s %s failed: %s", url, method, e)
+                log.warning("rpc %s %s failed: %s", safe_url(url), method, e)
         if size_errors and size_errors == len(errors):
             # remembered, so cached / readonly replays split the range the same way
             return {TOO_BIG_MARKER: " | ".join(errors)[:300]}
         raise ChainAPIError(f"every RPC failed for {method}: {' | '.join(errors)}")
 
-    out = cache.cached("eth_rpc", {"method": method, "params": params}, fetch=fetch, ttl=ttl,
-                       on_hit=count_cache_hit, is_empty=lambda r: r == [])
+    parts = {"method": method, "params": params}
+    if method in _NULL_IS_MISSING:
+        entry = cache.read("eth_rpc", parts)
+        if entry is not None and entry.get("value") is None and not cache.offline():
+            cache.write("eth_rpc", parts, fetch())  # a cached null from a pruned node: refetch
+    out = cache.cached("eth_rpc", parts, fetch=fetch, ttl=ttl, on_hit=count_cache_hit, is_empty=lambda r: r == [])
     if isinstance(out, dict) and TOO_BIG_MARKER in out:
         raise RangeTooBig(out[TOO_BIG_MARKER])
     return out
@@ -798,3 +808,47 @@ def is_contract(address: str) -> bool:
     """True if the address has contract code now (eth_getCode, cached forever)."""
     code = rpc("eth_getCode", [norm(address), "latest"], ttl=None)
     return bool(code) and code not in ("0x", "0x0")
+
+
+# ---------------------------------------------------------------- victim sends from a tx hash
+
+_TX_HASH = re.compile(r"^0x[0-9a-f]{64}$")
+
+
+def tx_sends(tx_hash: str, to: str | None = None) -> list[dict]:
+    """Case `sends` from one victim transaction: its native ETH value and every USDT Transfer the
+    sender made in it, read from the tx + receipt (cached forever once mined).
+    to: keep only sends to this address. Failed or pending txs raise ValueError."""
+    h = (tx_hash or "").strip().lower()
+    if not _TX_HASH.match(h):
+        raise ValueError(f"not an Ethereum tx hash: {tx_hash!r}")
+    urls = ETH_ARCHIVE_RPC_URLS + [u for u in ETH_RPC_URLS if u not in ETH_ARCHIVE_RPC_URLS]
+    try:
+        tx = rpc("eth_getTransactionByHash", [h], ttl=None, urls=urls)
+        rc = rpc("eth_getTransactionReceipt", [h], ttl=None, urls=urls)
+    except ChainAPIError as e:
+        raise ValueError(f"tx {h} not found on any RPC (wrong chain, or not mined yet): {e}") from e
+    if not tx.get("blockNumber"):
+        raise ValueError(f"tx {h} is still pending")
+    if int(rc.get("status", "0x0"), 16) != 1:
+        raise ValueError(f"tx {h} failed on chain: no money moved")
+    block = int(tx["blockNumber"], 16)
+    when = iso(block_time(block))
+    sender = tx["from"].lower()
+    sends = []
+    value = int(tx.get("value") or "0x0", 16)
+    if value > 0 and tx.get("to"):
+        sends.append({"chain": CHAIN, "tx_hash": h, "from": sender, "to": tx["to"].lower(), "token": "ETH",
+                      "amount": _amount(value, 18), "time": when})
+    for lg in rc.get("logs", []):
+        t = lg.get("topics") or []
+        if lg.get("address", "").lower() != USDT or len(t) != 3 or t[0] != TRANSFER_TOPIC:
+            continue
+        frm, dst = "0x" + t[1][-40:].lower(), "0x" + t[2][-40:].lower()
+        raw = int(lg.get("data") or "0x0", 16)
+        if frm == sender and raw > 0 and frm != dst:
+            sends.append({"chain": CHAIN, "tx_hash": h, "from": frm, "to": dst, "token": "USDT",
+                          "amount": _amount(raw, 6), "time": when})
+    if to:
+        sends = [s for s in sends if s["to"] == norm(to)]
+    return sends
