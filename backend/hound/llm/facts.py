@@ -139,7 +139,7 @@ def _tx(v, where):
 # the PARENT wallet's address (the money was sent on from there, not held there). They never take
 # on the parent's freeze, balance or freezable flag.
 LEFTOVER_REASONS = ("dust", "capped")
-LIMIT_REASONS = ("budget", "time_cap", "max_hops")
+LIMIT_REASONS = ("budget", "time_cap", "max_hops")  # swap_unresolved is reported in swaps.per_seed (eth_unresolved), not as a banner
 _SEED_MISSING = re.compile(r"^seed (s\d+) not found on chain")
 _SEED_SHORT = re.compile(r"^seed (s\d+): only ")
 
@@ -154,7 +154,8 @@ def _incomplete(trace):
     def add(what, address=None, seed_id=None):
         if (what, address, seed_id) not in seen:
             seen.add((what, address, seed_id))
-            items.append({"what": what, "address": address, "seed_id": seed_id})
+            num = int(seed_id[1:]) if seed_id and seed_id[1:].isdigit() else None
+            items.append({"what": what, "address": address, "seed_id": seed_id, "send_number": num})
 
     for i, a in enumerate(trace.get("audit_log") or []):
         if not isinstance(a, dict) or a.get("step") != "error":

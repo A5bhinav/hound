@@ -345,11 +345,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             capped, fresh = fresh[room:], fresh[:room]
             for group, reason in ((dust, "dust"), (capped, "capped")):
                 if group:
-                    merged = {}
-                    for d, a, by in group:
-                        for sid, v in by.items():
-                            merged[sid] = merged.get(sid, 0) + v
-                    leftovers.append((addr, reason, len(group), merged))
+                    leftovers.append((addr, reason, group))  # resolved against the FINAL depth below
             for d, a, by in sorted(known + fresh, key=lambda x: (-x[1], x[0])):
                 if (addr, d) not in hop_seen:
                     hop_seen.add((addr, d))
@@ -367,6 +363,21 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             stopped.setdefault(addr, "max_hops")
             audit("cap_hit", f"max_hops {m['max_hops']} reached", addr)
         st["status"] = "partial"
+    # A branch counted as dust/capped by an earlier node can become a followed address later in the
+    # same hop (another node adds it to depth); its money is then counted at that address, so drop it
+    # here or it would be counted twice.
+    final = []
+    for addr, reason, group in leftovers:
+        merged, n = {}, 0
+        for d, a, by in group:
+            if d in depth or d in stopped:
+                continue
+            n += 1
+            for sid, v in by.items():
+                merged[sid] = merged.get(sid, 0) + v
+        if n:
+            final.append((addr, reason, n, merged))
+    leftovers = final
     for addr, reason, n, merged in leftovers:  # final pass only, so each line appears once
         audit("skip_branch" if reason == "dust" else "cap_hit",
               f"{n} branches, {from_base(sum(merged.values()))} USDT not followed ({reason})", addr)

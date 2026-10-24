@@ -273,6 +273,7 @@ _WHERE = {
     "fetch_error": "reached a wallet whose history we could not load, so this branch is incomplete",
     "max_hops": "went further than we followed",
     "high_volume": "reached a very busy wallet, likely a service",
+    "returned_to_victim": "went to your own wallet, usually a small fake profit payment meant to build trust",
     "infra": "passed through shared infrastructure such as an exchange router, which we do not follow",
     "budget": "was not followed further because the trace hit its data budget",
     "time_cap": "was not followed further because the trace hit its time limit",
@@ -292,8 +293,9 @@ def _header(facts):
 _INCOMPLETE = {
     "fetch_failed": "the history of {A} could not be loaded, so where money went after it is unknown",
     "swap_fetch_failed": "the swap history at {A} could not be loaded, so money that passed through it may be missing",
-    "seed_not_found": "reported send {S} was not found on the blockchain, so it is not in the totals",
-    "seed_short": "only part of reported send {S} was found arriving after its swap",
+    "seed_not_found": "reported send number {S} was not found on the blockchain, so it is not in the totals",
+    "seed_short": "only part of reported send number {S} was found arriving after its swap",
+    "swap_unresolved": "some of the money swapped at {A} could not be matched to the token it became",
     "order_guess": "the order of some transfers at {A} is a best guess",
     "lookup_failed": "a label, freeze or balance check failed at {A}",
     "budget": "{A} was not followed because the trace hit its data budget",
@@ -320,7 +322,7 @@ def _status_block(facts, audience):
         text = _INCOMPLETE.get(it["what"], _INCOMPLETE["other_error"])
         if "{A}" in text and not it.get("address"):
             text = "an error was logged that is not tied to one wallet"
-        text = text.replace("{A}", f"{{{{{p}.address|{fmt}}}}}").replace("{S}", f"{{{{{p}.seed_id|raw}}}}")
+        text = text.replace("{A}", f"{{{{{p}.address|{fmt}}}}}").replace("{S}", f"{{{{{p}.send_number|int}}}}")
         lines.append(f"- {text}.")
     n_inc, n_err = d["incomplete_count"], d["audit_error_count"]
     errs = f"{{{{derived.audit_error_count|int}}}} {_pl(n_err, 'error')} in the audit log"

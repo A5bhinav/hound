@@ -740,3 +740,16 @@ def test_eth_swap_pass_past_the_deadline_is_partial_not_a_crash():
     assert calls == [] and t["status"] == "partial"
     assert any(e["address"] == X and e["reason"] == "time_cap" for e in t["endpoints"])
     assert any(a["step"] == "cap_hit" and a["address"] == X for a in t["audit_log"])
+
+
+def test_dust_branch_later_followed_is_not_counted_twice():
+    V, A, B, C = "0x" + "a1" * 20, "0x" + "b2" * 20, "0x" + "c3" * 20, "0x" + "d4" * 20
+    rows = [{"chain": "ethereum", "tx_hash": f"t{i}", "log_index": 0, "from": f, "to": t, "token": "USDT",
+             "amount": amt, "time": f"2024-01-0{i + 1}T00:00:00Z", "block": i + 1}
+            for i, (f, t, amt) in enumerate([(V, A, 1000.0), (V, B, 1000.0), (A, C, 10.0), (B, C, 900.0)])]
+    case = {"case_id": "dust-twice", "created_at": "2024-01-01T00:00:00Z", "source": "phone", "status": "intake",
+            "sends": [{"chain": "ethereum", "tx_hash": "t0", "from": V, "to": A, "token": "USDT", "amount": 1000.0, "time": "2024-01-01T00:00:00Z"},
+                      {"chain": "ethereum", "tx_hash": "t1", "from": V, "to": B, "token": "USDT", "amount": 1000.0, "time": "2024-01-02T00:00:00Z"}]}
+    get = lambda chain, address, after=None, as_of=None, **k: [r for r in rows if address in (r["from"], r["to"])]
+    t = run_trace(case, get_transfers=get, label=lambda c, a: None, get_balance=lambda c, a, **k: 0.0, max_hops=1)
+    assert abs(sum(e["victim_remaining"] for e in t["endpoints"]) - 2000.0) < 1e-6
