@@ -15,9 +15,25 @@ npm run dev                    # http://localhost:3000
 
 ## Routes
 
-- `/`: curated case picker (`GET /cases`, server-side)
-- `/cases/[id]`: case card + trace graph. The browser starts the trace with `POST /api/cases/{id}/trace`; if that returns `{trace_id, status: "running"}` (AUDIT N4) it polls `GET /api/traces/{id}` every second and shows the live audit log until the run ends.
-- Only `POST /api/cases/{id}/trace` and `GET /api/traces/{id}` are proxied to `HOUND_API_URL` (`next.config.ts`), with a 150 s proxy timeout for long synchronous traces. Everything else is fetched server-side.
+| Route | What | Backend |
+|---|---|---|
+| `/` | Curated case picker | `GET /cases` (server-side) |
+| `/cases/[id]` | Case card, trace graph, freeze reveal, other payers | `POST /api/cases/{id}/trace`, then polls `GET /api/traces/{id}` every 1 s |
+| `/cases/[id]/packet` | Printable packet, detective or victim (`?audience=victim`) | `GET /cases/{id}/packet` (server-side) |
+| `/exchange` | Mock exchange withdrawal screen: hold / warn / allow with evidence | `GET /api/check` |
+| `/proof` | DOJ scoreboard, freeze backtest, weekend scan | `GET /proof/scoreboard`, `/proof/backtest`, `/scan/latest` (server-side) |
+| `/intake` | Live intake card: case code, QR + short link, "Replay intake" | polls `GET /api/intake/active` every 1 s |
+| `/c/[code]` | Victim upload page (one big button, 18px+, "type it instead") | `POST /api/intake/{code}/screenshot` |
+
+Only the `/api/...` routes above are proxied to `HOUND_API_URL` (`next.config.ts`), with a 150 s proxy timeout. Everything else is fetched server-side.
+
+### Intake contract (proposed, CK to confirm)
+
+The intake backend isn't built yet; the UI says so, and "Replay intake" still works. Shapes are in `src/lib/types.ts` (`IntakeSession`, `IntakeUploadResult`):
+
+- `GET /intake/active` → 200 `{case_code, upload_url, status: story|awaiting_upload|validating|validated|needs_retake, story?, victim?, case_id?, message?}`, or 204 when no call is in progress.
+- `POST /intake/{case_code}/screenshot` (multipart: `file` image, or `typed` text) → `{status: "validated", case_id}` or `{status: "needs_retake", message}`. The message is shown to the caller as-is, so plain words.
+- `upload_url` should point at this app's `/c/{case_code}` through the public tunnel.
 
 Fixture mode reads `../examples/ohnd_replay.case.json` and `ohnd_replay.trace.json` (real engine output) and skips the API. Replays (`method.freeze_visibility: "hidden"`) reveal Tether freezes only after the last hop unfolds (BRIEF §0).
 
