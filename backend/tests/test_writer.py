@@ -833,3 +833,22 @@ def test_every_incomplete_kind_without_an_address_renders(audience, what):
                             incomplete=[{"what": what, "address": None, "seed_id": "s1", "send_number": 1}])
     for tpl in writer._status_block(facts, audience):
         render(tpl, facts, audience=audience)
+
+
+def test_every_short_formattable_path_offered_to_claude_validates():
+    """Claude picks paths from the FACTS list: no endpoint field may be a pre-shortened string that
+    fails the short formatter (the old derived.endpoints.N.short), and every address passes |short."""
+    facts = build_facts(TRACE, CASE)
+    for p, v in citable(facts).items():
+        assert not p.endswith(".short")
+        if p.endswith(".address") and isinstance(v, str):
+            validate(f"It reached {{{{{p}|short}}}}.", facts)
+
+
+def test_prompt_lists_every_banned_word_and_rule():
+    s = writer.SYSTEM_PROMPT
+    for w in writer._NUMBER_WORDS.pattern.replace("\\b", "").strip("()").split("|"):
+        assert w in s
+    for phrase in ('"get ... back"', "third person", "leftover true", "sent on"):
+        assert phrase in s
+    assert "%" not in s

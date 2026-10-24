@@ -218,8 +218,8 @@ def _endpoint_rows(trace, fetch_failed=frozenset()):
             log.warning("facts: endpoint %s reason %s marked freezable by the engine; not freezable in the packet",
                         addr, reason)
         rows.append({
+            # no pre-shortened copy: cite {{...address|short}} (a shortened string fails the short formatter)
             "address": addr,
-            "short": short_addr(addr),
             "reason": reason,
             "leftover": leftover,
             "victim_inflow": inflow,
