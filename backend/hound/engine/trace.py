@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 from hound.contracts import validate_trace
 from hound.engine.fifo import propagate
+from hound.llm.classify import classify, features
 
 log = logging.getLogger("hound.engine")
 
@@ -76,7 +77,7 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
     depth = {s["to"]: 1 for s in sends}
     for v in victims:
         depth.setdefault(v, 0)
-    explored, stopped, labels, frozen = set(), {}, {}, {}
+    explored, stopped, labels, frozen, classes = set(), {}, {}, {}, {}
     transfers = {}
     frontier = sorted({s["to"] for s in sends})
     result = None
@@ -99,6 +100,17 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             if not rows:
                 stats["empty_results"] += 1
                 audit("empty_result", "no transfers returned; treated as a dead end, check the adapter", addr)
+            if rows and addr not in victims:
+                feats = features(addr, rows)
+                top = feats["top_recipient"]
+                c = classify(feats, label(chain, top) if top else None)
+                classes[addr] = c
+                audit("classify", f"{c['kind']} ({c['confidence']:.2f}): {'; '.join(c['reasons'])}", addr)
+                if c["kind"] in EXCHANGE_KINDS and c["confidence"] >= 0.7:
+                    labels[addr] = {"name": f"unlabelled {c['kind'].replace('_', ' ')}", "kind": c["kind"], "source": "classifier"}
+                    stopped[addr] = "exchange"
+                    audit("stop", f"classified as {c['kind']}; deposit addresses belong to the exchange's customers", addr)
+                    continue
             for t in rows:
                 transfers[(t["tx_hash"], t.get("log_index"), t["from"], t["to"], t["amount"])] = t
             explored.add(addr)
@@ -137,13 +149,13 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
             stopped.setdefault(addr, "max_hops")
             audit("cap_hit", f"max_hops {m['max_hops']} reached", addr)
 
-    trace = _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, get_balance, audit)
+    trace = _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, get_balance, audit, classes)
     trace["stats"] = {**stats, "elapsed_ms": int((time.monotonic() - started) * 1000)}
     trace["audit_log"] = audit.entries
     return validate_trace(trace)
 
 
-def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, get_balance, audit):
+def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, victims, get_balance, audit, classes):
     nodes_in_trace = set(victims) | explored | set(stopped)
     senders = {}
     edges = []
@@ -188,8 +200,9 @@ def _build(case, chain, m, result, explored, stopped, labels, frozen, depth, vic
         nodes.append({
             "address": addr, "chain": chain, "kind": kind,
             "label": lab.get("name") if lab else None,
-            "label_source": "exchange_list" if lab and lab.get("kind") in EXCHANGE_KINDS else ("ofac" if lab else None),
-            "classifier": None, "balance_usdt": balance,
+            "label_source": ("classifier" if lab.get("source") == "classifier" else
+                             "exchange_list" if lab.get("kind") in EXCHANGE_KINDS else "ofac") if lab else None,
+            "classifier": classes.get(addr), "balance_usdt": balance,
             "frozen": {"is_frozen": bool(fz.get("is_frozen")), "frozen_at": fz.get("frozen_at"), "freeze_tx": fz.get("freeze_tx")},
             "depth": depth.get(addr, 0),
         })

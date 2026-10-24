@@ -17,6 +17,9 @@ log = logging.getLogger("hound.writer")
 
 MODEL = os.environ.get("HOUND_WRITER_MODEL", "claude-sonnet-5-5")
 _HEX = re.compile(r"0x[0-9a-fA-F]{6,}")
+_WORDS = re.compile(r"\b(hundred|thousand|million|billion|trillion|dozen|grand)\b|\b\d+(\.\d+)?\s*[kmb]\b", re.I)
+_LINKY = re.compile(r"https?://|www\.|@|\b[a-z0-9-]+\.(com|net|org|io|xyz|app|co|me|info|biz)\b|(?<![\w-])\+?1?[ .-]?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}(?![\w-])", re.I)
+_SAFE_TEXT = re.compile(r"[^A-Za-z0-9 ._-]")
 _SHORT = re.compile(r"(0x[0-9a-fA-F]+)…([0-9a-fA-F]+)")
 _NUM = re.compile(r"(?<![\w.])\d[\d,]*(?:\.\d+)?")
 
@@ -29,12 +32,17 @@ def short(addr):
     return f"{addr[:8]}…{addr[-6:]}"
 
 
+def _clean(text, limit=40):
+    """Free text from outside (case ids, exchange names) is display-only: strip it to safe characters."""
+    return _SAFE_TEXT.sub("", str(text))[:limit] if text is not None else None
+
+
 def facts(trace, case=None):
     ends = sorted(trace["endpoints"], key=lambda e: -e["victim_inflow"])
     victims = {n["address"] for n in trace["nodes"] if n["kind"] == "victim"}
     sent = sum(e["attributed_amount"] for e in trace["edges"] if e["from"] in victims)
     f = {
-        "case_id": trace["case_id"],
+        "case_id": _clean(trace["case_id"], 64),
         "replay": bool(trace.get("replay")),
         "method": f"{trace['method']['accounting']}, max {trace['method']['max_hops']} hops",
         "victim_sent_usdt": money(sent),
@@ -45,7 +53,7 @@ def facts(trace, case=None):
             "victim_inflow_usdt": money(e["victim_inflow"]),
             "frozen_at": next((n["frozen"]["frozen_at"] for n in trace["nodes"]
                                if n["address"] == e["address"] and n.get("frozen")), None),
-            "freezable": e["freezable"], "exchange": e.get("exchange"),
+            "freezable": e["freezable"], "exchange": _clean(e.get("exchange")),
         } for e in ends],
         "tx_hashes": sorted({h for e in trace["edges"] for h in e["tx_hashes"]}),
     }
@@ -53,9 +61,16 @@ def facts(trace, case=None):
     return f
 
 
+# Only these fields can make a number or address "allowed". Free-text fields (case_id,
+# exchange names) never can, or a crafted case id could whitelist a fake amount.
+_NUMERIC_FIELDS = ("victim_sent_usdt", "wallets_in_trace", "hops", "tx_count", "tx_hashes", "method")
+_ENDPOINT_FIELDS = ("address", "victim_inflow_usdt", "frozen_at")
+
+
 def allowed_tokens(f):
     """Every number / hex string the packet is allowed to contain."""
-    blob = json.dumps(f)
+    blob = json.dumps([f.get(k) for k in _NUMERIC_FIELDS] +
+                      [[e.get(k) for k in _ENDPOINT_FIELDS] for e in f["endpoints"]])
     toks = set(_HEX.findall(blob)) | set(_NUM.findall(blob))
     for e in f["endpoints"]:
         toks.add(e["short"].split("…")[0])
@@ -63,9 +78,13 @@ def allowed_tokens(f):
 
 
 def uncited(text, f):
-    """Return the numbers / hex strings in `text` that are not in the facts. Empty = clean."""
+    """Return the numbers / hex strings in `text` that are not in the facts. Empty = clean.
+
+    Also rejects amounts written as words or with k/M/B suffixes, and any link, domain,
+    email or phone number: a packet for a scam victim must never carry contact details.
+    """
     ok = allowed_tokens(f)
-    bad = []
+    bad = [m.group(0) for m in _WORDS.finditer(text)] + [m.group(0) for m in _LINKY.finditer(text)]
     full = [t for t in ok if t.startswith("0x")]
     for m in _SHORT.finditer(text):  # 0x4e5cda…47abb5 must be a real address from the facts
         pre, suf = m.group(1).lower(), m.group(2).lower()
