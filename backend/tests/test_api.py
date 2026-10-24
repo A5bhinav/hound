@@ -15,8 +15,8 @@ from hound.contracts import example
 client = TestClient(app)
 A7 = "0xa1770ead287dc8e91631a7a323390d5b744f0021"
 CASE = example("ohnd_replay.case")["case_id"]  # ETH-send case: A.H.'s six real ETH sends
-SEND = {"chain": "ethereum", "tx_hash": "0x1", "from": "0xa", "to": "0xb", "token": "USDT", "amount": 1,
-        "time": "2026-10-24T00:00:00Z"}
+SEND = {"chain": "ethereum", "tx_hash": "0x" + "1" * 64, "from": "0x" + "a" * 40, "to": "0x" + "b" * 40,
+        "token": "USDT", "amount": 1, "time": "2026-10-24T00:00:00Z"}
 
 
 @pytest.fixture(autouse=True)
@@ -71,34 +71,75 @@ def test_chain_deps_forwards_native_txs_from_real_chain(monkeypatch):
     full = types.SimpleNamespace(**{k: getattr(fixture_chain, k) for k in api.CHAIN_FUNCS},
                                  get_native_txs=lambda *a, **k: [])
     monkeypatch.setitem(sys.modules, "hound.chain", full)
-    deps, using_fixture = api._chain_deps(api.CASES[CASE])
-    assert not using_fixture
+    deps = api._chain_deps(api.CASES[CASE])
     assert deps["get_native_txs"] is full.get_native_txs
     assert deps["get_transfers"] is full.get_transfers
 
 
-def test_chain_deps_without_native_txs_uses_fixture_for_eth_case(monkeypatch, caplog):
+def test_chain_deps_without_native_txs_raises_only_for_eth_case(monkeypatch):
     real = types.SimpleNamespace(**{k: (lambda *a, **k: None) for k in api.CHAIN_FUNCS})
     monkeypatch.setitem(sys.modules, "hound.chain", real)
-    with caplog.at_level("WARNING", logger="hound.api"):
-        deps, using_fixture = api._chain_deps(api.CASES[CASE])
-    assert using_fixture
-    assert deps["get_native_txs"] is fixture_chain.get_native_txs
-    assert deps["get_transfers"] is fixture_chain.get_transfers
-    assert "get_native_txs" in caplog.text
-    usdt, using_fixture = api._chain_deps({"sends": [SEND]})
-    assert not using_fixture
+    with pytest.raises(api.MissingAdapters, match="get_native_txs"):
+        api._chain_deps(api.CASES[CASE])
+    usdt = api._chain_deps({"sends": [SEND]})
     assert usdt["get_transfers"] is real.get_transfers and usdt["get_native_txs"] is None
 
 
-def test_fixture_fallback_when_chain_missing(monkeypatch, caplog):
+def test_fixture_fallback_only_for_replay_and_marked(monkeypatch, caplog):
     monkeypatch.setitem(sys.modules, "hound.chain", types.SimpleNamespace())
     with caplog.at_level("WARNING", logger="hound.api"):
-        deps, using_fixture = api._chain_deps({"sends": [SEND]})
-    assert using_fixture
-    assert deps["get_transfers"] is fixture_chain.get_transfers
-    assert deps["get_native_txs"] is fixture_chain.get_native_txs
+        trace = _trace_done()
+    assert trace["source"] == "fixture" and trace["other_payers"] == []
+    assert {e["address"] for e in trace["endpoints"]} >= {A7}
     assert "REAL CHAIN ADAPTERS MISSING" in caplog.text
+
+
+def test_missing_adapters_on_live_case_is_error_not_fixture(monkeypatch):
+    monkeypatch.setitem(sys.modules, "hound.chain", types.SimpleNamespace())
+    cid = client.post("/cases", json={"source": "phone", "sends": [SEND]}).json()["case_id"]
+    body = _poll(client.post(f"/cases/{cid}/trace").json()["trace_id"])
+    assert body["status"] == "error" and body["error"].startswith("MissingAdapters:")
+    assert not api.TRACES
+
+
+@pytest.mark.parametrize("make_err", [
+    lambda: __import__("hound.chain.net", fromlist=["x"]).ChainAPIError("GET https://x/api?apikey=SECRET 503"),
+    lambda: __import__("hound.chain.cache", fromlist=["x"]).CacheMiss("nothing cached apikey=SECRET"),
+    lambda: RuntimeError("call budget or deadline exhausted while resolving ETH swaps token=SECRET"),
+])
+def test_chain_error_never_falls_back_to_fixture(monkeypatch, make_err):
+    calls = []
+
+    def boom(case, **kw):
+        calls.append(kw["get_transfers"])
+        raise make_err()
+
+    monkeypatch.setattr(api, "run_trace", boom)
+    body = _poll(client.post(f"/cases/{CASE}/trace").json()["trace_id"])
+    assert body["status"] == "error" and "SECRET" not in body["error"]
+    assert body["error"].startswith(type(make_err()).__name__ + ":")
+    assert len(calls) == 1  # one attempt on the real adapters, no fixture retry
+    assert not api.TRACES and api.CASES[CASE]["status"] != "traced"
+
+
+def test_engine_adapters_missing_type_triggers_fallback(monkeypatch):
+    engine_type = getattr(api.trace_module, "AdaptersMissing", None)
+    if engine_type is not None:
+        assert engine_type in api.FALLBACK_ERRORS
+    fake = type("AdaptersMissing", (RuntimeError,), {})
+    monkeypatch.setattr(api, "FALLBACK_ERRORS", (api.MissingAdapters, fake))
+    real_run = api.run_trace
+    seen = []
+
+    def first_fails(case, **kw):
+        seen.append(kw["get_transfers"])
+        if len(seen) == 1:
+            raise fake("case has ETH sends but no get_native_txs adapter")
+        return real_run(case, **kw)
+
+    monkeypatch.setattr(api, "run_trace", first_fails)
+    trace = _trace_done()
+    assert trace["source"] == "fixture" and seen[1] is fixture_chain.get_transfers
 
 
 def test_running_state_then_done(monkeypatch):
@@ -306,7 +347,7 @@ def test_other_payers_failure_keeps_trace(monkeypatch, caplog):
 
 def test_other_payers_skipped_on_fixture_fallback(monkeypatch):
     called = []
-    monkeypatch.setattr(api, "_chain_deps", lambda case: ({k: getattr(fixture_chain, k) for k in api.CHAIN_FUNCS + ("get_native_txs",)}, True))
+    monkeypatch.setitem(sys.modules, "hound.chain", types.SimpleNamespace())
     monkeypatch.setattr(api, "other_payers", lambda trace: called.append(1) or [{"address": "live"}])
     trace = _trace_done()
     assert called == [] and trace["other_payers"] == []
@@ -320,7 +361,7 @@ def test_done_response_carries_job_id():
 
 
 def test_unusable_trace_or_audience_is_422_not_500():
-    r = client.post("/cases", json={"source": "phone", "sends": [{"chain": "ethereum", "tx_hash": "0x1", "from": "0xa", "to": "0xb", "token": "USDT", "amount": 1, "time": "2026-10-24T00:00:00Z"}]})
+    r = client.post("/cases", json={"source": "phone", "sends": [SEND]})
     cid = r.json()["case_id"]
     api.TRACES[f"t-{cid}"] = {"trace_id": f"t-{cid}", "case_id": cid, "nodes": [], "edges": [], "endpoints": []}
     api.LAST_DONE[cid] = f"t-{cid}"
@@ -332,3 +373,55 @@ def test_unusable_trace_or_audience_is_422_not_500():
         api.LAST_DONE.pop(cid, None)
     _trace_done()
     assert client.get(f"/cases/{CASE}/packet?audience=press").status_code == 422
+
+
+def test_list_cases_returns_full_validated_cases():
+    from hound.contracts import validate_case
+    rows = client.get("/cases").json()
+    assert rows and all(validate_case(r) and r["sends"] for r in rows)
+    assert next(r for r in rows if r["case_id"] == CASE) == api.CASES[CASE]
+
+
+@pytest.mark.parametrize("extra", [{"case_id": CASE}, {"source": "doj_replay"}, {"freeze_visibility": "hidden"},
+                                   {"data_cutoff_block": 1}])
+def test_post_case_rejects_server_owned_fields(extra):
+    before = dict(api.CASES[CASE])
+    r = client.post("/cases", json={"source": "phone", "sends": [SEND], **extra})
+    assert r.status_code == 400
+    assert api.CASES[CASE] == before
+
+
+def test_post_case_lowercases_eth_hex_and_rejects_malformed():
+    upper = dict(SEND, tx_hash="0x" + "AB" * 32, to="0x" + "CD" * 20, **{"from": "0x" + "EF" * 20})
+    c = client.post("/cases", json={"source": "phone", "sends": [upper]}).json()
+    s = c["sends"][0]
+    assert (s["tx_hash"], s["to"], s["from"]) == ("0x" + "ab" * 32, "0x" + "cd" * 20, "0x" + "ef" * 20)
+    assert api.CASES[c["case_id"]]["sends"][0]["to"] == "0x" + "cd" * 20
+    assert client.post("/cases", json={"source": "phone", "sends": [dict(SEND, to="0xb")]}).status_code == 400
+    assert client.post("/cases", json={"source": "phone", "sends": [dict(SEND, tx_hash="0x1")]}).status_code == 400
+
+
+def test_trace_registers_with_watchlist(monkeypatch, tmp_path):
+    from hound.watch import watchlist
+    monkeypatch.setenv("HOUND_TRACE_DIRS", str(tmp_path))  # nothing preloaded: only the live trace counts
+    watchlist.reset()
+    addrs = {n["address"] for n in example("ohnd_replay.trace")["nodes"]}
+    before = {a for a in addrs if client.get(f"/check?chain=ethereum&address={a}").json()["decision"] == "hold"}
+    _trace_done()
+    after = {a for a in addrs if client.get(f"/check?chain=ethereum&address={a}").json()["decision"] == "hold"}
+    assert after - before, "no unfrozen wallet from the new trace is held"
+
+
+def test_register_failure_keeps_trace(monkeypatch, caplog):
+    monkeypatch.setattr(api, "register_trace", lambda t: 1 / 0)
+    with caplog.at_level("ERROR", logger="hound.api"):
+        trace = _trace_done()
+    assert "register_trace failed" in caplog.text and api.TRACES[trace["trace_id"]]
+
+
+def test_scoreboard_scores_latest_replay_trace():
+    assert client.get("/proof/scoreboard").json()["summary"]["status"] == "no_trace"
+    trace = _trace_done()
+    board = client.get("/proof/scoreboard").json()
+    assert board["summary"]["status"] != "no_trace" and board["trace_source"] == trace["source"]
+    assert board["summary"]["intermediates_reached"] > 0
