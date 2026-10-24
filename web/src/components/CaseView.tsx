@@ -12,6 +12,8 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
   const state = useTrace(c.case_id, initialTrace);
   const trace = state.phase === "done" ? state.trace : null;
   const asOf = "as_of" in c ? c.as_of : null;
+  // Driven by the graph: a replay hides freezes until its last hop has unfolded.
+  const [freezesShown, setFreezesShown] = useState(false);
 
   return (
     <>
@@ -22,8 +24,8 @@ export default function CaseView({ c, initialTrace }: { c: CaseSummary | Case; i
         </p>
       )}
       <main className={styles.layout}>
-        <CaseCard c={c} trace={trace} />
-        {state.phase === "done" && <TraceGraph trace={state.trace} asOf={asOf} />}
+        <CaseCard c={c} trace={trace} freezesShown={freezesShown} />
+        {state.phase === "done" && <TraceGraph trace={state.trace} asOf={asOf} onFreezesShown={setFreezesShown} />}
         {state.phase === "running" && <Progress log={state.log} startedAt={state.startedAt} />}
         {state.phase === "error" && (
           <div className={styles.panel} role="alert">

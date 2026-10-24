@@ -90,7 +90,16 @@ function buildElements(trace: Trace, freezesShown: boolean): ElementDefinition[]
 }
 
 /** asOf: the case's story date (replay: the victim's report), used to say how long after it Tether froze. */
-export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: string | null }) {
+export default function TraceGraph({
+  trace,
+  asOf,
+  onFreezesShown,
+}: {
+  trace: Trace;
+  asOf?: string | null;
+  /** Told whenever freezes are hidden or revealed, so the rest of the page can follow. */
+  onFreezesShown?: (shown: boolean) => void;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -107,6 +116,10 @@ export default function TraceGraph({ trace, asOf }: { trace: Trace; asOf?: strin
     const t = setTimeout(() => setFreezesShown(true), FREEZE_REVEAL_MS);
     return () => clearTimeout(t);
   }, [hideFreezes, shownHop, maxHop]);
+
+  useEffect(() => {
+    onFreezesShown?.(freezesShown);
+  }, [freezesShown, onFreezesShown]);
 
   useEffect(() => {
     const cy = cyRef.current;
