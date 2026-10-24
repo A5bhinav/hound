@@ -125,12 +125,24 @@ export interface Trace {
     freeze_visibility?: "visible" | "hidden";
   };
   seeds: Seed[];
+  /** ETH sends swapped to USDT in the same transaction (the DOJ replay's A-1 / B-1 / C-1). */
+  swaps?: { resolved?: SwapResolved[]; [k: string]: unknown };
   nodes: TraceNode[];
   edges: TraceEdge[];
   endpoints: Endpoint[];
   other_payers: OtherPayer[];
   stats: { api_calls: number; cache_hits: number; empty_results: number; elapsed_ms: number };
   audit_log: AuditEntry[];
+}
+
+export interface SwapResolved {
+  address: string;
+  tx_hash: string;
+  time: string;
+  eth_out: number;
+  usdt_in: number;
+  victim_eth: Record<string, number>;
+  victim_usdt: Record<string, number>;
 }
 
 export interface AuditEntry {
