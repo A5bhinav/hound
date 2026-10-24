@@ -12,7 +12,7 @@ from hound import fixture_chain
 from hound.api import app
 from hound.contracts import example
 
-client = TestClient(app)
+client = TestClient(app, client=("127.0.0.1", 50000))  # localhost: /demo/reset and live cases need it
 A7 = "0xa1770ead287dc8e91631a7a323390d5b744f0021"
 CASE = example("ohnd_replay.case")["case_id"]  # ETH-send case: A.H.'s six real ETH sends
 SEND = {"chain": "ethereum", "tx_hash": "0x" + "1" * 64, "from": "0x" + "a" * 40, "to": "0x" + "b" * 40,
@@ -449,3 +449,274 @@ def test_client_posted_case_can_trace_but_never_feeds_the_watchlist(monkeypatch)
     job = client.post(f"/cases/{cid}/trace").json()
     _poll(job["trace_id"])
     api.TRUSTED.discard(cid)
+
+
+# ---- round 2: job deadline, input checks, admin reset, live redaction, packet cache, env, CORS ----
+
+remote = TestClient(app, client=("203.0.113.5", 50000))  # a caller beyond this machine
+LIVE_ADDR = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE"
+
+
+def test_job_cap_ordering():
+    assert api.ENGINE_BUDGET_S > api.DEFAULTS["deadline_s"]
+    assert api.JOB_STALE_S > api.ENGINE_BUDGET_S + api.OTHER_PAYERS_BUDGET_S  # never supersede a live job
+
+
+def test_engine_overrun_ends_job_as_error_not_running(monkeypatch):
+    gate = threading.Event()
+    monkeypatch.setattr(api, "ENGINE_BUDGET_S", 0.3)
+    monkeypatch.setattr(api, "run_trace", lambda case, **deps: gate.wait(10))
+    try:
+        job = client.post(f"/cases/{CASE}/trace").json()
+        body = _poll(job["trace_id"], timeout=3)
+        assert body["status"] == "error" and "ran over 0.3s" in body["error"]
+        assert api.CASES[CASE]["status"] == "intake"
+    finally:
+        gate.set()
+
+
+def test_other_payers_overrun_ends_partial(monkeypatch):
+    gate = threading.Event()
+    monkeypatch.setattr(api, "OTHER_PAYERS_BUDGET_S", 0.3)
+    monkeypatch.setattr(api, "other_payers", lambda trace: gate.wait(10) and [{"address": "late"}])
+    try:
+        trace = _trace_done()
+        assert trace["status"] == "partial" and trace["other_payers"] == []
+        assert any("ran over 0.3s" in e["detail"] for e in trace["audit_log"])
+    finally:
+        gate.set()
+
+
+def test_other_payers_skipped_when_chain_was_unreachable(monkeypatch):
+    real, called = api.run_trace, []
+
+    def with_fetch_errors(case, **deps):
+        t = real(case, **deps)
+        t["stats"]["fetch_errors"] = 1
+        return t
+
+    monkeypatch.setattr(api, "run_trace", with_fetch_errors)
+    monkeypatch.setattr(api, "other_payers", lambda trace: called.append(1) or [])
+    trace = _trace_done()
+    assert called == [] and trace["other_payers"] == []
+    assert any(e["step"] == "skip_branch" and "fetch errors" in e["detail"] for e in trace["audit_log"])
+
+
+def test_engine_value_error_reaches_the_poller(monkeypatch):
+    def bad(case, **deps):
+        raise ValueError("a case must start on one chain for now, got ['ethereum', 'tron']")
+
+    monkeypatch.setattr(api, "run_trace", bad)
+    body = _poll(client.post(f"/cases/{CASE}/trace").json()["trace_id"])
+    assert body["status"] == "error" and "one chain" in body["error"]
+
+
+TRON_SEND = {"chain": "tron", "tx_hash": "a" * 64, "from": LIVE_ADDR, "to": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+             "token": "USDT", "amount": 1, "time": "2026-10-24T00:00:00Z"}
+
+
+@pytest.mark.parametrize("case, word", [
+    ({"sends": [dict(SEND, token="DAI")]}, "token"),
+    ({"sends": [SEND, TRON_SEND]}, "one chain"),
+    ({"sends": [SEND] * 51}, "limit"),
+    ({"sends": [dict(TRON_SEND, to="TXYZ")]}, "Tron address"),
+    ({"sends": [dict(TRON_SEND, tx_hash="0x" + "a" * 64)]}, "Tron tx hash"),
+    ({"sends": [dict(SEND, time="yesterday")]}, "ISO 8601"),
+    ({"sends": [SEND], "created_at": "yesterday"}, "ISO 8601"),
+])
+def test_post_case_rejects_what_the_engine_would(case, word):
+    r = client.post("/cases", json={"source": "phone", **case})
+    assert r.status_code == 422 and word in r.json()["detail"]
+
+
+def test_post_case_uppercases_token_and_accepts_tron():
+    c = client.post("/cases", json={"source": "phone", "sends": [dict(SEND, token="usdt")]}).json()
+    assert c["sends"][0]["token"] == "USDT"
+    assert client.post("/cases", json={"source": "phone", "sends": [TRON_SEND]}).status_code == 200
+
+
+def test_demo_reset_is_localhost_only_without_token(monkeypatch):
+    monkeypatch.delenv("HOUND_ADMIN_TOKEN", raising=False)
+    created = client.post("/cases", json={"source": "phone", "sends": [SEND]}).json()["case_id"]
+    assert remote.post("/demo/reset").status_code == 403
+    assert client.post("/demo/reset", headers={"cf-connecting-ip": "198.51.100.7"}).status_code == 403  # tunnel
+    assert client.post("/demo/reset", headers={"x-forwarded-for": "198.51.100.7"}).status_code == 403
+    assert created in api.CASES  # nothing was wiped
+    assert client.post("/demo/reset", headers={"x-forwarded-for": "127.0.0.1"}).status_code == 200  # local Next proxy
+
+
+def test_demo_reset_with_token_needs_the_header(monkeypatch):
+    monkeypatch.setenv("HOUND_ADMIN_TOKEN", "s3cret")
+    assert client.post("/demo/reset").status_code == 403
+    assert remote.post("/demo/reset", headers={"X-Hound-Admin": "wrong"}).status_code == 403
+    assert remote.post("/demo/reset", headers={"X-Hound-Admin": "s3cret"}).status_code == 200
+    monkeypatch.delenv("HOUND_ADMIN_TOKEN")
+
+
+def test_cases_live_are_marked_live(monkeypatch, tmp_path):
+    live = tmp_path / "data" / "cases_live"
+    live.mkdir(parents=True)
+    case = {"case_id": "live-1", "created_at": "2026-10-24T00:00:00Z", "source": "phone", "status": "intake",
+            "sends": [TRON_SEND]}
+    (live / "live-1.case.json").write_text(__import__("json").dumps(case))
+    monkeypatch.setattr(api, "ROOT", tmp_path)
+    api._load_curated()
+    assert "live-1" in api.LIVE_CASES and "live-1" in api.TRUSTED
+
+
+def _live_case_with_trace():
+    cid, tid, jid = "live-x", "t-live-x", "j" * 32
+    api.CASES[cid] = {"case_id": cid, "created_at": "2026-10-24T00:00:00Z", "source": "phone", "status": "traced",
+                      "victim": {"alias": "Grandma K", "age_band": "70s", "exchange_used": None},
+                      "story": {"summary": "met on WhatsApp", "scam_app": None, "platform": None, "first_contact": None},
+                      "sends": [TRON_SEND]}
+    api.LIVE_CASES.add(cid)
+    api.TRACES[tid] = {"trace_id": tid, "case_id": cid, "nodes": [{"address": LIVE_ADDR}],
+                       "audit_log": [{"step": "hop", "detail": f"hop to {LIVE_ADDR} via tx {'a' * 64}"}]}
+    api.JOBS[jid] = {"case_id": cid, "status": "done", "result_trace_id": tid}
+    api.LATEST[cid] = jid
+    return cid, jid
+
+
+def test_live_case_details_never_leave_localhost():
+    cid, jid = _live_case_with_trace()
+    short = LIVE_ADDR[:6] + "..." + LIVE_ADDR[-4:]
+    for path in ("/cases", f"/cases/{cid}/trace", f"/traces/{jid}", "/traces/t-live-x"):
+        body = remote.get(path).text
+        assert LIVE_ADDR not in body and "a" * 64 not in body and short in body, path
+        assert "WhatsApp" not in body and "Grandma" not in body, path
+        assert LIVE_ADDR in client.get(path).text, path  # localhost still sees full values
+    row = next(r for r in remote.get("/cases").json() if r["case_id"] == cid)
+    assert "story" not in row and row["victim"]["alias"] is None and row["victim"]["age_band"] == "70s"
+    tunnelled = client.get("/cases", headers={"cf-connecting-ip": "198.51.100.7"}).text
+    assert LIVE_ADDR not in tunnelled
+    replay = next(r for r in remote.get("/cases").json() if r["case_id"] == CASE)
+    assert replay == api.CASES[CASE]  # the public DOJ replay is never redacted
+
+
+def test_live_packet_redacted_beyond_localhost(monkeypatch):
+    cid, _ = _live_case_with_trace()
+    api.LAST_DONE[cid] = "t-live-x"
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: {"text": f"send to {LIVE_ADDR}", "source": "template"})
+    assert LIVE_ADDR not in remote.get(f"/cases/{cid}/packet").text
+    assert LIVE_ADDR in client.get(f"/cases/{cid}/packet").text
+
+
+def test_packet_cached_per_trace_and_audience(monkeypatch):
+    _trace_done()
+    calls = []
+
+    def fake(trace, case, audience):
+        calls.append(audience)
+        return {"text": "x", "source": "claude"}
+
+    monkeypatch.setattr(api, "write_case", fake)
+    for _ in range(3):
+        assert client.get(f"/cases/{CASE}/packet?audience=detective").status_code == 200
+    client.get(f"/cases/{CASE}/packet?audience=victim")
+    assert calls == ["detective", "victim"]  # repeats never re-call Claude
+    assert client.post("/demo/reset").status_code == 200  # reset drops the cache
+    _trace_done()
+    client.get(f"/cases/{CASE}/packet?audience=detective")
+    assert calls == ["detective", "victim", "detective"]
+
+
+def test_template_packet_not_cached(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    _trace_done()
+    calls = []
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "template"})
+    client.get(f"/cases/{CASE}/packet")
+    client.get(f"/cases/{CASE}/packet")
+    assert len(calls) == 2  # a Claude failure that fell back to the template may recover next hit
+
+
+def test_cors_allows_localhost_not_other_origins():
+    ok = client.options("/cases", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"})
+    assert ok.headers.get("access-control-allow-origin") == "http://localhost:3000"
+    evil = client.get("/cases", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in evil.headers
+
+
+def test_load_env_never_overrides_and_logs_names_only(monkeypatch, tmp_path, caplog):
+    import os
+    env = tmp_path / ".env"
+    env.write_text("ANTHROPIC_API_KEY=from-file-value\nETHERSCAN_API_KEY=eth-file-value\n")
+    monkeypatch.delenv("HOUND_NO_DOTENV")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "real-env-value")
+    had = "ETHERSCAN_API_KEY" in os.environ
+    monkeypatch.delenv("ETHERSCAN_API_KEY", raising=False)
+    try:
+        with caplog.at_level("INFO", logger="hound.api"):
+            api._load_env(env)
+        assert os.environ["ANTHROPIC_API_KEY"] == "real-env-value"
+        assert os.environ["ETHERSCAN_API_KEY"] == "eth-file-value"
+        assert "ANTHROPIC_API_KEY" in caplog.text and "ETHERSCAN_API_KEY" in caplog.text
+        assert "value" not in caplog.text
+    finally:
+        if not had:
+            os.environ.pop("ETHERSCAN_API_KEY", None)
+
+
+def test_load_env_warns_when_anthropic_key_missing(monkeypatch, tmp_path, caplog):
+    monkeypatch.delenv("HOUND_NO_DOTENV")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with caplog.at_level("WARNING", logger="hound.api"):
+        api._load_env(tmp_path / "missing.env")
+    assert "ANTHROPIC_API_KEY unset" in caplog.text
+
+
+def test_make_demo_fails_loudly_without_anthropic_key():
+    from hound.contracts import ROOT
+    demo = (ROOT / "Makefile").read_text().split("\ndemo:")[1].split("\n\n")[0]
+    assert "ANTHROPIC_API_KEY unset" in demo and "exit 1" in demo
+
+
+def test_repeat_post_on_running_live_job_is_redacted(monkeypatch):
+    cid, _ = _live_case_with_trace()
+    api.CASES[cid]["status"] = "traced"
+    release = threading.Event()
+
+    def slow(job_id, case, progress):
+        progress.append({"step": "hop", "detail": f"hop to {LIVE_ADDR} via tx {'a' * 64}"})
+        release.wait(5)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(api, "_trace_with_fallback", slow)
+    try:
+        first = remote.post(f"/cases/{cid}/trace")
+        assert first.status_code == 200 and LIVE_ADDR not in first.text
+        for _ in range(100):
+            if api.JOBS[api.LATEST[cid]]["progress"]:
+                break
+            time.sleep(0.01)
+        again = remote.post(f"/cases/{cid}/trace")
+        assert again.json()["status"] == "running" and again.json()["audit_log_so_far"]
+        assert LIVE_ADDR not in again.text and "a" * 64 not in again.text
+        assert LIVE_ADDR in client.post(f"/cases/{cid}/trace").text  # localhost sees full values
+    finally:
+        release.set()
+
+
+def test_live_packet_prose_withheld_beyond_localhost(monkeypatch):
+    cid, _ = _live_case_with_trace()
+    api.LAST_DONE[cid] = "t-live-x"
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: {"text": "met on WhatsApp", "cited": ["x"],
+                                                          "source": "template", "citations_verified": {}})
+    pk = remote.get(f"/cases/{cid}/packet").json()["packet"]
+    assert pk["text"] is None and pk["redacted"] is True and pk["cited"] == ["x"]
+    assert client.get(f"/cases/{cid}/packet").json()["packet"]["text"] == "met on WhatsApp"
+
+
+def test_claude_fallback_packet_negative_cached(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    _trace_done()
+    calls = []
+    monkeypatch.setattr(api, "write_case", lambda t, c, a: calls.append(a) or {"text": "x", "source": "template"})
+    for _ in range(3):
+        assert client.get(f"/cases/{CASE}/packet").status_code == 200
+    assert len(calls) == 1  # Claude failing: no retry inside the TTL
+    key = next(iter(api.FALLBACK_PACKETS))
+    api.FALLBACK_PACKETS[key] = (api.FALLBACK_PACKETS[key][0], time.monotonic() - 1)
+    client.get(f"/cases/{CASE}/packet")
+    assert len(calls) == 2  # expired: Claude gets another try
