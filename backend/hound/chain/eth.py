@@ -476,11 +476,22 @@ def _transfers_rpc_range(address: str, contract: str | None, from_block: int, to
     return out
 
 
-def _v2_get(path: str, params: dict, ttl: Any) -> dict:
-    url = f"{BLOCKSCOUT}{path}"
+BLOCKSCOUT_PRO = os.environ.get("BLOCKSCOUT_PRO_URL", "https://api.blockscout.com/1")
 
+
+def _v2_fetch(path: str, params: dict) -> dict:
+    """One uncached Blockscout v2 call: PRO (keyed, higher limits) when BLOCKSCOUT_API_KEY is set."""
+    key = os.environ.get("BLOCKSCOUT_API_KEY")
+    url = f"{BLOCKSCOUT_PRO}{path}" if key else f"{BLOCKSCOUT}{path}"
+    q = dict(params or {})
+    if key:
+        q["apikey"] = key  # stripped from cache keys and error text
+    return request_json("GET", url, params=q or None)
+
+
+def _v2_get(path: str, params: dict, ttl: Any) -> dict:
     def fetch():
-        return request_json("GET", url, params=params or None)
+        return _v2_fetch(path, params)
 
     return cache.cached("eth_v2", {"path": path, **params}, fetch=fetch, ttl=ttl, on_hit=count_cache_hit,
                         is_empty=lambda b: isinstance(b, dict) and b.get("items") == [])
@@ -508,7 +519,7 @@ def _transfers_v2(address: str, contract: str | None, lo: int | None, hi: int | 
         if first and not items:
             # retry an empty first page once, bypassing the cache
             time.sleep(1.5)
-            body = request_json("GET", f"{BLOCKSCOUT}{path}", params=params)
+            body = _v2_fetch(path, params)
             items = body.get("items") or []
             if items:
                 log.warning("EMPTY v2 page became non-empty on retry for %s", address)
@@ -815,9 +826,11 @@ def is_contract(address: str) -> bool:
 _TX_HASH = re.compile(r"^0x[0-9a-f]{64}$")
 
 
-def tx_sends(tx_hash: str, to: str | None = None) -> list[dict]:
+def tx_sends(tx_hash: str, to: str | None = None, sender: str | None = None) -> list[dict]:
     """Case `sends` from one victim transaction: its native ETH value and every USDT Transfer the
-    sender made in it, read from the tx + receipt (cached forever once mined).
+    victim made in it, read from the tx + receipt (cached forever once mined).
+    The victim is `sender` if given, else the signer, plus the called account when it is a smart
+    wallet (EIP-7702 / smart account with gas paid by a relayer) rather than an exchange or infra.
     to: keep only sends to this address. Failed or pending txs raise ValueError."""
     h = (tx_hash or "").strip().lower()
     if not _TX_HASH.match(h):
@@ -834,11 +847,21 @@ def tx_sends(tx_hash: str, to: str | None = None) -> list[dict]:
         raise ValueError(f"tx {h} failed on chain: no money moved")
     block = int(tx["blockNumber"], 16)
     when = iso(block_time(block))
-    sender = tx["from"].lower()
+    signer = tx["from"].lower()
+    if sender:
+        victims = {norm(sender)}
+    else:
+        victims = {signer}
+        called = (tx.get("to") or "").lower()
+        if called:
+            from .labels import label
+            lb = label(CHAIN, called, network=False)
+            if not lb or lb["kind"] not in ("exchange_hot", "exchange_deposit", "infra", "service"):
+                victims.add(called)  # relayed smart-wallet call: the funds leave the called account
     sends = []
     value = int(tx.get("value") or "0x0", 16)
     if value > 0 and tx.get("to"):
-        sends.append({"chain": CHAIN, "tx_hash": h, "from": sender, "to": tx["to"].lower(), "token": "ETH",
+        sends.append({"chain": CHAIN, "tx_hash": h, "from": signer, "to": tx["to"].lower(), "token": "ETH",
                       "amount": _amount(value, 18), "time": when})
     for lg in rc.get("logs", []):
         t = lg.get("topics") or []
@@ -846,7 +869,7 @@ def tx_sends(tx_hash: str, to: str | None = None) -> list[dict]:
             continue
         frm, dst = "0x" + t[1][-40:].lower(), "0x" + t[2][-40:].lower()
         raw = int(lg.get("data") or "0x0", 16)
-        if frm == sender and raw > 0 and frm != dst:
+        if frm in victims and raw > 0 and frm != dst:
             sends.append({"chain": CHAIN, "tx_hash": h, "from": frm, "to": dst, "token": "USDT",
                           "amount": _amount(raw, 6), "time": when})
     if to:

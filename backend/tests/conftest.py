@@ -2,6 +2,8 @@ import os
 
 import pytest
 
+os.environ.setdefault("HOUND_NO_DOTENV", "1")  # tests never read the real .env keys
+
 LIVE = os.environ.get("HOUND_LIVE") == "1"
 
 
