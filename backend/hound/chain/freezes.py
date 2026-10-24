@@ -26,6 +26,7 @@ TOPIC_REMOVED = "0xd7e9ec6e6ecd65492dce6bf513cd6867560d49544421d0783ddf06e76c244
 TOPIC_DESTROYED = "0x61e6e66b0d6339b2980aecc6ccc0039736791f0ccde9ed512e789a7fbdd698c6"  # DestroyedBlackFunds(address,uint256)
 SEL_IS_BLACKLISTED = "0xe47d6060"  # isBlackListed(address)
 DUMP_FILE = REPO_ROOT / "data" / "freezes_eth.json"
+TRON_DUMP_FILE = REPO_ROOT / "data" / "freezes_tron.json"  # python -m hound.chain.freezes dump tron
 EVENT_TOPICS = (("added", TOPIC_ADDED), ("removed", TOPIC_REMOVED), ("destroyed", TOPIC_DESTROYED))
 
 
@@ -84,8 +85,13 @@ def _fetch_events(from_block: int) -> dict[str, list[dict]]:
 
 def _load_history(chain: str) -> dict[str, list[dict]]:
     if chain != "ethereum":
-        from . import tron
-        return tron.blacklist_history()
+        # never page the whole TronGrid event log inside a request (58 calls at 1/s = a 60 s /check):
+        # read the dump; without one, freeze_status relies on the on-chain isBlackListed call alone
+        if TRON_DUMP_FILE.exists():
+            return json.loads(TRON_DUMP_FILE.read_text())["events"]
+        log.warning("%s missing: Tron freeze dates unknown, on-chain status only "
+                    "(run `python -m hound.chain.freezes dump tron`)", TRON_DUMP_FILE)
+        return {}
     dump = _load_dump()
     if dump is None:
         log.warning("%s missing: fetching the full freeze history (run `python -m hound.chain.freezes dump`)",
@@ -229,8 +235,24 @@ def freeze_status(chain: str, address: str, as_of: int | str | None = None,
     return out
 
 
+def dump_tron() -> dict:
+    """Write data/freezes_tron.json: every Tron USDT blacklist event (TronGrid, about a minute keyless)."""
+    from . import tron
+    hist = tron.blacklist_history()
+    counts = {k: sum(1 for evs in hist.values() for e in evs if e["type"] == k) for k, _ in EVENT_TOPICS}
+    out = {"_meta": {"built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "counts": counts,
+                     "source": f"public Tron USDT contract events {tron.USDT} (TronGrid)"},
+           "events": hist}
+    TRON_DUMP_FILE.write_text(json.dumps(out, separators=(",", ":")) + "\n")
+    _MEMO.pop("tron", None)
+    return out["_meta"]
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
-    if sys.argv[1:] != ["dump"]:
-        sys.exit("usage: python -m hound.chain.freezes dump")
-    print(dump())
+    if sys.argv[1:] == ["dump"]:
+        print(dump())
+    elif sys.argv[1:] == ["dump", "tron"]:
+        print(dump_tron())
+    else:
+        sys.exit("usage: python -m hound.chain.freezes dump [tron]")
