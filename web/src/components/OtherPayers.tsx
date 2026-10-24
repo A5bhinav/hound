@@ -32,15 +32,20 @@ export default function OtherPayers({ trace }: { trace: Trace }) {
       {payers.length > 0 && (
         <>
           <ul className={styles.exchanges}>
-            {[...byExchange].map(([ex, list]) => (
+            {[...byExchange].map(([ex, list]) => {
+              // Rows are payments; a sender is a distinct wallet (review F4).
+              const n = new Set(list.map((p) => p.address.toLowerCase())).size;
+              return (
               <li key={ex}>
                 <strong>{ex}</strong>
                 <span>
-                  {list.length} {list.length === 1 ? "sender" : "senders"} · {byToken(list)} sent
+                  {n} {n === 1 ? "sender" : "senders"} · {list.length} {list.length === 1 ? "payment" : "payments"} ·{" "}
+                  {byToken(list)} sent
                 </span>
                 {ex !== "Unknown source" && <span className={styles.ask}>Ask {ex} to warn their user before the next send.</span>}
               </li>
-            ))}
+              );
+            })}
           </ul>
           <div className={styles.tableWrap}>
             <table className={styles.table}>

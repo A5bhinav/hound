@@ -150,7 +150,13 @@ def _path_to(trace: dict, addr: str, victims: set[str]) -> list[dict]:
         return e.get("attributed_amount", e.get("amount"))
 
     def hop(e):
-        return {"from": e["from"], "to": e["to"], "amount": hop_amount(e),
+        shown = e.get("attributed_amount", e.get("amount"))  # the figure the trace graph prints on this edge
+        a = hop_amount(e)
+        capped = a is not None and shown is not None and abs(float(a) - float(shown)) > 0.005
+        return {"from": e["from"], "to": e["to"], "amount": a,
+                # when they differ, `amount` counts each victim's money once (laundering loops deduped)
+                "edge_amount": shown,
+                "amount_basis": "victim money counted once" if capped else "edge amount",
                 "token": e.get("token") or "USDT",  # victim-side hops are ETH: never print them as USDT
                 "tx_hashes": (e.get("tx_hashes") or [])[:2], "confidence": e.get("confidence"),
                 "method": e.get("method")}

@@ -16,6 +16,7 @@ Exit code 0 only if every required step passes. Known gaps are listed as WARN, n
 """
 import json
 import os
+import shutil
 import signal
 import socket
 import subprocess
@@ -146,7 +147,7 @@ def intake_flow(api, web):
     code, b = http("POST", f"{api}/intake/start", body={"story": {"summary": "e2e intake"}, "victim": {"alias": "e2e caller"}})
     s = jget(code, b)
     cc = s.get("case_code") or ""
-    if not step("intake: POST /intake/start (localhost)", code == 200 and len(cc) == 6 and (s.get("upload_url") or "").endswith(cc), f"{code}"):
+    if not step("intake: POST /intake/start (localhost)", code == 200 and len(cc) == 6 and (s.get("upload_url") or "") == f"{web}/c/{cc}", f"{code} {s.get('upload_url')}"):
         return
     a = jget(*http("GET", f"{api}/intake/active"))
     step("intake: /intake/active on localhost shows the code and link", a.get("case_code") == cc and a.get("upload_url") == s["upload_url"],
@@ -273,11 +274,13 @@ def demo_reset(api, web, extra_ids, watched):
     code, _ = http("POST", f"{web}/api/demo/reset", headers={"X-Forwarded-For": "203.0.113.9"})
     step("403: web /api/demo/reset from a tunnel visitor is refused", code == 403, f"{code}")
     code, b = http("POST", f"{web}/api/demo/reset")
-    step("web Reset button (/api/demo/reset through the proxy) works from localhost", code == 200, f"{code} {b[:100]}", required=False)
+    step("web Reset button (/api/demo/reset through the proxy) works from localhost", code == 200, f"{code} {b[:100]}")
     code, b = http("POST", f"{api}/demo/reset")
     step("/demo/reset from localhost", code == 200 and jget(code, b).get("ok"), f"{code} {b[:80]}")
     ids = {c["case_id"] for c in jget(*http("GET", f"{api}/cases")) or []}
     step("after reset: intake and judge cases are gone, curated cases back", REPLAY in ids and not (ids & set(extra_ids)), f"{sorted(ids)}")
+    code, b = http("GET", f"{web}/api/intake/active")
+    step("after reset: no intake session is left on screen (204 from /api/intake/active)", code == 204, f"{code} {b[:100]}")
     for cid, trace in watched:
         left = held_for(api, trace, cid)
         step(f"after reset: watchlist no longer names {cid}", not left, f"{left}")
@@ -315,13 +318,28 @@ def intake_typed_hash_live(logs):
             proc.kill()
 
 
+def _stat(path):
+    """(mtime_ns, size) of a file, or None when it does not exist."""
+    try:
+        st = path.stat()
+        return (st.st_mtime_ns, st.st_size)
+    except FileNotFoundError:
+        return None
+
+
 def main():
     logs = ROOT / ".e2e"
     logs.mkdir(exist_ok=True)
     bport, wport = free_port(), free_port()
     api = f"http://127.0.0.1:{bport}"
     web = f"http://127.0.0.1:{wport}"
-    env = dict(os.environ, HOUND_CACHE_MODE="readonly")
+    # Private cache dir: the run registers an intake case and then calls /demo/reset, which deletes
+    # <cache>/watchlist.json. Never let that touch the real <repo>/cache (demo traces live there).
+    cache_ro = logs / "cache_readonly"
+    shutil.rmtree(cache_ro, ignore_errors=True)
+    real_wl = ROOT / "cache" / "watchlist.json"
+    real_before = _stat(real_wl)
+    env = dict(os.environ, HOUND_CACHE_MODE="readonly", HOUND_CACHE_DIR=str(cache_ro), PUBLIC_BASE_URL=web)
     env.pop("ANTHROPIC_API_KEY", None) if os.environ.get("E2E_NO_CLAUDE") else None
     procs = []
     try:
@@ -329,7 +347,7 @@ def main():
         procs.append(subprocess.Popen([PY, "-m", "uvicorn", "hound.api:app", "--port", str(bport)], cwd=ROOT / "backend",
                                       env=env, stdout=open(logs / "backend.log", "w"), stderr=subprocess.STDOUT))
         wait_for(f"{api}/health", 60, procs[-1], "backend")
-        wenv = dict(os.environ, HOUND_API_URL=api, HOUND_DATA="", PORT=str(wport))
+        wenv = dict(os.environ, HOUND_API_URL=api, HOUND_DATA="", PORT=str(wport), HOUND_NEXT_DIST_DIR=".next-e2e")
         # Always rebuild: next build bakes HOUND_API_URL into the /api proxy, so a stale build points
         # the proxy at an old backend port (500 on every proxied route).
         print("building web (next build)...", flush=True)
@@ -428,7 +446,14 @@ def main():
         demo_reset(api, web, [i for i in (intake_id, judge_id) if i], [w for w in watched if w[1]])
         if not os.environ.get("E2E_NO_LIVE_CHAIN"):
             intake_typed_hash_live(logs)
+        step("the repo's real cache/watchlist.json was not touched", _stat(real_wl) == real_before,
+             f"before {real_before} after {_stat(real_wl)}")
+    except SystemExit as e:
+        # a server that never came up must fail the run, not vanish into the finally block
+        step("servers booted", False, str(e))
     finally:
+        if not results:
+            step("at least one check ran", False, "nothing was checked")
         failed = [r for r in results if r[1] == "FAIL"]
         warned = [r for r in results if r[1] == "WARN"]
         print(f"\n{len(results) - len(failed) - len(warned)} pass, {len(warned)} warn, {len(failed)} fail")

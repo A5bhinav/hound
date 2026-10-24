@@ -22,7 +22,9 @@ def _check_consistent(res: dict) -> None:
     assert res["addresses_unfrozen"] == len(rows)
     assert res["usdt_unfrozen"] == pytest.approx(round(sum(c["capped_usdt"] for c in rows), 2), abs=0.005)
     for c in rows:
-        assert (c.get("transfer_count") or 0) <= scan.MAX_LIFETIME_TRANSFERS, c["address"]
+        # fail closed: a counted row has a measured transfer count, never None
+        assert c.get("transfer_count") is not None, c["address"]
+        assert c["transfer_count"] <= scan.MAX_LIFETIME_TRANSFERS, c["address"]
         assert not c.get("label") and not c.get("excluded_as_exchange_or_infra"), c["address"]
         assert c["capped_usdt"] <= c["balance_usdt"] + 1e-9
         assert c["row_label"] == "reported, not proven"
@@ -104,3 +106,62 @@ def test_weekend_scan_counts_transfers_only_for_candidates(monkeypatch, tmp_path
     assert sorted(counted) == sorted([big, small])  # the frozen one never pays for a count
     assert res["usdt_unfrozen"] == 4_000.0 and res["addresses_unfrozen"] == 1
     assert json.loads((tmp_path / "scan_latest.json").read_text())["usdt_unfrozen"] == 4_000.0
+
+
+def test_stale_live_file_never_promotes_source_excluded_rows(monkeypatch, tmp_path):
+    """Old-shape scan_latest.json: two big rows ruled out only by freezable_now=false (no label,
+    no transfer count, no reason). finalize must keep them out of the headline."""
+    live = tmp_path / "scan_latest.json"
+    ok = "0x" + "12" * 20
+    live.write_text(json.dumps({"scanned_at": "2026-10-24T00:00:00+00:00", "addresses": 3, "cases": [
+        _row(ok, 2_000.0, transfer_count=30, freezable_now=True, excluded_as_exchange_or_infra=False),
+        _row("0x" + "96" * 20, 8_956_891.82, freezable_now=False, excluded_as_exchange_or_infra=False),
+        _row("0x" + "4e" * 20, 3_089_426.62, freezable_now=False, excluded_as_exchange_or_infra=False),
+    ]}))
+    monkeypatch.setattr(scan, "OUT", live)
+    res = scan.serve()
+    _check_consistent(res)
+    assert res["usdt_unfrozen"] == 2_000.0 and res["addresses_unfrozen"] == 1
+    big = [c for c in res["cases"] if c["balance_usdt"] > 1e6]
+    assert len(big) == 2 and not any(c["freezable_now"] for c in big)
+    assert all(c["excluded_reasons"] for c in big)
+
+
+def test_source_exclusion_survives_even_with_a_count():
+    res = scan.finalize({"cases": [_row("0x" + "77" * 20, 50_000.0, transfer_count=10, freezable_now=False)]})
+    assert res["usdt_unfrozen"] == 0 and res["cases"][0]["excluded_reasons"] == ["excluded in source scan"]
+
+
+def test_unknown_transfer_count_is_left_out_of_the_headline():
+    res = scan.finalize({"cases": [_row("0x" + "78" * 20, 853_611.70),                      # never measured
+                                   _row("0x" + "6f" * 20, 5_000.0, transfer_count=12)]})
+    _check_consistent(res)
+    assert res["usdt_unfrozen"] == 5_000.0
+    unk = next(c for c in res["cases"] if c["balance_usdt"] > 1e5)
+    assert unk["excluded_reasons"] == ["transfer count not checked"] and not unk["freezable_now"]
+
+
+def test_finalize_is_idempotent_on_its_own_output():
+    res = scan.finalize({"cases": [_row("0x" + "aa" * 20, 900.0, transfer_count=5),
+                                   _row("0x" + "bb" * 20, 900.0)]})
+    again = scan.finalize(res)
+    assert again["usdt_unfrozen"] == res["usdt_unfrozen"] == 900.0
+    assert [c["freezable_now"] for c in again["cases"]] == [c["freezable_now"] for c in res["cases"]]
+
+
+def test_group_by_address_counts_stablecoin_losses_and_unknown_assets():
+    from hound.proof.chainabuse import group_by_address
+
+    def rep(addr, losses):
+        return {"report_id": addr + str(len(losses)), "address": addr, "chain": "ethereum", "category": "PIGBUTCHERING",
+                "reported_at": "2026-10-20", "checked": False, "trusted": False, "claimed_losses": losses}
+    out = {r["address"]: r for r in group_by_address([
+        rep("a", [{"amount": 100, "asset": "USD"}, {"amount": 50, "asset": "USDT"}, {"amount": 5, "asset": "usdc"}]),
+        rep("b", [{"amount": 2, "asset": "ETH"}]),
+        rep("c", [{"amount": 2, "asset": "ETH"}, {"amount": 300, "asset": "USD"}]),
+        rep("d", []),
+    ])}
+    assert out["a"]["claimed_losses_usd"] == 155.0
+    assert out["b"]["claimed_losses_usd"] is None  # unknown, falls back to balance in finalize
+    assert out["c"]["claimed_losses_usd"] == 300.0
+    assert out["d"]["claimed_losses_usd"] == 0.0

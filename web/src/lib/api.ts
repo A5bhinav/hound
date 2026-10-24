@@ -36,6 +36,26 @@ async function call<T>(method: "GET" | "POST", apiPath: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+/**
+ * Is this upload code a live intake session? false on 404 (unknown or expired, sessions live 2 h).
+ * null when the backend can't say (unreachable, 5xx): the page then shows the form and the upload reports the error.
+ */
+export async function intakeCodeActive(code: string): Promise<boolean | null> {
+  if (usingFixtures) return true;
+  await connection();
+  const url = `${API_URL}/intake/${encodeURIComponent(code)}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.status === 404) return false;
+    if (res.ok) return true;
+    console.error(`[hound-web] GET ${url} -> ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    return null;
+  } catch (err) {
+    console.error(`[hound-web] GET ${url} failed:`, err);
+    return null;
+  }
+}
+
 async function example<T>(name: string): Promise<T> {
   const file = path.join(EXAMPLES, name);
   try {

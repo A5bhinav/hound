@@ -163,8 +163,9 @@ const SCAN_ROWS_SHOWN = 8;
 function ScanPanel({ scan }: { scan: Scan }) {
   const computed = scan.status !== "not_computed" && scan.addresses > 0;
   // Only rows the backend counted in the headline, at their capped amount, so the list adds up to it.
-  const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen);
   const amount = (c: ScanRow) => c.capped_usdt ?? c.balance_usdt;
+  // Largest first, whatever order the summary file was written in (review F1).
+  const rows = (scan.cases as ScanRow[]).filter((c) => c.freezable_now && !c.is_frozen).sort((a, b) => amount(b) - amount(a));
   const shown = rows.slice(0, SCAN_ROWS_SHOWN);
   const rest = rows.slice(SCAN_ROWS_SHOWN);
   const uncapped = rows.some((c) => c.cap_basis?.startsWith("balance"));
@@ -181,6 +182,12 @@ function ScanPanel({ scan }: { scan: Scan }) {
           <div className={styles.big}>
             <Stat n={usdt(scan.usdt_unfrozen)} label={`in ${scan.addresses_unfrozen} addresses not yet frozen`} />
           </div>
+          {scan.addresses_unfrozen === 0 && (
+            // The scan fails closed: rows whose transfer counts were not checked are left out of the total.
+            <p className={styles.empty}>
+              Nothing is counted yet: transfer counts for these addresses have not been checked. {scan.method}
+            </p>
+          )}
           <ul className={styles.scanList}>
             {shown.map((c) => (
               // Live addresses are truncated everywhere public (BRIEF §0).

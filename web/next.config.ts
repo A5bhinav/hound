@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const API_URL = process.env.HOUND_API_URL || "http://localhost:8000";
 
 const nextConfig: NextConfig = {
+  // e2e builds into its own folder so it never clobbers the demo's .next (and its baked API port).
+  distDir: process.env.HOUND_NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   partialPrefetching: true,
   // Browser code calls /api/... (same origin); Next proxies it to the FastAPI backend (BRIEF §0).

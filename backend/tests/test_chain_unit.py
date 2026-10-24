@@ -395,3 +395,17 @@ def test_tron_freeze_lookup_never_pages_trongrid_in_a_request(tmp_path, monkeypa
     freezes._MEMO.clear()
     assert freezes._history("tron")["TMzn3oX7caFKbJK8UmAaxdG9jV1yRtVzGd"][0]["type"] == "added"
     freezes._MEMO.clear()
+
+
+def test_empty_settings_from_a_copied_env_example_mean_defaults():
+    """Fresh clone: cp .env.example .env leaves HOUND_MAX_TRANSFERS= etc. as "" after python-dotenv.
+    Importing the chain package must treat them as unset (it crashed at import before)."""
+    import subprocess, sys, os as _o
+    env = {**_o.environ, "HOUND_NO_DOTENV": "1", "HOUND_MAX_TRANSFERS": "", "HOUND_ETH_TRANSFER_SOURCES": "",
+           "HOUND_TRACE_DIRS": "", "ETH_ARCHIVE_RPC_URL": "", "ETH_RPC_URLS": ""}
+    code = ("import os, hound.chain as c; from hound.chain import eth; "
+            "assert eth.MAX_TRANSFERS == 5000 and eth.ETH_ARCHIVE_RPC_URLS; "
+            "assert 'HOUND_ETH_TRANSFER_SOURCES' not in os.environ and 'HOUND_TRACE_DIRS' not in os.environ; print('ok')")
+    r = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True,
+                       cwd=str(Path(__file__).resolve().parents[1]))
+    assert r.stdout.strip() == "ok", r.stderr[-800:]

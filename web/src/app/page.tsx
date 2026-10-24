@@ -15,7 +15,8 @@ const SOURCE: Record<CaseSummary["source"], string> = {
 function storyLine(c: CaseSummary) {
   const { scam_app, platform } = c.story ?? {};
   if (scam_app && platform) return `${scam_app} via ${platform}`;
-  return scam_app ?? platform ?? c.story?.summary ?? null;
+  // One word like "text message" says less than the summary; prefer the summary when there is one (review F16).
+  return c.story?.summary ?? scam_app ?? platform ?? null;
 }
 
 /** Three true numbers from the backend for the opening line; the page still renders without them. */

@@ -12,6 +12,7 @@ __pycache__/
 # node
 node_modules/
 .next/
+.next-e2e/
 # os
 .DS_Store
 

@@ -106,6 +106,9 @@ def chainabuse_reports(chain: str | None = None, since: str | None = None, categ
     return rows
 
 
+USD_LIKE = {"USD", "USDT", "USDC"}  # stablecoin losses count at face value
+
+
 def group_by_address(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Dedupe report rows into one entry per (chain, address) with report_count and a confidence
     derived from moderation: 0.9 if any report is checked, 0.7 if any trusted, else 0.5."""
@@ -122,6 +125,16 @@ def group_by_address(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         elif r["trusted"]:
             cur["confidence"] = max(cur["confidence"], 0.7)
         for l in r["claimed_losses"]:
-            if l.get("asset") == "USD" and l.get("amount"):
+            if not l.get("amount"):
+                continue
+            if str(l.get("asset") or "").upper() in USD_LIKE:
                 cur["claimed_losses_usd"] += float(l["amount"])
-    return list(agg.values())
+            else:
+                cur["_other_assets"] = True
+    out = []
+    for cur in agg.values():
+        # losses filed only in ETH, BTC, ... have no USD figure: unknown (None), never a cap of 0
+        if cur.pop("_other_assets", False) and not cur["claimed_losses_usd"]:
+            cur["claimed_losses_usd"] = None
+        out.append(cur)
+    return out
