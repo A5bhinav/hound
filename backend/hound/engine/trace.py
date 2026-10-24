@@ -20,6 +20,7 @@ Data comes through injectable functions (BRIEF 8.4):
 import hashlib
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 
@@ -38,6 +39,13 @@ CONSOLIDATION_SENDERS = 3
 CONFIDENCE_MODEL = {"base": {"direct": 1.0, "consolidation": 0.9, "swap": 0.9, "peel": 0.85, "bridge_match": 0.6},
                     "completeness": {"complete": 1.0, "incomplete": 0.5}}
 NO_FREEZE = {"is_frozen": False, "frozen_at": None, "freeze_tx": None}
+
+
+_SECRET = re.compile(r"(?i)(api[_-]?key|apikey|token|key|secret|auth)=([^&\s]+)")
+
+
+def _redact(text):
+    return _SECRET.sub(r"\1=REDACTED", text)
 
 
 def _now():
@@ -155,14 +163,17 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                 rows = get_transfers(chain, addr, after=None, as_of=cutoff)
             except Exception as e:  # noqa: BLE001 - adapters raise their own types
                 stats["api_calls"] += 1
+                # Never put raw exception text in the trace: adapter errors can carry request
+                # URLs with API keys. Full detail goes to the server log only, redacted.
+                log.warning("fetch failed for %s: %s: %s", addr, type(e).__name__, _redact(str(e)))
                 if type(e).__name__ == "TooManyTransfers":
                     stopped[addr] = "high_volume"
-                    audit("stop", f"high volume address (exchange or service sized): {e}", addr)
+                    audit("stop", "high volume address (exchange or service sized)", addr)
                 else:
                     stats["fetch_errors"] = stats.get("fetch_errors", 0) + 1
                     stopped[addr] = "dead_end"
                     status = "partial"
-                    audit("error", f"fetch failed after the adapter's retries: {type(e).__name__}: {e}", addr)
+                    audit("error", f"fetch failed after the adapter's retries ({type(e).__name__})", addr)
                 continue
             stats["api_calls"] += 1
             audit("fetch", f"{len(rows)} transfers (full history" + (f" up to block {cutoff})" if cutoff else ")"), addr)

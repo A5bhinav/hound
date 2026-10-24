@@ -143,3 +143,15 @@ def test_input_limits_cannot_bypass_the_call_budget():
         run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_hopz=99)
     with pytest.raises(RuntimeError, match="budget"):
         run_trace(case, get_transfers=fixture_chain.get_transfers, get_native_txs=fixture_chain.get_native_txs, max_api_calls=3)
+
+
+def test_adapter_errors_never_leak_into_the_trace():
+    def leaky(chain, address, after=None, as_of=None):
+        if address == A6:
+            raise ConnectionError("GET https://api.etherscan.io/v2/api?apikey=SECRET123&address=x failed")
+        return fixture_chain.get_transfers(chain, address, after=after, as_of=as_of)
+    t = run_trace(example("ohnd_replay.case"), get_transfers=leaky, label=fixture_chain.label,
+                  freeze_status=fixture_chain.freeze_status, get_balance=fixture_chain.get_balance,
+                  get_native_txs=fixture_chain.get_native_txs)
+    import json as _json
+    assert "SECRET123" not in _json.dumps(t) and "etherscan" not in _json.dumps(t)
