@@ -30,7 +30,7 @@ Result: Hound reaches **all 8 intermediate wallets** the DOJ named that it was n
 - Rate limits: free chain APIs returned errors as HTTP 200, which a naive cache would store as a permanent "no transactions". The adapters classify responses and never cache an error.
 
 ## What's real vs simulated
-Real: the DOJ case, every address and transaction, the swaps, Tether's freezes, the live scam report data. Replayed: the 2024 timing of the DOJ case (labelled REPLAY on screen). Simulated: the exchange withdrawal screen.
+Real: the DOJ case, every address and transaction, the swaps, Tether's freezes, the live scam report data. Replayed: the 2024 timing of the DOJ case (labelled REPLAY on screen). Simulated: the exchange withdrawal screen, and the "Replay intake" button, which replays the intake steps from the curated case when no live call is running.
 
 ## What's next
 Exchange and wallet integrations of the check API, a filing path to Tether and IC3, and a shared watchlist that gets stronger with every free victim report.
@@ -42,3 +42,6 @@ python, fastapi, next.js, typescript, cytoscape, anthropic-claude, cartesia, goo
 Overall · Most Technically Complex Hack · Best People-First Hack · Hacker's Choice · Hyphenate (Autonomous Systems for Finance; seat: exchange fraud / AML investigator) · Microsoft Built for the Real World + Customer Impact Award · Anthropic · Cartesia (if voice ships) · Armadin Best Security Hack · Apify (if the scraper ships)
 
 Sources for every number: PITCH.md and BRIEF.md §2.
+
+## Gallery
+Screenshots from the running app (DOJ replay, real backend) in `docs/devpost/`: `1-trace.png` (trace after the freeze reveal), `2-exchange-hold.png` (withdrawal held with evidence), `3-packet.png` (detective packet), `4-proof.png` (DOJ scoreboard). Re-capture after the final cache snapshot so the numbers match the stage.

@@ -8,6 +8,12 @@ export function Bar({ offline, children }: { offline: boolean; children?: React.
         Hound
       </Link>
       <span className="bar-meta">{children}</span>
+      <nav className="bar-nav" aria-label="Main">
+        <Link href="/">Cases</Link>
+        <Link href="/intake">Intake</Link>
+        <Link href="/exchange">Exchange check</Link>
+        <Link href="/proof">Proof</Link>
+      </nav>
       {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}
     </header>
   );

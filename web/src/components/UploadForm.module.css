@@ -1,0 +1,127 @@
+/* Victim-facing: everything at 18px or larger, high contrast, big targets (AUDIT N7). */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 1.3rem;
+  line-height: 1.5;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.6rem;
+}
+
+.steps li {
+  margin-bottom: 0.4rem;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cta {
+  min-height: 5rem;
+  padding: 1rem 1.25rem;
+  font: 600 1.45rem var(--font-b);
+  color: #ffffff;
+  background: var(--trace);
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.cta:focus-visible {
+  outline: 4px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cta:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.status:empty {
+  display: none;
+}
+
+.retake,
+.error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.retake {
+  background: var(--hold-wash);
+  border: 2px solid var(--hold);
+}
+
+.error {
+  background: #fbeceb;
+  border: 2px solid var(--exchange);
+}
+
+.link {
+  align-self: flex-start;
+  font: inherit;
+  color: var(--trace);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+
+.typed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.typed textarea {
+  font: 1.2rem var(--font-m);
+  padding: 0.75rem;
+  border: 2px solid var(--ink-2);
+  border-radius: 10px;
+}
+
+.secondary {
+  min-height: 3.5rem;
+  font: 600 1.25rem var(--font-b);
+  color: var(--ink);
+  background: #ffffff;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.secondary:disabled {
+  opacity: 0.5;
+}
+
+.small {
+  font-size: 1.1rem;
+  color: var(--ink-2);
+}
+
+.done {
+  font-size: 1.3rem;
+  padding: 1.25rem;
+  background: #e8f4ec;
+  border: 2px solid #2f7d4f;
+  border-radius: 12px;
+}
+
+.big {
+  margin-top: 0;
+  font-size: 1.7rem;
+  font-weight: 600;
+}

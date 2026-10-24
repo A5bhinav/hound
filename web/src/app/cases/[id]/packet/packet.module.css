@@ -1,0 +1,164 @@
+.sheet {
+  max-width: 62rem;
+  margin: 1.5rem auto 3rem;
+  padding: 2rem 2.25rem;
+  background: #ffffff;
+  border: 1px solid var(--rule);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.88rem;
+}
+
+.tools button {
+  margin-left: auto;
+  font: 500 0.85rem var(--font-b);
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.toggle {
+  display: inline-flex;
+  border: 1px solid var(--ink);
+}
+
+.toggle a {
+  padding: 0.3rem 0.7rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.toggle a[aria-current="page"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.head h1 {
+  font-size: 2rem;
+}
+
+.meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.stamp {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  border: 2px solid var(--exchange);
+  color: var(--exchange);
+  font-family: var(--font-d);
+  font-stretch: 75%;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-2deg);
+}
+
+.text {
+  margin: 1.25rem 0;
+  max-width: 50rem;
+}
+
+.text ul {
+  padding-left: 1.2rem;
+}
+
+.text li {
+  margin-bottom: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.verify {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+
+.h2 {
+  font-size: 1.25rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-d);
+  font-stretch: 75%;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.tx {
+  display: block;
+}
+
+.foot {
+  margin-top: 2rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
+@media (max-width: 700px) {
+  .sheet {
+    margin: 0;
+    padding: 1.25rem;
+    border: 0;
+  }
+
+  .head {
+    flex-direction: column;
+  }
+}
+
+@media print {
+  .screenOnly {
+    display: none !important;
+  }
+
+  .sheet {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-width: none;
+  }
+}
