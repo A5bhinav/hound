@@ -15,11 +15,14 @@ export type TraceState =
 // One POST per case per page load: React dev mode runs effects twice, and each POST starts a full backend trace.
 const starts = new Map<string, Promise<TraceJob>>();
 
-function startTrace(caseId: string): Promise<TraceJob> {
+/** "?code=…" when the victim's own case code is known: the backend then returns their trace unshortened. */
+const own = (code?: string) => (code ? `?code=${encodeURIComponent(code)}` : "");
+
+function startTrace(caseId: string, code?: string): Promise<TraceJob> {
   let p = starts.get(caseId);
   if (!p) {
     // Not tied to a component's AbortSignal, so a remount reuses it instead of starting another run.
-    p = getJson<TraceJob>("POST", `/api/cases/${encodeURIComponent(caseId)}/trace`, new AbortController().signal);
+    p = getJson<TraceJob>("POST", `/api/cases/${encodeURIComponent(caseId)}/trace${own(code)}`, new AbortController().signal);
     starts.set(caseId, p);
     p.finally(() => setTimeout(() => starts.delete(caseId), 5000)).catch(() => {});
   }
@@ -96,7 +99,7 @@ async function getJson<T>(method: "GET" | "POST", path: string, signal: AbortSig
  * initial: an already-finished trace (fixture mode), so nothing is fetched.
  * A trace this page already finished for the case is reused until Reset demo clears it.
  */
-export function useTrace(caseId: string, initial: Trace | null): TraceState {
+export function useTrace(caseId: string, initial: Trace | null, code?: string): TraceState {
   const [state, setState] = useState<TraceState>(() => {
     const done = initial ?? finished.get(caseId);
     return done ? { phase: "done", trace: done } : { phase: "running", log: [], traceId: null, startedAt: Date.now() };
@@ -117,7 +120,7 @@ export function useTrace(caseId: string, initial: Trace | null): TraceState {
 
     (async () => {
       const startedAt = Date.now();
-      const first = await startTrace(caseId);
+      const first = await startTrace(caseId, code);
       if (ctl.signal.aborted) return;
       const done = settle(first);
       if (done) return finish(done);
@@ -131,7 +134,7 @@ export function useTrace(caseId: string, initial: Trace | null): TraceState {
         await new Promise((r) => setTimeout(r, POLL_MS));
         let now: TraceJob;
         try {
-          now = await getJson<TraceJob>("GET", `/api/traces/${encodeURIComponent(first.trace_id)}`, ctl.signal);
+          now = await getJson<TraceJob>("GET", `/api/traces/${encodeURIComponent(first.trace_id)}${own(code)}`, ctl.signal);
           failures = 0;
         } catch (err) {
           if (ctl.signal.aborted) return;

@@ -174,21 +174,14 @@ h3 {
   border-bottom: 1px solid #1c1c1f;
 }
 
-/* Once the page scrolls under it, the bar gets a dark glass backing (set by the sticky shadow trick below). */
-.bar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: rgba(11, 11, 12, 0.86);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+/* See-through at the top of the page; once content scrolls under it, an almost solid dark backing so no text
+   bleeds through (blur alone does not render everywhere, e.g. screen recorders). */
+.bar {
+  transition: background-color 0.2s ease;
 }
 
-.bar[data-stuck]::before {
-  opacity: 1;
+.bar[data-stuck] {
+  background-color: rgba(11, 11, 12, 0.97);
 }
 
 .wordmark {

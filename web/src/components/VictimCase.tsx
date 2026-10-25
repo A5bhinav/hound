@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTrace } from "@/lib/useTrace";
-import { shortAddr, tok, usdt } from "@/lib/format";
+import { explorerUrl, shortAddr, tok, usdt } from "@/lib/format";
 import type { Endpoint, Trace } from "@/lib/types";
 import styles from "@/app/victim.module.css";
 import TraceGraph from "./TraceGraph";
@@ -24,7 +24,7 @@ function stops(trace: Trace) {
 
 /** The victim's own case: what Hound found, in plain words, and what to do now. */
 export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: string; code: string; exchangeUsed?: string | null }) {
-  const state = useTrace(caseId, null);
+  const state = useTrace(caseId, null, code);
   const report = `/cases/${encodeURIComponent(caseId)}/packet?audience=victim&code=${encodeURIComponent(code)}`;
 
   if (state.phase === "running") {
@@ -85,6 +85,7 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
               <li key={p.seed_id}>
                 <strong>{tok(p.amount, p.token)}</strong>
                 <span className="mono">tx {shortAddr(p.tx_hash)}</span>
+                <Verify href={explorerUrl(trace.nodes[0]?.chain ?? "ethereum", "tx", p.tx_hash)} />
               </li>
             ))}
           </ul>
@@ -131,6 +132,26 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
                 </li>
               )}
             </ul>
+          )}
+          {trace.endpoints.length > 0 && (
+            // Each wallet the money reached, so a victim (or a judge) can check every one on a public explorer.
+            <>
+              <h3 className={styles.subTitle}>Where your money is now</h3>
+              <ul className={styles.wallets}>
+                {[...trace.endpoints]
+                  .filter((p) => (p.victim_inflow ?? 0) >= 1)
+                  .sort((a, b) => (b.victim_inflow ?? 0) - (a.victim_inflow ?? 0))
+                  .slice(0, 6)
+                  .map((p) => (
+                    <li key={p.address}>
+                      <span className="mono">{shortAddr(p.address)}</span>
+                      <span>{WHERE[p.reason] ?? (p.exchange ? `Reached ${p.exchange}` : "Still moving")}</span>
+                      <strong>{usdt(p.reason === "exchange" || p.victim_remaining == null ? p.victim_inflow : p.victim_remaining)}</strong>
+                      <Verify href={explorerUrl(trace.nodes[0]?.chain ?? "ethereum", "address", p.address)} />
+                    </li>
+                  ))}
+              </ul>
+            </>
           )}
           <div className={styles.actions}>
             <Link href={report} className={`btn btn-primary btn-lg ${styles.primary}`}>
@@ -180,5 +201,21 @@ export default function VictimCase({ caseId, code, exchangeUsed }: { caseId: str
         </details>
       )}
     </>
+  );
+}
+
+const WHERE: Record<string, string> = {
+  frozen: "Frozen by Tether",
+  holding: "Sitting here, can be frozen",
+  exchange: "Reached an exchange",
+};
+
+/** Opens the transfer on a public block explorer, so anyone can check it independently of Hound. */
+function Verify({ href }: { href: string | null }) {
+  if (!href) return null;
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className={styles.verify}>
+      Verify on Etherscan ↗
+    </a>
   );
 }

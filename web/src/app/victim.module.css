@@ -360,3 +360,38 @@
   flex-wrap: wrap;
   font-size: 1.1rem;
 }
+
+.verify {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.subTitle {
+  margin: 1.5rem 0 0.6rem;
+  font-size: 1.05rem;
+}
+
+.wallets {
+  display: grid;
+  gap: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.wallets li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 0.4rem 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.98rem;
+}
+
+@media (max-width: 640px) {
+  .wallets li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
