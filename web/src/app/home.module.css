@@ -348,3 +348,104 @@
     animation: none;
   }
 }
+
+/* Round 2: a dot grid drifts behind the hero; light sweeps across the red line and the main button;
+   sections below slide in as they scroll into view (where the browser supports scroll timelines). */
+@keyframes drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 56px 56px;
+  }
+}
+
+@keyframes sheen {
+  0%,
+  55% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -20% 0;
+  }
+}
+
+@keyframes shine {
+  0%,
+  70% {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+
+.hero {
+  isolation: isolate;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 -40vw;
+  z-index: -2;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.4px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(60% 70% at 60% 45%, #000 20%, transparent 75%);
+  animation: drift 9s linear infinite;
+  pointer-events: none;
+}
+
+.red {
+  /* solid red underneath, so the text is never transparent where the sweep gradient is not */
+  background: linear-gradient(100deg, #e5302a 40%, #ff8f8a 50%, #e5302a 60%) 120% 0 / 250% 100% no-repeat, #e5302a;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sheen 5s 1.4s ease-in-out infinite;
+}
+
+.ctas a:first-child {
+  position: relative;
+  overflow: hidden;
+}
+
+.ctas a:first-child::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: shine 4.5s 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .feature,
+  .ways > * {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before,
+  .red,
+  .ctas a:first-child::after,
+  .feature,
+  .ways > * {
+    animation: none;
+  }
+}

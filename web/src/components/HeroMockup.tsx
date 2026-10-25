@@ -59,13 +59,13 @@ export default function HeroMockup() {
               <circle className={styles.beat} cx="40" cy="130" r="40" fill="url(#hm-glow)" />
               <circle cx="40" cy="130" r="20" fill="#c0181f" stroke="#ff5a5f" strokeWidth="1.5" />
               <path d="M60 130 H138" stroke="#e5484d" strokeWidth="1.6" markerEnd="url(#hm-arrow-red)" />
-              <g fill="#2a2a2e" stroke="#6a6a70" strokeWidth="1.4">
+              <g className={styles.nodes} fill="#2a2a2e" stroke="#6a6a70" strokeWidth="1.4">
                 <circle cx="152" cy="130" r="13" />
                 <circle cx="268" cy="80" r="15" />
                 <circle cx="236" cy="172" r="13" />
                 <circle cx="372" cy="222" r="13" />
               </g>
-              <g fill="none" stroke="#8a8a90" strokeWidth="1.3">
+              <g className={styles.edges} fill="none" stroke="#8a8a90" strokeWidth="1.3">
                 <path d="M162 124 C190 100 205 82 252 80" markerEnd="url(#hm-arrow)" />
                 <path d="M162 136 C182 150 200 166 222 170" markerEnd="url(#hm-arrow)" />
                 <path d="M280 74 C300 56 318 44 356 44" markerEnd="url(#hm-arrow)" />

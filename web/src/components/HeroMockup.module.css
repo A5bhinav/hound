@@ -359,3 +359,86 @@
     animation: none;
   }
 }
+
+/* Round 2: the trail draws itself in, wallet by wallet, then the exchange rows slide in one by one. */
+@keyframes draw {
+  from {
+    stroke-dashoffset: 260;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.edges path {
+  stroke-dasharray: 260;
+  animation: draw 0.9s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+.edges path:nth-child(1) { animation-delay: 1.05s; }
+.edges path:nth-child(2) { animation-delay: 1.15s; }
+.edges path:nth-child(3) { animation-delay: 1.5s; }
+.edges path:nth-child(4) { animation-delay: 1.6s; }
+.edges path:nth-child(5) { animation-delay: 1.75s; }
+
+.nodes circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pop 0.45s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+.nodes circle:nth-child(1) { animation-delay: 0.95s; }
+.nodes circle:nth-child(2) { animation-delay: 1.4s; }
+.nodes circle:nth-child(3) { animation-delay: 1.45s; }
+.nodes circle:nth-child(4) { animation-delay: 2s; }
+
+.alerts li {
+  animation: rowIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.alerts li:nth-child(1) { animation-delay: 1.9s; }
+.alerts li:nth-child(2) { animation-delay: 2.05s; }
+.alerts li:nth-child(3) { animation-delay: 2.2s; }
+
+/* the sparks start once the trail has drawn */
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.flow {
+  animation: appear 0.4s 2s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edges path,
+  .nodes circle,
+  .alerts li,
+  .flow {
+    animation: none;
+  }
+}
