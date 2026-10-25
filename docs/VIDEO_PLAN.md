@@ -25,6 +25,34 @@ Each on-camera shot is **2 to 3 seconds, one punchy sentence, looking at the len
 
 ## Cut 1: Devpost / judges (2:00, 16:9)
 
+### The narration (v3, read this; the table below is the shot list)
+
+ISHAAN (0:00-0:16)
+[frozen wallets lighting up on the trace page → Ishaan on camera → home page, card tilting]
+"This is money stolen from a real victim, and this is Hound finding exactly where it went. Last year, Americans over sixty lost four point four billion dollars to scams like hers, and most of them had no one to call. So we built that call."
+
+AARYAN (0:16-0:44)
+[Aaryan on camera, phone to ear → split screen: the call ↔ the Report page filling in live → his phone: upload, "We found your payment", tap Verify on Etherscan]
+"So I called it, the way any victim would, and told it what happened in my own words."
+(real call audio plays here: the greeting, "they said they needed money to fly here from China", the case code, the website)
+"When we were done, it gave me a case code and a website, and all I had to send was one screenshot of my payment. Hound found that payment on the blockchain and gave me a link to check it myself."
+
+JINKA (0:44-1:20)
+[Jinka on camera → trace unfolding at 3x → Reveal what Tether did → engine log scrolling]
+"Finding the payment is the easy part. Following it is where victims lose the trail, so we tested Hound blind on a real federal case, giving it one victim's six payments and nothing else. It followed her money through swaps and a laundering loop to all eight wallets the FBI named and all three the DOJ seized, the same wallets Tether froze sixteen to twenty days after she reported. And every step is logged, with rules deciding where the money goes instead of an AI, so an investigator can audit all of it."
+
+CK (1:20-1:52)
+[CK on camera → exchange: Withdraw → WITHDRAWAL HELD → police report scrolling → proof page]
+"Finding the money helps one victim, but we wanted to stop the next one. Every wallet in the trail goes on a warning list, so when someone tries to pay one of them, the exchange checks Hound first and holds the payment. The police get a one-page report that Claude writes and that we check, number by number, against the blockchain. And when we compared our results to the DOJ's own, two of the three seized wallets matched within one percent."
+
+ISHAAN (1:52-2:00)
+[all four walking in → end card: houndhelp.vercel.app · (501) 443-1471 · names · Cartesia + Claude]
+"One phone call, one screenshot, and the money is found. This is Hound, the 911 call for crypto scam victims."
+
+Each person reads their whole paragraph in one take. Faces only for each person's first sentence; the rest is voiceover. If it runs long: Jinka cuts "and a laundering loop", CK cuts "number by number".
+
+### Shot list
+
 | Time | Picture | Who | Line (spoken) | On-screen text |
 |---|---|---|---|---|
 | **0:00–0:03** | R3 end: frozen wallets light up (riser → hit), push-in | Ishaan (VO) | "This money was stolen from a real victim. Hound found where it went." | **FOUND IT.** |
