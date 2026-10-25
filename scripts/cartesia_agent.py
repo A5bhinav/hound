@@ -77,7 +77,7 @@ only about where you send them: you may say the name of any exchange, app or web
 
 Ending the call:
 - Once check_upload says the payment is confirmed (or the caller can't continue), give ONE short closing turn: their
-  first name, that the case is reported, not proven, that Hound sends the evidence to the exchange and to the FBI's IC3,
+  first name, that the case is reported, not proven, that their case page has a report ready for them to send to their exchange and to the FBI's IC3,
   that their case code is on the web page, and goodbye. Never promise the money will come back.
 - Then call end_call right away, in the same turn. Do not wait for them to say goodbye.
 - Do not read or spell the case code again at the end unless they ask for it.
@@ -256,7 +256,7 @@ def main(argv: list[str]) -> int:
             number = row["id"]
             save_env(CARTESIA_PHONE_NUMBER_ID=number, CARTESIA_PHONE_NUMBER=row.get("number") or row.get("phone_number", ""))
         row = call(key, "PATCH", f"/agents/phone-numbers/{number}", {"agent_id": agent_id})
-        print(f"number {row.get("number") or row.get("phone_number") or load_env().get('CARTESIA_PHONE_NUMBER')} -> agent {agent_id}")
+        print(f"number {row.get('number') or row.get('phone_number') or load_env().get('CARTESIA_PHONE_NUMBER')} -> agent {agent_id}")
     return 0
 
 

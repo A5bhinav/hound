@@ -35,6 +35,35 @@ The API loads the repo-root `.env` at startup (python-dotenv) and never override
 
 Tracing is async: `POST /cases/{id}/trace` returns `{trace_id, case_id, status: "running"}` at once. Poll `GET /traces/{trace_id}` (or `GET /cases/{id}/trace`) every second until `status` is `done` or `partial` (the full Trace) or `error` (with `error`). While running, the poll body is `{trace_id, case_id, status, started_at, elapsed_s, audit_log_so_far}`, where `audit_log_so_far` is the engine's audit log up to now, so the UI can animate hops live. The POST `trace_id` is a job handle: the finished Trace carries the engine's own `trace_id` plus `job_id` (the handle), so key client state on `job_id`. Fixture data is used only when hound.chain adapters are missing and the case is the curated `doj_replay`; that trace is marked `source: "fixture"`, skips `other_payers` (empty) and is not added to the /check watchlist. Any other chain error ends the job in `error`, never in a fixture trace. A failure in `other_payers` leaves the trace intact with `other_payers: []`. The API bounds the whole job: the engine gets its deadline plus 30 s (an overrun ends the job in `error` with a timeout message), and `other_payers` gets 20 s of its own (an overrun keeps the trace as `partial` with `other_payers: []`). `other_payers` is skipped, with an audit entry, when the trace had chain fetch errors, a seed was not found on chain, or no USDT was traced. Every successful live trace is registered with the watchlist, so /check holds its wallets at once. `GET /cases` returns full Case objects. `POST /cases` assigns `case_id` on the server, rejects `case_id`, `freeze_visibility`, `data_cutoff_block` and `source: "doj_replay"` with 400, and lowercases Ethereum addresses and tx hashes (malformed hex is a 400). It also returns 422 for input the engine would reject: a token other than USDT or ETH (case is normalised), sends on more than one chain, more than 50 sends, a malformed Tron address or tx hash, or a time that is not ISO 8601. An engine `ValueError` reaches the poller with its message. `GET /proof/scoreboard` scores the latest finished replay trace and reports its `trace_source`. On `error`, `error` holds only the exception type and a fixed message; full detail (secrets redacted) is in the server log. The packet always uses the latest successful trace, so a failed re-trace never takes it away. A running job older than the whole-job cap plus 10 s counts as hung and a new POST replaces it. `POST /demo/reset` clears in-memory cases, traces, jobs and cached packets and reloads the curated cases; it needs header `X-Hound-Admin` equal to `HOUND_ADMIN_TOKEN`, or, when no token is set, a request from 127.0.0.1 or ::1 with no tunnel headers (`cf-connecting-ip`, a non-loopback `X-Forwarded-For`). Cases loaded from `data/cases_live/` are redacted for any caller beyond localhost on `GET /cases`, the trace routes and the packet: addresses and tx hashes become prefix 6 + `...` + suffix 4, `story` is dropped and the victim alias is cleared, including the running-job view a repeat `POST /cases/{id}/trace` returns. For a live case the packet beyond localhost carries only its structured fields (`cited`, `source`, `citations_verified`) with `text: null` and `redacted: true`, since the prose is written from the story. The API judges "localhost" by the connecting socket and tunnel headers, so the web server's own SSR fetches count as local: do not tunnel the web app while live cases are loaded unless it forwards `cf-connecting-ip` / `X-Forwarded-For`. Packets written by Claude are cached per (trace_id, audience), so repeat hits never re-call Claude; when `ANTHROPIC_API_KEY` is set but Claude fails and the writer falls back to the template, that template is cached for 60 s so a looping caller retries Claude at most once a minute per key. CORS allows localhost origins plus `HOUND_PUBLIC_ORIGIN` (comma separated).
 
+## Voice line (Cartesia)
+Victims can call the Hound line, **(501) 443-1471**, instead of typing anything. The line is a Cartesia Managed Agent, created and updated by `scripts/cartesia_agent.py`.
+
+**Flow.** The agent takes the story and calls `open_case`. The backend opens an intake session and returns a 6-character case code, the upload link and a `say` line. The agent reads the code slowly, twice, then the website. The caller opens houndhelp.vercel.app, presses **Check my case**, enters the code, and uploads a picture of the payment (or types the transaction hash). Hound checks the payment on Ethereum, the agent's `check_upload` tool hears that it was confirmed, and the agent closes the call. The operator watches each step live on `/intake`.
+
+**Setup.**
+```bash
+# repo-root .env: CARTESIA_API_KEY, HOUND_INTAKE_TOKEN (the same value as the backend's), optional CARTESIA_VOICE_ID
+python3.12 scripts/cartesia_agent.py --tool-url https://<backend host>/intake/voice/story --number
+```
+This creates the two webhook tools, the agent and, with `--number`, a US number attached to it, and writes their ids back to `.env`. Re-running it without `--number` updates the same agent in place, so the number stays. On the backend, set `HOUND_INTAKE_TOKEN` (the tools send it as a secret header), `PUBLIC_BASE_URL` (the upload links), `HOUND_PHONE_NUMBER` (the site shows it via `/health`) and optionally `HOUND_SPOKEN_SITE` (the website as the agent should say it).
+
+**Cartesia features used.**
+- A Managed Agent on Claude Haiku from Cartesia's model catalog, with automatic model fallback.
+- A Sonic voice at 0.9x speed with a calm emotion, noise suppression at max, and keyterms for the names callers say (Coinbase, Crypto.com, Binance, Kraken, USDT, Tether, WhatsApp).
+- Two webhook tools with a secret header and immediate execution: `open_case` (`POST /intake/voice/story`) and `check_upload` (`POST /intake/voice/status`).
+- The `system__time` dynamic variable, so "five months ago" becomes a month and year without a follow-up question.
+- System tools: `skip_turn`, so the agent stays silent while the caller finishes a sentence, and `end_call`. It checks in after 12 s of silence and hangs up after 120 s.
+- A provisioned US phone number attached to the agent.
+
+**Known limitations.**
+- No text messages: the agent says the website and the case code out loud. Texting the link through Twilio is built but switched off.
+- English only.
+- The payment check covers Ethereum (USDT and ETH).
+- The free plan has a limited allowance of agent-call minutes and one number per account. When the allowance runs out, Cartesia answers 402 and calls drop before the agent picks up. The fix is more credit, or a new agent and number on another account; the script does both.
+- The tools call one backend through a tunnel. If that machine or the tunnel is down, the agent cannot open a case.
+- The case code is the caller's only key to their case page. A phone case only feeds the exchange warning list after a person approves it on `/intake`.
+- The agent never asks for money, keys, a last name or a phone number, and never promises the money back.
+
 ## Layout
 | Path | What | Owner |
 |---|---|---|

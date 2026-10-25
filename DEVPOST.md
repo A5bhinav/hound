@@ -36,7 +36,7 @@ The victim gets a case code. With it they can come back any time to see what we 
 | Wallets the FBI named in between, found blind | **8 of 8** |
 | Match to the DOJ's own amounts (seized wallets) | **+0.9%, +1.04%, +10.8%** |
 | Victim money accounted for | **100%**, to the smallest unit |
-| Time Tether took to freeze them after her report | 16 to 20 days (Hound points at them on day 0) |
+| Time Tether took to freeze them after her report | 16 to 20 days (Hound reaches them from her report alone) |
 | Reported scam wallets checked this weekend | 963, of which 14 still hold 91,218 unfrozen USDT |
 | Real transactions we had never seen, traced end to end | 4 of 4 finished (no hangs, no crashes) |
 | Automated tests | 576 passing |
@@ -69,7 +69,7 @@ We tested Hound on a real federal case: *United States v. 4,340,000 Tether* (Nor
 - **Swaps.** The DOJ victim paid in ETH, which the scammers swapped to USDT. Hound joins each ETH outflow to the USDT inflow **in the same transaction**, converts the victim's share at the realised rate, and leaves the rounding remainder untainted.
 - **Laundering loops.** Funds that cycle back through already-visited wallets are re-queued, not double-counted.
 - **Stopping rules.** A branch stops at an exchange, at a wallet Tether froze, at dust, at an exchange-sized address (over 5,000 transfers), or at a cap (max 8 hops, 12 branches per wallet, 400 API calls, 120 s deadline). Every stop is a named reason in the audit log, and an unfinished branch makes the result "partial" rather than silently dropping it.
-- **No AI in the decisions.** Classification is rule-based (labels from public exchange datasets, OFAC, an infrastructure allowlist); Claude only rewords explanations.
+- **No AI in the decisions.** Classification is rule-based (labels from public exchange datasets, OFAC, an infrastructure allowlist). Claude reads the payment screenshot and writes the reports, and on live traces rewords the rule-based explanations; it never decides a stop or a hold.
 
 **3. Proving it blind.** We rebuilt *US v. 4,340,000 Tether* from the court complaint, which prints wallets truncated (`0xa17…44f0021`). We recovered every full address from public chain data, ruling out deliberate look-alike addresses by amount and date. The engine gets only the victim's six payments. The other DOJ addresses are a **holdout**: the test suite fails if any of them appears in engine code, the case file or the label database, and Tether's freeze events are hidden until after the run. A data cutoff block replays the case exactly as it stood before the freezes.
 
