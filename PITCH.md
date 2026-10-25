@@ -75,7 +75,7 @@ Merged from Jinka's winners research (DEMO_RESEARCH.md on branch jinka-demo-rese
 "Exchange wallets are never on the watchlist. A hold needs a Tether freeze or a high-confidence trace from a verified send. Reports alone never hold, low confidence only warns, and nothing is published: findings go to IC3, Chainabuse or the exchange, labelled reported, not proven."
 
 **"Where's the AI?"**
-"Claude does two jobs where code can't: it rewords each wallet's rule-based explanation in plain English, and it drafts the victim's and detective's summaries. It never decides a stop or a hold. The writer can only use placeholders for numbers, and a validator rejects anything it can't verify, including promises of recovery. If Claude is down, a fixed template writes the same packet."
+"Claude does the jobs where code can't: it reads the victim's payment screenshot, and it writes the victim's and detective's reports. On a live trace it also rewords each wallet's rule-based explanation in plain English; the DOJ replay keeps the rules' exact wording so it is reproducible. It never decides a stop or a hold. The writer can only use placeholders for numbers, and a validator rejects anything it can't verify, including promises of recovery. If Claude is down, a fixed template writes the same packet."
 
 **"Would you hire it? For which seat?"** (Hyphenate)
 "An exchange fraud or AML investigator. Read-only access, it can't move money, every step is in an audit log, and it warns instead of holding when it's unsure."

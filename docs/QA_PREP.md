@@ -10,7 +10,7 @@
 "Because one Chainabuse report points at it, and that's all. The wallet also holds PYUSD, USDC, cbBTC and cbETH and makes DeFi calls, so it could be a real person or a fund that a scam used, or a treasury. We don't name a wallet the scammer's on one report. It appears only as an anonymous row in the weekend-scan stat, labelled reported, not proven. That restraint is the product."
 
 **"Could someone file a fake report and get an innocent wallet held?"**
-"No. A client-posted case can be traced but never mints a hold. Intake validates the send on chain, which proves the payment exists, not that the caller made it, so an operator has to approve the case before it feeds the watchlist. Exchange, sanctioned and infrastructure addresses are never held at all." [api security rules, intake approve step]
+"No. A client-posted case can be traced but never mints a hold. Intake validates the send on chain, which proves the payment exists, not that the caller made it, so an operator has to approve the case before it feeds the watchlist. Exchange and infrastructure addresses are never held; an address on the OFAC sanctions list is always held (confidence 0.99), with or without a case." [api security rules, intake approve step]
 
 **"What about address poisoning / lookalike addresses?"**
 "We hit it on day one: the DOJ printed addresses truncated, and poison lookalikes share those prefixes and suffixes. Zero-value and dust transfers are dropped before anything is matched, and the scoreboard matches full addresses only. Three lookalikes sat in our own fixture." [proof/resolve_ohnd.py]
