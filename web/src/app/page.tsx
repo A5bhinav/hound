@@ -60,6 +60,8 @@ export default async function Home() {
   return (
     <>
       <Bar offline={usingFixtures} />
+      {/* Clip sideways overflow at the screen edge, not the 1600px column, so the card and its glow run to the edge. */}
+      <div className={styles.clip}>
       <main className={styles.main}>
         <div className={styles.first}>
         <section className={styles.hero}>
@@ -150,6 +152,7 @@ export default async function Home() {
 
         <p className={`small ${styles.foot}`}>Public blockchain data only · Reported, not proven</p>
       </main>
+      </div>
     </>
   );
 }
