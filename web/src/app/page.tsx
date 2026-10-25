@@ -62,7 +62,7 @@ export default async function Home() {
       <Bar offline={usingFixtures} />
       {/* Clip sideways overflow at the screen edge, not the 1600px column, so the card and its glow run to the edge. */}
       <div className={styles.clip}>
-      <main className={styles.main}>
+      <main className={styles.main} data-home>
         <div className={styles.first}>
         <section className={styles.hero}>
           <div className={styles.copy}>
@@ -76,7 +76,7 @@ export default async function Home() {
             </h1>
             <p className={styles.lede}>We trace stolen funds, warn exchanges, and prepare a report for police.</p>
             <div className={styles.ctas}>
-              <Link href="/report" className={`btn btn-primary btn-lg ${styles.cta}`}>
+              <Link href="/report" className={`btn btn-primary btn-lg glint ${styles.cta}`}>
                 Report a scam
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
                   <path d="M4 10h12m0 0l-4.5-4.5M16 10l-4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />

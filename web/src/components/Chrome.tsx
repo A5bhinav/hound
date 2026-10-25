@@ -60,7 +60,7 @@ export function Bar({ offline, step, caseId = DEMO_CASE, children }: { offline: 
         <Link href="/c" className="btn bar-check">
           Check my case
         </Link>
-        <Link href="/report" className="btn btn-primary bar-cta">
+        <Link href="/report" className="btn btn-primary bar-cta glint">
           Report a scam
         </Link>
         {offline && <span className="sample-flag">OFFLINE · examples/ data, not the live API</span>}

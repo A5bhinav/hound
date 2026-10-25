@@ -836,3 +836,99 @@ a.box:hover {
   margin: 0 auto;
   padding: 0 var(--gutter) 2.5rem;
 }
+
+/* Silver glint on "Report a scam": a metallic streak sweeps across every few seconds and a soft silver
+   halo breathes, always running (not only on hover). Off for reduced-motion users. */
+@keyframes glint-sweep {
+  0%,
+  62% {
+    transform: translateX(-140%) skewX(-22deg);
+  }
+  100% {
+    transform: translateX(340%) skewX(-22deg);
+  }
+}
+
+@keyframes glint-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(226, 230, 238, 0.18), 0 0 10px 0 rgba(226, 230, 238, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(226, 230, 238, 0.45), 0 0 22px 2px rgba(226, 230, 238, 0.32);
+  }
+}
+
+.glint,
+.btn-primary.btn-lg:not(:disabled) {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: glint-halo 3.2s ease-in-out infinite;
+}
+
+.glint::after,
+.btn-primary.btn-lg:not(:disabled)::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 34%;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(214, 218, 228, 0.35) 30%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(214, 218, 228, 0.35) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  mix-blend-mode: screen;
+  animation: glint-sweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glint,
+  .glint::after,
+  .btn-primary.btn-lg::after,
+  .btn-primary.btn-lg {
+    animation: none;
+  }
+}
+
+/* Site-wide motion, screen only (the printed police report never animates):
+   each page's content rises in on load, then cards slide in as they scroll into view.
+   "backwards" fill: once an entrance ends, every element is back to its own styles. The home page has its own. */
+@keyframes page-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+  main:not([data-home]) > * {
+    animation: page-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  main:not([data-home]) > :nth-child(2) { animation-delay: 0.08s; }
+  main:not([data-home]) > :nth-child(3) { animation-delay: 0.16s; }
+  main:not([data-home]) > :nth-child(4) { animation-delay: 0.24s; }
+  main:not([data-home]) > :nth-child(n + 5) { animation-delay: 0.3s; }
+
+  @supports (animation-timeline: view()) {
+    main:not([data-home]) .box {
+      animation: card-reveal linear backwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
