@@ -6,14 +6,18 @@
   perspective-origin: 20% 50%;
 }
 
-/* A soft red light behind the card. */
+/* Red light spilling out from behind the card: brightest above its top edge and under its bottom right,
+   so a halo shows around the card rather than one blob hidden behind it. */
 .stage::before {
   content: "";
   position: absolute;
-  inset: -12% -8% -18% 4%;
+  inset: -30% -14% -34% -6%;
   z-index: -1;
-  background: radial-gradient(closest-side, rgba(214, 30, 36, 0.55), rgba(200, 24, 31, 0.18) 55%, rgba(200, 24, 31, 0) 82%);
-  filter: blur(28px);
+  background:
+    radial-gradient(38% 30% at 32% 18%, rgba(220, 32, 38, 0.6), rgba(200, 24, 31, 0) 100%),
+    radial-gradient(42% 30% at 70% 84%, rgba(220, 32, 38, 0.55), rgba(200, 24, 31, 0) 100%),
+    radial-gradient(closest-side, rgba(200, 24, 31, 0.22), rgba(200, 24, 31, 0) 90%);
+  filter: blur(36px);
   pointer-events: none;
 }
 
