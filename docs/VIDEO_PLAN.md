@@ -27,21 +27,21 @@ Each on-camera shot is **2 to 3 seconds, one punchy sentence, looking at the len
 
 | Time | Picture | Who | Line (spoken) | On-screen text |
 |---|---|---|---|---|
-| **0:00–0:03** | R3 end: frozen wallets light up (riser → hit), push-in | Ishaan (VO) | "This money was stolen. Hound found where it went." | **FOUND IT.** |
-| **0:03–0:06** | Quick cuts: R3 trail → the banner "Tether froze 3 of these wallets" | Ishaan (VO) | "Blind. From one victim's report." | A real DOJ case · run blind |
-| **0:06–0:09** | **Ishaan on camera** | Ishaan | "Americans over 60 lost four point four billion dollars to crypto scams last year." | **$4.4B** (FBI IC3 2025) |
-| **0:09–0:12** | R1 home hero, cursor sweep so the card leans, logo stamp | Ishaan | "We built the 911 call for them." | HOUND · Let's track it down. |
+| **0:00–0:03** | R3 end: frozen wallets light up (riser → hit), push-in | Ishaan (VO) | "This money was stolen from a real victim. Hound found where it went." | **FOUND IT.** |
+| **0:03–0:06** | Quick cuts: R3 trail → the banner "Tether froze 3 of these wallets" | Ishaan (VO) | "No hints. Just her report." | A real DOJ case · run blind |
+| **0:06–0:09** | **Ishaan on camera** | Ishaan | "She's not alone. Americans over 60 lost four point four billion dollars to crypto scams last year." | **$4.4B** (FBI IC3 2025) |
+| **0:09–0:12** | R1 home hero, cursor sweep so the card leans, logo stamp | Ishaan | "And there's no one to call. So we built the 911 call for them." | HOUND · Let's track it down. |
 | **0:12–0:14** | **Aaryan on camera**, phone to ear | Aaryan | "So I called it." | REAL CALL · REAL NUMBER |
 | **0:14–0:30** | Split screen, cutting every 3–4 s: Aaryan on the phone ↔ R2, the laptop's Report page filling in live | Real call audio | Agent: "Hi, this is Hound… we never ask for money." · Aaryan: "they said they needed money to fly here from China" · Agent: the case code · Agent: "hound help, dot vercel, dot app" | Why phone first: no 64-character hash over the phone |
-| **0:30–0:38** | R5 on the phone, fast: code → upload → **We found your payment** → **Verify on Etherscan** tap | Aaryan (VO) | "One screenshot. It found my payment, and I can check it myself." | Checked on the live Ethereum chain |
-| **0:38–0:41** | **Jinka on camera** | Jinka | "Real federal case. Hound saw none of the answers." | US v. 4,340,000 Tether |
-| **0:41–0:58** | R3 at 3x: the money moves column by column, push-in, then the click on **Reveal what Tether did** (hit) | Jinka (VO) | "Six payments in. No labels, no hints. Through swaps, through a laundering loop… all eight wallets the FBI named. All three the DOJ seized." (hit) "Tether froze them sixteen to twenty days later." | **8 / 8 · 3 / 3** · 16–20 days |
-| **0:58–1:12** | R4: the engine log scrolling fast, steps flashing | Jinka (VO) | "Every step logged. Every dead end shown. Rules decide, never an AI. An investigator you can audit." | The seat it fills: an exchange's fraud investigator |
-| **1:12–1:15** | **CK on camera** | CK | "Now we stop the next victim." | |
-| **1:15–1:28** | R6: DOJ wallet → **Withdraw** → **Withdrawal held** (thud), punch-in on the evidence; quick cut to the hot wallet → **Withdrawal sent** | CK (VO) | "Every wallet goes on a warning list. Someone tries to pay one: the exchange checks Hound, and it's held. We warn. We don't seize." | **HELD** · mock exchange screen, real check API |
-| **1:28–1:38** | R7: police report, toggle victim / detective, fast scroll | CK (VO) | "One page for the police. Claude writes it, and every number is checked against the blockchain." | Every number cited |
-| **1:38–1:47** | R8: proof tiles, push-in | CK (VO) | "Scored against the DOJ's own numbers: within about one percent." | Within ~1% of the DOJ |
-| **1:47–1:52** | **All four on camera**, walking in | Ishaan | "Hound. The 911 call for crypto scam victims." | |
+| **0:30–0:38** | R5 on the phone, fast: code → upload → **We found your payment** → **Verify on Etherscan** tap | Aaryan (VO) | "Then I sent one screenshot. It found my payment, and I can check it myself." | Checked on the live Ethereum chain |
+| **0:38–0:41** | **Jinka on camera** | Jinka | "Finding the payment is easy. Following it is the hard part." | US v. 4,340,000 Tether |
+| **0:41–0:58** | R3 at 3x: the money moves column by column, push-in, then the click on **Reveal what Tether did** (hit) | Jinka (VO) | "So we ran Hound blind on a real federal case. Six payments in, no labels. It followed the money through swaps and a laundering loop, to all eight wallets the FBI named, and all three the DOJ seized." (hit) "Tether froze them sixteen to twenty days later." | **8 / 8 · 3 / 3** · 16–20 days |
+| **0:58–1:12** | R4: the engine log scrolling fast, steps flashing | Jinka (VO) | "And it shows its work. Every step logged, every dead end shown. Rules make the calls, not an AI. An investigator you can audit." | The seat it fills: an exchange's fraud investigator |
+| **1:12–1:15** | **CK on camera** | CK | "That helps this victim. Now we stop the next one." | |
+| **1:15–1:28** | R6: DOJ wallet → **Withdraw** → **Withdrawal held** (thud), punch-in on the evidence; quick cut to the hot wallet → **Withdrawal sent** | CK (VO) | "Every wallet in the trail goes on a warning list. When someone tries to pay one, the exchange checks Hound first, and the payment is held. We don't seize. We warn." | **HELD** · mock exchange screen, real check API |
+| **1:28–1:38** | R7: police report, toggle victim / detective, fast scroll | CK (VO) | "Then the police get one page they can act on. Claude writes it, and every number is checked against the blockchain." | Every number cited |
+| **1:38–1:47** | R8: proof tiles, push-in | CK (VO) | "And we checked ourselves against the DOJ. Two of the three seized wallets match their numbers within one percent." | Within ~1% of the DOJ |
+| **1:47–1:52** | **All four on camera**, walking in | Ishaan | "One call. One screenshot. The money, found. Hound: the 911 call for crypto scam victims." | |
 | **1:52–2:00** | End card: logo, houndhelp.vercel.app, (501) 443-1471, names, sponsors | (music out) | | Voice: Cartesia · Screenshot reading + reports: Claude · Ishaan · Jinka · CK · Aaryan |
 
 ## Cut 2: LinkedIn (0:45, 4:5, silent-first)
