@@ -111,11 +111,12 @@ python · fastapi · next.js · typescript · vercel · anthropic-claude · cart
 - Phone line: (501) 443-1471
 - How it works (judge tour): https://houndhelp.vercel.app/how
 - Code: https://github.com/A5bhinav/hound
+- Demo video: https://youtu.be/vszixNm1onY
 
 **Try it as the victim:** save https://houndhelp.vercel.app/demo/receipt.png (a real payment from the DOJ case), go to **Report online**, and upload it. Hound finds 101,352 USDT of it, all in wallets Tether froze.
 
 ## Video
-YouTube link to the 2:00 demo video (docs/VIDEO_PLAN.md).
+https://youtu.be/vszixNm1onY
 
 ## What's real and what's simulated
 Real: the DOJ case, every wallet and transaction, Tether's freezes, the phone line, the screenshot reading, the live blockchain checks. Replayed: the timing of the 2024 DOJ case (labelled "replay" on screen). Simulated: the exchange withdrawal screen, which shows how an exchange would use Hound's real check.

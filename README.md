@@ -2,6 +2,8 @@
 
 Hound takes one scam victim's report, follows the stolen USDT to where it sits, finds everyone else still paying the same scam, and gives exchanges a check to hold the next send. Cal Hacks 13.0. Full plan, contracts and task lists: [BRIEF.md](BRIEF.md).
 
+**Demo video:** https://youtu.be/vszixNm1onY · **Live:** https://houndhelp.vercel.app · **Call:** (501) 443-1471
+
 ## Run the backend
 ```bash
 cd backend
