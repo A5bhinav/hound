@@ -1,63 +1,96 @@
-# Devpost draft (paste into the Devpost fields; Aaryan owns final edits)
+# Devpost: paste-ready (one section per Devpost field)
 
-**Name:** Hound
-**Tagline:** The 911 call for crypto scam victims: follow the money to where it can still be frozen, and stop the next victim's send.
+Every number here is checked against the code and data (sources: PITCH.md, BRIEF.md §2, data/proof/). Keep the wording simple; if you change a number, check it first.
 
-## Inspiration
-Americans over 60 lost $4.4 billion to crypto scams in 2025, out of $11.4 billion in crypto fraud losses reported to the FBI. Most of it was pig-butchering: a fake friendship or romance, then a fake investment app. Tracing tools exist, but they are sold to agencies and exchanges. The victim calls local police, who usually can't trace crypto, while Tether can freeze stolen USDT on a single law-enforcement request. We wanted to connect the victim to that request, and use one report to protect the next person.
+---
 
-## What it does
-- **Report.** A victim calls the Hound line (Cartesia voice agent) or reports online at houndhelp.vercel.app, then sends a screenshot of their payment. Hound checks it on the live chain, so a made-up payment is rejected. Nobody is asked to read a 64-character hash aloud.
-- **Their case.** With their case code, the victim sees where the money went, who can freeze it, a step-by-step "what to do now" (IC3, their exchange, a police freeze request, beware recovery scams), and their own police report.
-- **Trace.** Hound follows the stolen money hop by hop with first-in-first-out accounting, through swaps, laundering loops and consolidation wallets, to where it sits: an exchange, a holding wallet, or a wallet Tether already froze. Every hop has a confidence, and every dead end is shown.
-- **Warn.** Every wallet in the traced cluster feeds a watchlist. At an exchange withdrawal screen, Hound's check API returns allow, warn or hold, with evidence. Exchanges, routers and bridges are never on the list, and reports alone never cause a hold.
-- **Packet.** One page for a detective: every hop with its transaction count and confidence, every endpoint with its freeze status, who to contact (Tether, the exchange, IC3), and a banner naming any branch the trace could not finish, labelled "reported, not proven".
+## Project name
+Hound
 
-## Try it
-- Call **(501) 443-1471**, or open **https://houndhelp.vercel.app** and choose **Report online**.
-- Play the victim from the DOJ case: save https://houndhelp.vercel.app/demo/receipt.png (A.H.'s real 33 ETH payment) and upload it. Hound finds 101,352 USDT of it, all in wallets Tether froze.
-- The judge tour: https://houndhelp.vercel.app/how
+## Elevator pitch (Devpost limit: 200 characters)
+The 911 call for crypto scam victims. Hound follows stolen crypto to where it can still be frozen, warns exchanges before the next victim pays, and writes the police report.
 
-## Proof: a real DOJ case, run blind
-We replay *United States v. 4,340,000 Tether* (N.D. Ohio 1:25-cv-00386, Feb 2025). The complaint printed every wallet truncated; we recovered all of them from public chain data and Tether's freeze events. The engine starts from one victim's six real ETH sends and gets nothing else: the other 11 DOJ addresses are a holdout (our test suite fails if one appears in engine code), and Tether's freezes are hidden until after the run.
+---
 
-Result: Hound reaches **all 8 intermediate wallets** the DOJ named that it was not given and **all 3 seized wallets**. Against the DOJ's own per-wallet numbers for that victim: **A-7 +0.9%, A-8 +1.04%, A-9 +10.8%**. Every one of the victim's dollars is accounted for. Then we reveal it: Tether froze those wallets 16 to 20 days after she reported to the FBI.
+## About the project
 
-Two more measurements: across 192 of the 657 Ethereum USDT addresses Tether froze in 2025, the median time from the first USDT arriving to the freeze was 45 days. And this weekend we checked 963 reported scam addresses on chain: 14 still hold 91,218 USDT that has not been frozen.
+### Inspiration
+Americans over 60 lost $4.4 billion to crypto scams last year (FBI IC3, 2025). Most of these are "pig-butchering" scams: someone builds a fake friendship or romance, then talks the victim into a fake investment app.
 
-## How we built it
-- **Engine (Python):** a deterministic FIFO replay in integer base units, ordered by block and log index; same-transaction ETH-to-USDT swap joins; cycle handling; visible caps (dust, branch limits, call budget, deadline); a full audit log. No LLM ever decides a stop or a hold.
-- **Chain data:** Ethereum and Tron adapters (public RPC logs, Blockscout, Etherscan, TronGrid) behind one interface, with a disk cache, record and readonly modes, and a committed snapshot so the DOJ replay runs with zero network calls. Labels from public exchange datasets, OFAC, and an infrastructure allowlist.
-- **Claude (Anthropic):** two jobs only. It rewords each wallet's rule-based explanation in plain English, and it drafts the victim and detective summaries using placeholders, never raw numbers. A validator checks every generation and rejects uncited numbers, recovery promises, unknown links and accusations next to addresses, falling back to a fixed template.
-- **API:** FastAPI with background trace jobs and live polling. **Web:** Next.js on Vercel, with a money-flow graph (ribbon width = victim money) that unfolds transfer by transfer.
-- **Data:** Google BigQuery public Ethereum datasets, Tether `AddedBlackList` events, Chainabuse reports.
+When it happens, the victim usually calls local police, who often can't trace crypto. Professional tracing tools exist, but they're sold to governments and exchanges, not to victims. Meanwhile, Tether can freeze stolen USDT with one request from law enforcement. The money is often still sitting somewhere it could be frozen. Nobody connects the victim to that request in time.
 
-## Challenges
-- The DOJ truncates addresses (`0xa17 ... 44f0021`), and address-poisoning lookalikes on chain match those truncations. We resolved them by amount and date, ignoring zero-value transfers.
-- Our own first engine silently lost money when a laundering loop sent funds back into wallets it had already visited. Adversarial review caught it, and conservation is now tested to the micro-unit.
-- Rate limits: free chain APIs returned errors as HTTP 200, which a naive cache would store as a permanent "no transactions". The adapters classify responses and never cache an error.
+We built Hound to be that connection, and to use one victim's report to protect the next person.
 
-## What's real vs simulated
-Real: the DOJ case, every address and transaction, the swaps, Tether's freezes, the live scam report data. Replayed: the 2024 timing of the DOJ case (labelled REPLAY on screen). Simulated: the exchange withdrawal screen, and the "Play a sample call" button, which replays the report steps from the curated case when no live call is running.
+### What it does
+1. **Report.** A victim calls our phone line (a voice agent built on Cartesia) or reports online. They tell their story in their own words and send one screenshot of their payment. Nobody has to read a long transaction code out loud.
+2. **Follow the money.** Hound reads the screenshot, finds the payment on the blockchain, and follows the money wallet by wallet to where it ended up: an exchange, a wallet that can still be frozen, or a wallet Tether already froze.
+3. **Stop the next victim.** Every wallet in the trail goes on a warning list. When someone tries to send money from an exchange to one of those wallets, the exchange can check Hound first and hold the payment, with the evidence attached.
+4. **Police report.** Hound writes a one-page report for the detective and a plain-language copy for the victim: every transfer, where the money is now, and who to contact (Tether, the exchange, the FBI's IC3).
 
-## What's next
-Exchange and wallet integrations of the check API, a filing path to Tether and IC3, and a shared watchlist that gets stronger with every free victim report.
+The victim gets a case code. With it they can come back any time to see what we found, what to do next, and their report. Every payment and wallet links to Etherscan, so they can check it themselves.
+
+### Proof it works: a real DOJ case, run blind
+We tested Hound on a real federal case: *United States v. 4,340,000 Tether* (Northern District of Ohio, 2025). We gave Hound only one victim's six payments and nothing else: no DOJ labels, and Tether's freezes were hidden until after the run.
+
+- Hound reached **all 8 wallets** the FBI named in between, and **all 3 wallets the DOJ seized**.
+- Its amounts match the DOJ's own numbers **within about 1%** on two of the seized wallets and 11% on the third.
+- Tether froze those wallets **16 to 20 days** after the victim reported. Hound points at them from her report alone.
+
+### How we built it
+- **The tracing engine (Python).** Follows the money step by step using "first in, first out" accounting, the same method the DOJ used for its named victims. Rules decide every step; an AI never decides where the money went or whether to hold a payment. Every step is logged, including dead ends.
+- **Blockchain data.** Ethereum and Tron data from public sources (Etherscan, Blockscout, public RPC nodes), with Tether's freeze records. A saved snapshot lets the DOJ case run with no internet.
+- **Claude (Anthropic).** Reads the payment screenshot, and writes the police report in plain English. It can only use numbers that are in the trace: a checker rejects anything else, including promises to get money back, and a fixed template takes over if Claude is unavailable.
+- **The voice line (Cartesia).** Takes the victim's story, opens the case, reads out the case code and the website, and walks them through sending the screenshot.
+- **The app.** A FastAPI backend and a Next.js website on Vercel (houndhelp.vercel.app).
+
+### Challenges we ran into
+- **The DOJ blanks out most of each wallet address** in court documents (like `0xa17…44f0021`), and scammers create look-alike addresses on purpose. We recovered every real address by matching amounts and dates.
+- **Our first version silently lost money** when stolen funds looped back through the same wallets. A review caught it, and now we test that every dollar is accounted for.
+- **Free blockchain APIs sometimes report errors as success.** We made sure we never save an error as "this wallet had no transactions".
+- **Making it usable for an older, scared person.** A phone call instead of forms, one screenshot instead of a transaction code, and a voice agent that waits for the caller to finish talking.
+
+### Accomplishments we're proud of
+- Finding all three wallets the DOJ seized, blind, from one victim's report.
+- A complete path for a real victim: phone call, screenshot, tracking, warning and police report.
+- Being honest about what we know: every result says "reported, not proven", and every dead end is shown.
+
+### What we learned
+- The hard part is not tracing; it's getting a victim's report to someone who can freeze the money in time. Across 192 of the wallets Tether froze in 2025, the typical wait was 45 days.
+- Plain language matters more than features. Our first screens used words like "hops" and "endpoints"; victims need "where your money went" and "what to do now".
+
+### What's next
+- Connecting the warning-list check to real exchanges and wallets.
+- Sending the report straight to Tether and the FBI's IC3.
+- Free for victims forever; every new report makes the warning list stronger for everyone.
+
+---
 
 ## Built with
-python, fastapi, next.js, typescript, anthropic-claude, cartesia, google-bigquery, ethereum, tron, usdt
+python · fastapi · next.js · typescript · vercel · anthropic-claude · cartesia · ethereum · tron · usdt · etherscan
 
-## Tracks
-Overall · Most Technically Advanced · Best People-First Social Impact · Hacker's Choice · Hyphenate (Autonomous Systems for Finance; seat: exchange fraud / AML investigator) · Microsoft Built for the Real World + Customer Impact Award · Claude for Public Benefit (Anthropic) · Cartesia · Armadin Best Security Hack
+## "Try it out" links
+- Website: https://houndhelp.vercel.app
+- Phone line: (501) 443-1471
+- How it works (judge tour): https://houndhelp.vercel.app/how
+- Code: https://github.com/A5bhinav/hound
 
-(Use the exact prize names from the Cal Hacks 13.0 Devpost page; the four above in their exact form were checked by Jinka's research.)
+**Try it as the victim:** save https://houndhelp.vercel.app/demo/receipt.png (a real payment from the DOJ case), go to **Report online**, and upload it. Hound finds 101,352 USDT of it, all in wallets Tether froze.
 
-Sources for every number: PITCH.md and BRIEF.md §2.
+## Video
+YouTube link to the 2:00 demo video (docs/VIDEO_PLAN.md).
 
-## Gallery
-Screenshots from the live site (houndhelp.vercel.app, DOJ replay on the real backend) in `docs/devpost/`, captions as claims:
-1. `1-home.png`: "Built for the victim first: call or report online, and Hound never asks for money or keys."
-2. `2-trace-reveal.png`: "From one victim's report, blind, Hound reached all 3 wallets the DOJ seized. Tether froze them 16 to 20 days later."
-3. `3-exchange-held.png`: "A withdrawal to a wallet from the DOJ case is held, with the evidence."
-4. `4-police-report.png`: "One page a detective can act on. Claude writes it, and it can only cite numbers that are in the trace."
-5. `5-proof.png`: "Scored blind against the DOJ's own numbers: 8 of 8 wallets in between, 3 of 3 seized."
-6. `6-victim-case-phone.png`: "The victim's own case: the payment from her screenshot, where the money is now, each wallet verifiable on Etherscan."
+## What's real and what's simulated
+Real: the DOJ case, every wallet and transaction, Tether's freezes, the phone line, the screenshot reading, the live blockchain checks. Replayed: the timing of the 2024 DOJ case (labelled "replay" on screen). Simulated: the exchange withdrawal screen, which shows how an exchange would use Hound's real check.
+
+## Prize tracks to select
+Most Technically Advanced · Best People-First Social Impact · Claude for Public Benefit · Armadin Best Security Hack · Hyphenate (Autonomous Systems for Finance) · Cartesia · Microsoft Built for the Real World · Hacker's Choice
+
+(Check each name against the Cal Hacks 13.0 Devpost page before submitting.)
+
+## Image gallery (docs/devpost/, captions as claims)
+1. `1-home.png`: Built for the victim first. Call or report online; Hound never asks for money or keys.
+2. `2-trace-reveal.png`: From one victim's report, blind, Hound reached all 3 wallets the DOJ seized.
+3. `3-exchange-held.png`: A withdrawal to a wallet from the DOJ case is held, with the evidence.
+4. `4-police-report.png`: One page a detective can act on. Every number is checked against the trace.
+5. `5-proof.png`: Scored blind against the DOJ's own numbers.
+6. `6-victim-case-phone.png`: The victim's own case: their payment, where the money is now, each wallet on Etherscan.
