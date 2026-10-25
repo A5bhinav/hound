@@ -121,7 +121,7 @@ YouTube link to the 2:00 demo video (docs/VIDEO_PLAN.md).
 Real: the DOJ case, every wallet and transaction, Tether's freezes, the phone line, the screenshot reading, the live blockchain checks. Replayed: the timing of the 2024 DOJ case (labelled "replay" on screen). Simulated: the exchange withdrawal screen, which shows how an exchange would use Hound's real check.
 
 ## Prize tracks to select
-Most Technically Advanced · Best People-First Social Impact · Claude for Public Benefit · Armadin Best Security Hack · Hyphenate (Autonomous Systems for Finance) · Cartesia · Microsoft Built for the Real World · Hacker's Choice
+Most Technically Complex Hack · Best People-First Hack · Hacker's Choice · The Hyphenated Enterprise: Autonomous Systems for Finance (Hyphenate) · Best Use of Cartesia · Grand Prize: Built for the Real World (Microsoft) · Microsoft Customer Impact Award · Best Security Hack (Armadin) · Anthropic / Claude prize (name from the live site)
 
 (Check each name against the Cal Hacks 13.0 Devpost page before submitting.)
 
