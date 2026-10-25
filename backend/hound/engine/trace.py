@@ -200,6 +200,12 @@ def run_trace(case, get_transfers=None, label=None, freeze_status=None, get_bala
                     stats["api_calls"] += 1
                     got.append(fetch(chain, x, after=None, as_of=cutoff))
             except Exception as e:  # noqa: BLE001 - adapter types vary (CacheMiss, ChainAPIError...)
+                if type(e).__name__ == "TooManyTransfers":
+                    # The victim sent ETH straight to an exchange-sized address (a hot wallet): that is where the
+                    # money stopped, the same verdict the USDT hops give a high-volume address. Not an error.
+                    swap_errors.append(x)
+                    audit("stop", "high volume address (exchange or service sized): the ETH reached it directly", x)
+                    continue
                 log.warning("swap fetch failed for %s: %s: %s", x, type(e).__name__, _redact(str(e)))
                 stats["fetch_errors"] = stats.get("fetch_errors", 0) + 1
                 swap_errors.append(x)

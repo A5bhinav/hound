@@ -39,7 +39,7 @@ export default function HeroMockup() {
               <p className={styles.date}>Reported Oct 21, 2026</p>
             </div>
             <span className={styles.download}>
-              <Icon d="M10 4v8m0 0l-3-3m3 3l3-3M5 15h10" /> Download report
+              <Icon d="M10 4v8m0 0l-3-3m3 3l3-3M5 15h10" /> Open report
             </span>
           </div>
           <div className={styles.body}>
@@ -96,7 +96,7 @@ export default function HeroMockup() {
                   <b>Binance</b>
                   <small>0x28c6…1d60</small>
                 </span>
-                <em className={styles.alerted}>Alerted</em>
+                <em className={styles.alerted}>On warning list</em>
               </li>
               <li>
                 <span className={styles.logo}>

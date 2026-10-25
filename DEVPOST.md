@@ -44,7 +44,7 @@ Real: the DOJ case, every address and transaction, the swaps, Tether's freezes, 
 Exchange and wallet integrations of the check API, a filing path to Tether and IC3, and a shared watchlist that gets stronger with every free victim report.
 
 ## Built with
-python, fastapi, next.js, typescript, cytoscape, anthropic-claude, cartesia, google-bigquery, ethereum, tron, usdt
+python, fastapi, next.js, typescript, anthropic-claude, cartesia, google-bigquery, ethereum, tron, usdt
 
 ## Tracks
 Overall · Most Technically Advanced · Best People-First Social Impact · Hacker's Choice · Hyphenate (Autonomous Systems for Finance; seat: exchange fraud / AML investigator) · Microsoft Built for the Real World + Customer Impact Award · Claude for Public Benefit (Anthropic) · Cartesia · Armadin Best Security Hack
@@ -54,4 +54,10 @@ Overall · Most Technically Advanced · Best People-First Social Impact · Hacke
 Sources for every number: PITCH.md and BRIEF.md §2.
 
 ## Gallery
-Screenshots from the running app (DOJ replay, real backend) in `docs/devpost/`: `1-trace.png` (trace after the freeze reveal), `2-exchange-hold.png` (withdrawal held with evidence), `3-packet.png` (detective packet), `4-proof.png` (DOJ scoreboard). Re-capture after the final cache snapshot so the numbers match the stage.
+Screenshots from the live site (houndhelp.vercel.app, DOJ replay on the real backend) in `docs/devpost/`, captions as claims:
+1. `1-home.png`: "Built for the victim first: call or report online, and Hound never asks for money or keys."
+2. `2-trace-reveal.png`: "From one victim's report, blind, Hound reached all 3 wallets the DOJ seized. Tether froze them 16 to 20 days later."
+3. `3-exchange-held.png`: "A withdrawal to a wallet from the DOJ case is held, with the evidence."
+4. `4-police-report.png`: "One page a detective can act on. Claude writes it, and it can only cite numbers that are in the trace."
+5. `5-proof.png`: "Scored blind against the DOJ's own numbers: 8 of 8 wallets in between, 3 of 3 seized."
+6. `6-victim-case-phone.png`: "The victim's own case: the payment from her screenshot, where the money is now, each wallet verifiable on Etherscan."

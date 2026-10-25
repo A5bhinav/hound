@@ -31,7 +31,7 @@ const FEATURES = [
   },
   {
     title: "Warn",
-    text: "We alert exchanges before the same wallets scam again.",
+    text: "Exchanges check our warning list before the same wallets scam again.",
     href: "/exchange",
     icon: (
       <svg viewBox="0 0 40 40" {...ICON}>
@@ -72,7 +72,7 @@ export default async function Home() {
               <br />
               <span className={styles.red}>Let&apos;s track it down.</span>
             </h1>
-            <p className={styles.lede}>We trace stolen funds, alert exchanges, and prepare a report for police.</p>
+            <p className={styles.lede}>We trace stolen funds, warn exchanges, and prepare a report for police.</p>
             <div className={styles.ctas}>
               <Link href="/report" className={`btn btn-primary btn-lg ${styles.cta}`}>
                 Report a scam
