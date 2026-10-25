@@ -79,7 +79,7 @@ We tested Hound on a real federal case: *United States v. 4,340,000 Tether* (Nor
 
 **6. The voice line.** A Cartesia agent (Claude Haiku) collects the story, infers dates from the current time instead of asking twice, calls an `open_case` tool on our backend (token-authenticated), reads the case code slowly, walks the caller through the upload, and calls `check_upload` to confirm the payment before hanging up.
 
-**Stack:** Python, FastAPI, Next.js 16 on Vercel; Ethereum and Tron data from Etherscan, Blockscout and public RPC nodes with a disk cache and an offline snapshot; Claude (vision + writer); Cartesia (voice). 576 automated tests plus an 87-check end-to-end run.
+**Stack:** Python, FastAPI, Next.js 16 on Vercel; Ethereum and Tron data from Etherscan, Blockscout and public RPC nodes with a disk cache and an offline snapshot; Claude (vision + writer); Cartesia (voice). 576 automated tests plus a 91-check end-to-end run.
 
 ### Challenges we ran into
 - **The DOJ blanks out most of each wallet address** in court documents (like `0xa17…44f0021`), and scammers create look-alike addresses on purpose. We recovered every real address by matching amounts and dates.
