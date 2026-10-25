@@ -2,7 +2,31 @@
 
 Every number below is verified (source in brackets). Don't say anything that isn't here. If a judge asks something not covered, say "I don't know, here's what we measured instead."
 
-## 3-minute version (MAIN: Cal Hacks 13.0 is 3 min pitch + 2 min Q&A, live demo required)
+## 2:30 version (MAIN for judging: 30 s of buffer under the 3:00 limit, then 2 min Q&A)
+Same story and same five numbers as the 3-minute version below, tighter lines. **Driver** clicks only (on the first word of each line); **Speaker** talks only. Slow down at two moments: the reveal and the close. Everything else moves fast.
+
+**Before each judge:** houndhelp.vercel.app on screen; both police reports opened once (instant, `source: claude`); the second phone has houndhelp.vercel.app open and **/demo/receipt.png** saved to Photos; backup screen recording on the desktop.
+
+| Time | Driver clicks | Speaker says |
+|---|---|---|
+| 0:00–0:10 | Home → **How it works** → **Walk through it →** | "Last year, Americans over 60 lost **4.4 billion dollars** to crypto scams. When it happens, most of them have no one to call. So we built the number." [FBI IC3 2025] |
+| 0:10–0:25 | **Play a sample call** (clip trimmed to about 10 s: greeting, story, case code) → **Next →** | "Real call. Real number." *(clip)* "No wallet addresses, no jargon. And it will never ask for money or keys." |
+| 0:25–1:05 | Nothing: let the transfers draw. **Skip to the end** if not done by 1:00 | "Now the hard part: following the money. This is a real federal case: US versus 4.34 million Tether. One victim. Six payments. Hound gets her report and nothing else. No DOJ labels. No freezes." *(beat)* "Swapped. Looped through a laundering ring. Pooled into one wallet. Hound follows every dollar. All **8** wallets the FBI named. All **3** the DOJ seized." |
+| 1:05–1:15 | **Reveal what Tether did**, then 2 seconds of silence → **Next →** | *(slowly)* "Here's what Hound didn't know. Tether froze these wallets **16 to 20 days** after she reported. Hound pointed at them from her report alone." |
+| 1:15–1:32 | **Try: A wallet from the DOJ case** → **Withdraw** → *Held*; **Try: An exchange hot wallet** → **Withdraw** → *Sent* → **Next →** | "Every wallet in that trail goes on a warning list. Next victim tries to send there: **held**, with the evidence. A normal exchange wallet goes right through. We warn. The exchange decides." |
+| 1:32–1:50 | Detective copy → **For the victim** | "And the detective gets one page they can act on today. Claude writes it, but it can only cite numbers from the trace. If it makes one up, the checker rejects it." |
+| 1:50–2:15 | **Next: See the proof →** | "Is it right? We scored it blind against the DOJ's own numbers. Two seized wallets within about **1 percent**. The third within **11**. Every wallet you just saw is real." |
+| 2:15–2:30 | Stay on Proof | *(to the judges, not the screen)* "Scam victims had nowhere to call. Now they call Hound, and their money gets followed while it can still be frozen. Hound: the 911 call for crypto scam victims." *(beat)* "Want to be the victim?" |
+
+**Checkpoints:** on the trace by 0:30, on the reveal by 1:10. Behind? Cut the hot-wallet click. Still behind at 2:15? Say only the last line.
+
+**Q&A, first 30 s: the judge tries it.** Hand over the second phone: **Report online** → short form → **Choose the picture of my payment** → the saved receipt → **See what we found**. Speaker: "That's one of her real payments, checked live on Ethereum. 101,352 dollars followed, all in wallets Tether froze. A fake receipt gets rejected." Then questions, under 15 s each (answers in Q&A below). A full phone call takes 1.5 to 2 minutes: only at the expo table or if a Cartesia judge asks, with the card line: *"Hi, I'm Sam. In May 2024 someone I met on WhatsApp got me into an investment app called BitPro. I sent about 100,000 dollars of Ethereum from Coinbase, and now I can't withdraw it."*
+
+**If it breaks:** trace stalls → play the backup recording from the trace step, keep talking, never apologise. Clip silent → "it reads them a case code and our website", move on. Between judges: **Reset demo** at the bottom of /how (click twice).
+
+**Rehearsal (write real times here):** run 1 ____ · run 2 ____ · run 3 ____
+
+## 3-minute version (longer form of the 2:30; Cal Hacks 13.0 is 3 min pitch + 2 min Q&A, live demo required)
 Merged from Jinka's winners research (DEMO_RESEARCH.md on branch jinka-demo-research) and our story order. Rules: **say at most five numbers** ($4.4B, 8 of 8, 3 of 3, 16 to 20 days, about 1% and 11%); everything else goes to Q&A. Each beat has one **why** line for the Intentionality criterion. Rehearse 3 times against a timer and write the real times here.
 
 | Time | Screen | Say |
