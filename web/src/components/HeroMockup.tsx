@@ -56,7 +56,7 @@ export default function HeroMockup() {
                   <path d="M0 0L8 4L0 8" fill="none" stroke="#e5484d" strokeWidth="1.2" />
                 </marker>
               </defs>
-              <circle cx="40" cy="130" r="40" fill="url(#hm-glow)" />
+              <circle className={styles.beat} cx="40" cy="130" r="40" fill="url(#hm-glow)" />
               <circle cx="40" cy="130" r="20" fill="#c0181f" stroke="#ff5a5f" strokeWidth="1.5" />
               <path d="M60 130 H138" stroke="#e5484d" strokeWidth="1.6" markerEnd="url(#hm-arrow-red)" />
               <g fill="#2a2a2e" stroke="#6a6a70" strokeWidth="1.4">
@@ -71,6 +71,15 @@ export default function HeroMockup() {
                 <path d="M280 74 C300 56 318 44 356 44" markerEnd="url(#hm-arrow)" />
                 <path d="M280 88 C302 112 320 126 356 128" markerEnd="url(#hm-arrow)" />
                 <path d="M248 176 C290 182 320 190 358 216" markerEnd="url(#hm-arrow)" />
+              </g>
+              {/* red sparks travelling along each edge of the trail */}
+              <g className={styles.flow} fill="none" stroke="#ff5a5f" strokeWidth="3" strokeLinecap="round">
+                <path d="M60 130 H138" />
+                <path d="M162 124 C190 100 205 82 252 80" />
+                <path d="M162 136 C182 150 200 166 222 170" />
+                <path d="M280 74 C300 56 318 44 356 44" />
+                <path d="M280 88 C302 112 320 126 356 128" />
+                <path d="M248 176 C290 182 320 190 358 216" />
               </g>
               <text x="40" y="172" textAnchor="middle" className={styles.walletT}>
                 Your wallet
